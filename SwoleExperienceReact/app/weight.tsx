@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, Text, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { WeightEntryForm } from '../components/weight/WeightEntryForm';
 import { WeightChart } from '../components/weight/WeightChart';
 import { WeightHistory } from '../components/weight/WeightHistory';
@@ -34,6 +35,15 @@ export default function WeightScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Refresh data when the screen comes into focus (e.g., when switching tabs)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!loading) {
+        loadData();
+      }
+    }, [loading])
+  );
 
   const handleWeightAdded = () => {
     loadData();

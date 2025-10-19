@@ -34,7 +34,7 @@ describe('useWorkoutCompletion', () => {
     
     // Default mock implementations
     mockWorkoutService.setCurrentDay.mockResolvedValue(true);
-    mockWorkoutHistoryService.createWorkoutHistory = jest.fn().mockResolvedValue(true);
+    mockWorkoutHistoryService.createBulkWorkoutHistories = jest.fn().mockResolvedValue(true);
   });
 
   it('should initialize with default values', () => {
@@ -59,7 +59,11 @@ describe('useWorkoutCompletion', () => {
     });
 
     expect(result.current.isCompletingDay).toBe(false);
-    expect(mockWorkoutHistoryService.createWorkoutHistory).toHaveBeenCalledTimes(2);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'history-id', workoutId: '1', name: 'Exercise 1' }),
+      expect.objectContaining({ id: 'history-id', workoutId: '2', name: 'Exercise 2' })
+    ]);
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2);
     expect(mockAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.');
     expect(mockOnComplete).toHaveBeenCalledWith(2);
@@ -94,7 +98,7 @@ describe('useWorkoutCompletion', () => {
 
     expect(mockAlert).toHaveBeenCalledWith('No Workouts', 'No workouts to complete for today');
     expect(mockWorkoutService.setCurrentDay).not.toHaveBeenCalled();
-    expect(mockWorkoutHistoryService.createWorkoutHistory).not.toHaveBeenCalled();
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).not.toHaveBeenCalled();
     expect(mockOnComplete).not.toHaveBeenCalled();
   });
 
@@ -113,7 +117,7 @@ describe('useWorkoutCompletion', () => {
     });
 
     expect(result.current.isCompletingDay).toBe(false);
-    expect(mockWorkoutHistoryService.createWorkoutHistory).toHaveBeenCalledTimes(1);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1);
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2);
     expect(mockAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.');
     expect(mockOnComplete).toHaveBeenCalledWith(2);
@@ -154,5 +158,57 @@ describe('useWorkoutCompletion', () => {
     // After completion, it should be false
     expect(result.current.isCompletingDay).toBe(false);
     expect(mockOnComplete).toHaveBeenCalledWith(2);
+  });
+
+  it('should handle bulk workout history creation failure', async () => {
+    const mockWorkouts = [
+      { id: '1', name: 'Exercise 1', weight: 100, sets: 3, reps: 10, day: 1, dayOrder: 0 },
+      { id: '2', name: 'Exercise 2', weight: 120, sets: 3, reps: 8, day: 1, dayOrder: 1 }
+    ];
+
+    mockWorkoutHistoryService.createBulkWorkoutHistories.mockResolvedValue(false);
+    const mockOnComplete = jest.fn();
+
+    const { result } = renderHook(() => useWorkoutCompletion());
+
+    await act(async () => {
+      await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete);
+    });
+
+    expect(result.current.isCompletingDay).toBe(false);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1);
+    expect(mockWorkoutService.setCurrentDay).not.toHaveBeenCalled();
+    expect(mockAlert).toHaveBeenCalledWith('Error', 'Failed to complete workout day');
+    expect(mockOnComplete).not.toHaveBeenCalled();
+  });
+
+  it('should use bulk method to prevent race conditions', async () => {
+    const mockWorkouts = [
+      { id: '1', name: 'Exercise 1', weight: 100, sets: 3, reps: 10, day: 1, dayOrder: 0 },
+      { id: '2', name: 'Exercise 2', weight: 120, sets: 3, reps: 8, day: 1, dayOrder: 1 },
+      { id: '3', name: 'Exercise 3', weight: 140, sets: 3, reps: 6, day: 1, dayOrder: 2 }
+    ];
+
+    const mockOnComplete = jest.fn();
+
+    const { result } = renderHook(() => useWorkoutCompletion());
+
+    await act(async () => {
+      await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete);
+    });
+
+    // Verify that createBulkWorkoutHistories was called once with all workouts
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledWith([
+      expect.objectContaining({ workoutId: '1', name: 'Exercise 1' }),
+      expect.objectContaining({ workoutId: '2', name: 'Exercise 2' }),
+      expect.objectContaining({ workoutId: '3', name: 'Exercise 3' })
+    ]);
+
+    // Verify all workouts were converted to history with the same date
+    const callArgs = mockWorkoutHistoryService.createBulkWorkoutHistories.mock.calls[0][0];
+    expect(callArgs).toHaveLength(3);
+    expect(callArgs[0].date).toBe(callArgs[1].date); // Same date for all
+    expect(callArgs[1].date).toBe(callArgs[2].date);
   });
 });

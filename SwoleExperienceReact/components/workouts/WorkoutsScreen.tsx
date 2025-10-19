@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { WorkoutDay } from '../../lib/models/WorkoutDay';
 import { workoutService } from '../../lib/services/WorkoutService';
 import { WorkoutList } from './WorkoutList';
@@ -96,9 +97,27 @@ export const WorkoutsScreen: React.FC = () => {
         Alert.alert('Error', 'Failed to load app data');
       }
     };
-    
+
     initializeApp();
   }, []);
+
+  // Refresh data when the screen comes into focus (e.g., when switching tabs)
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshData = async () => {
+        try {
+          // Only refresh if we're not currently loading
+          if (!isLoading) {
+            await loadDataForOffset(dayOffset);
+          }
+        } catch (error) {
+          console.error('Error refreshing data on focus:', error);
+        }
+      };
+
+      refreshData();
+    }, [dayOffset, isLoading, loadDataForOffset])
+  );
 
   // Load data when currentDay or dayOffset changes (but not on initial mount)
   useEffect(() => {
