@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform, Modal, Alert } from 'react-native';
 import WorkoutsConfigure from '../components/workouts/WorkoutsConfigure';
 import { useTheme, ThemeMode } from '../contexts/ThemeContext';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { workoutHistoryService } from '../lib/services/WorkoutHistoryService';
 
 export default function SettingsScreen() {
   const [showWorkoutConfig, setShowWorkoutConfig] = useState(false);
+  const [showClearHistoryModal, setShowClearHistoryModal] = useState(false);
   const { themeMode, setThemeMode } = useTheme();
   const colors = useThemeColors();
 
@@ -15,6 +17,20 @@ export default function SettingsScreen() {
 
   const handleThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
+  };
+
+  const handleClearHistory = async () => {
+    try {
+      const success = await workoutHistoryService.removeAllHistory();
+      if (success) {
+        Alert.alert('Success', 'All workout history has been cleared.');
+      } else {
+        Alert.alert('Error', 'Failed to clear workout history. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred while clearing workout history.');
+    }
+    setShowClearHistoryModal(false);
   };
 
   return (
@@ -38,6 +54,19 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Text style={[styles.chevron, { color: colors.text.tertiary }]}>›</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingItem, { backgroundColor: colors.surface }]}
+            onPress={() => setShowClearHistoryModal(true)}
+          >
+            <View style={styles.settingContent}>
+              <Text style={[styles.settingTitle, { color: colors.error || '#FF4444' }]}>Clear Workout History</Text>
+              <Text style={[styles.settingDescription, { color: colors.text.secondary }]}>
+                Permanently delete all workout history data
+              </Text>
+            </View>
+            <Text style={[styles.chevron, { color: colors.error || '#FF4444' }]}>›</Text>
           </TouchableOpacity>
         </View>
 
@@ -113,6 +142,39 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Clear History Confirmation Modal */}
+      <Modal
+        visible={showClearHistoryModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowClearHistoryModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
+              Clear Workout History
+            </Text>
+            <Text style={[styles.modalMessage, { color: colors.text.secondary }]}>
+              This will permanently delete all workout history. Are you sure?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={() => setShowClearHistoryModal(false)}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text.primary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton, { backgroundColor: colors.error || '#FF4444' }]}
+                onPress={handleClearHistory}
+              >
+                <Text style={[styles.modalButtonText, { color: 'white' }]}>Clear History</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -169,6 +231,58 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 16,
     marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  confirmButton: {
+    // backgroundColor will be set dynamically
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 
