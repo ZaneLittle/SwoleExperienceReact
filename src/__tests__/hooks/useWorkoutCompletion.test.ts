@@ -87,7 +87,7 @@ describe('useWorkoutCompletion', () => {
     expect(mockOnComplete).toHaveBeenCalledWith(1);
   });
 
-  it('should show alert when no workouts to complete', async () => {
+  it('should complete empty day successfully', async () => {
     const mockOnComplete = jest.fn();
 
     const { result } = renderHook(() => useWorkoutCompletion());
@@ -96,10 +96,43 @@ describe('useWorkoutCompletion', () => {
       await result.current.completeWorkoutDay([], 1, 3, mockOnComplete);
     });
 
-    expect(mockAlert).toHaveBeenCalledWith('No Workouts', 'No workouts to complete for today');
-    expect(mockWorkoutService.setCurrentDay).not.toHaveBeenCalled();
+    expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2);
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).not.toHaveBeenCalled();
-    expect(mockOnComplete).not.toHaveBeenCalled();
+    expect(mockAlert).toHaveBeenCalledWith('Success', 'Day 1 completed (no workouts). Moved to day 2.');
+    expect(mockOnComplete).toHaveBeenCalledWith(2);
+  });
+
+  it('should complete empty day and wrap to day 1 when on last day', async () => {
+    const mockOnComplete = jest.fn();
+
+    const { result } = renderHook(() => useWorkoutCompletion());
+
+    await act(async () => {
+      await result.current.completeWorkoutDay([], 3, 3, mockOnComplete);
+    });
+
+    expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(1);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).not.toHaveBeenCalled();
+    expect(mockAlert).toHaveBeenCalledWith('Success', 'Day 3 completed (no workouts). Moved to day 1.');
+    expect(mockOnComplete).toHaveBeenCalledWith(1);
+  });
+
+  it('should complete day with workouts and show different message', async () => {
+    const mockWorkouts = [
+      { id: '1', name: 'Exercise 1', weight: 100, sets: 3, reps: 10, day: 1, dayOrder: 0 }
+    ];
+    const mockOnComplete = jest.fn();
+
+    const { result } = renderHook(() => useWorkoutCompletion());
+
+    await act(async () => {
+      await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete);
+    });
+
+    expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2);
+    expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1);
+    expect(mockAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.');
+    expect(mockOnComplete).toHaveBeenCalledWith(2);
   });
 
   it('should handle setCurrentDay failure', async () => {

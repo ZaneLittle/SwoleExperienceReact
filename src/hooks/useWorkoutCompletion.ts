@@ -14,25 +14,23 @@ export const useWorkoutCompletion = () => {
     onComplete: (nextDay: number) => void
   ) => {
     try {
-      if (workouts.length === 0) {
-        Alert.alert('No Workouts', 'No workouts to complete for today');
-        return;
-      }
-
       setIsCompletingDay(true);
 
-      // Convert all workouts to history with the current date
-      const completionDate = new Date();
-      
-      const workoutHistories = workouts.map(workout => 
-        WorkoutHistoryService.workoutDayToHistory(workout, completionDate)
-      );
-      
-      // Create all workout histories at once to avoid race conditions
-      const success = await workoutHistoryService.createBulkWorkoutHistories(workoutHistories);
-      
-      if (!success) {
-        throw new Error('Failed to create workout histories');
+      // Only create workout histories if there are workouts
+      if (workouts.length > 0) {
+        // Convert all workouts to history with the current date
+        const completionDate = new Date();
+        
+        const workoutHistories = workouts.map(workout => 
+          WorkoutHistoryService.workoutDayToHistory(workout, completionDate)
+        );
+        
+        // Create all workout histories at once to avoid race conditions
+        const success = await workoutHistoryService.createBulkWorkoutHistories(workoutHistories);
+        
+        if (!success) {
+          throw new Error('Failed to create workout histories');
+        }
       }
 
       // Move to next day
@@ -40,7 +38,13 @@ export const useWorkoutCompletion = () => {
       await workoutService.setCurrentDay(nextDay);
       
       setIsCompletingDay(false);
-      Alert.alert('Success', `Workout day completed! Moved to day ${nextDay}.`);
+      
+      // Show different messages based on whether there were workouts
+      if (workouts.length > 0) {
+        Alert.alert('Success', `Workout day completed! Moved to day ${nextDay}.`);
+      } else {
+        Alert.alert('Success', `Day ${currentDay} completed (no workouts). Moved to day ${nextDay}.`);
+      }
       
       // Call the completion callback
       onComplete(nextDay);
