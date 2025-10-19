@@ -152,7 +152,6 @@ export const WorkoutsScreen: React.FC = () => {
           workouts={workouts}
           history={workoutHistory}
           isHistory={dayOffset < 0}
-          onAddWorkout={handleAddWorkout}
           onGoToToday={handleGoToToday}
           onUpdateWorkout={handleEditWorkout}
           onDeleteWorkout={handleDelete}
@@ -163,7 +162,7 @@ export const WorkoutsScreen: React.FC = () => {
       )}
       
       <CompleteWorkoutButton
-        visible={workouts.length > 0 && dayOffset === 0}
+        visible={dayOffset === 0}
         isCompleting={isCompletingDay}
         onComplete={handleCompleteDay}
       />

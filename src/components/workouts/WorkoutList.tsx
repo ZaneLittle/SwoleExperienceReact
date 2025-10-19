@@ -19,7 +19,6 @@ interface WorkoutListProps {
   history: WorkoutHistory[];
   isLoading?: boolean;
   isHistory?: boolean;
-  onAddWorkout?: () => void;
   onGoToToday?: () => void;
   onUpdateWorkout?: (workout: WorkoutDay) => void;
   onDeleteWorkout?: (workout: WorkoutDay) => void;
@@ -33,7 +32,6 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
   history,
   isLoading = false,
   isHistory = false,
-  onAddWorkout,
   onGoToToday,
   onUpdateWorkout,
   onDeleteWorkout,
@@ -79,12 +77,15 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
   );
 
   const renderAddWorkoutPlaceholder = () => (
-    <TouchableOpacity style={styles.placeholderContainer} onPress={onAddWorkout}>
+    <View style={styles.placeholderContainer}>
       <View style={styles.placeholderContent}>
-        <Text style={styles.placeholderIcon}>+</Text>
-        <Text style={styles.placeholderText}>Add a workout</Text>
+        <Text style={styles.placeholderTitle}>No workouts configured</Text>
+        <Text style={styles.placeholderDescription}>
+          To create your workout routines, go to{'\n'}
+          <Text style={styles.settingsText}>Settings → Configure Workouts</Text>
+        </Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 
   const renderGoToTodayPlaceholder = () => (
@@ -209,15 +210,22 @@ const styles = StyleSheet.create({
   placeholderContent: {
     alignItems: 'center',
   },
-  placeholderIcon: {
-    fontSize: 32,
+  placeholderTitle: {
     color: '#007AFF',
-    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  placeholderText: {
-    color: '#007AFF',
+  placeholderDescription: {
+    color: '#666',
     fontSize: 16,
-    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  settingsText: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
   noWorkoutsText: {
     color: '#007AFF',
