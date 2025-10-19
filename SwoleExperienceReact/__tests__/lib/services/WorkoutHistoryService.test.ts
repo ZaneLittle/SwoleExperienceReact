@@ -650,6 +650,71 @@ describe('WorkoutHistoryService', () => {
     });
   });
 
+  describe('removeAllHistory', () => {
+    it('removes all workout history successfully', async () => {
+      mockSetItem.mockResolvedValueOnce(undefined);
+
+      const result = await workoutHistoryService.removeAllHistory();
+
+      expect(result).toBe(true);
+      expect(mockSetItem).toHaveBeenCalledWith('workout_history', '[]');
+    });
+
+    it('removes all workout history regardless of existing data', async () => {
+      mockSetItem.mockResolvedValueOnce(undefined);
+
+      const result = await workoutHistoryService.removeAllHistory();
+
+      expect(result).toBe(true);
+      expect(mockSetItem).toHaveBeenCalledWith('workout_history', '[]');
+      expect(mockSetItem).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns false when storage fails', async () => {
+      mockSetItem.mockRejectedValueOnce(new Error('Storage error'));
+
+      const result = await workoutHistoryService.removeAllHistory();
+
+      expect(result).toBe(false);
+    });
+
+    it('does not call getItem when removing all history', async () => {
+      mockSetItem.mockResolvedValueOnce(undefined);
+
+      await workoutHistoryService.removeAllHistory();
+
+      expect(mockGetItem).not.toHaveBeenCalled();
+      expect(mockSetItem).toHaveBeenCalledWith('workout_history', '[]');
+    });
+
+    it('handles multiple consecutive calls correctly', async () => {
+      mockSetItem.mockResolvedValue(undefined);
+
+      const result1 = await workoutHistoryService.removeAllHistory();
+      const result2 = await workoutHistoryService.removeAllHistory();
+
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
+      expect(mockSetItem).toHaveBeenCalledTimes(2);
+      expect(mockSetItem).toHaveBeenNthCalledWith(1, 'workout_history', '[]');
+      expect(mockSetItem).toHaveBeenNthCalledWith(2, 'workout_history', '[]');
+    });
+
+    it('clears the storage key completely', async () => {
+      mockSetItem.mockResolvedValueOnce(undefined);
+
+      await workoutHistoryService.removeAllHistory();
+
+      const setItemCall = mockSetItem.mock.calls[0];
+      expect(setItemCall[0]).toBe('workout_history');
+      
+      const storedData = JSON.parse(setItemCall[1] as string);
+      expect(storedData).toEqual([]);
+      expect(Array.isArray(storedData)).toBe(true);
+      expect(storedData.length).toBe(0);
+    });
+  });
+
   describe('Static methods', () => {
     describe('workoutDayToHistory', () => {
       it('converts WorkoutDay to WorkoutHistory correctly', () => {
