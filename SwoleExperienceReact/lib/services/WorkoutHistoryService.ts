@@ -25,7 +25,11 @@ export class WorkoutHistoryService {
       const historyData: WorkoutHistoryData[] = JSON.parse(historyJson);
       const history = historyData.map(WorkoutHistoryConverter.fromData);
 
+      // console.log(`json: ${historyJson}`)
+      // console.log(`parsed data: ${history}`)
+
       if (date) {
+        // console.log(`filtered data: ${history.filter(entry => entry.date === date)}`)
         return history.filter(entry => entry.date === date);
       }
 
@@ -54,6 +58,24 @@ export class WorkoutHistoryService {
     }
   }
 
+  async createBulkWorkoutHistories(workoutHistories: WorkoutHistory[]): Promise<boolean> {
+    try {
+      const existingHistory = await this.getWorkoutHistory();
+      const newHistoryData = workoutHistories.map(WorkoutHistoryConverter.toData);
+      
+      const historyDataArray = [
+        ...newHistoryData,
+        ...existingHistory.map(WorkoutHistoryConverter.toData)
+      ];
+
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyDataArray));
+      return true;
+    } catch (error) {
+      console.error('Error creating multiple workout histories:', error);
+      return false;
+    }
+  }
+
   async removeWorkoutHistory(id: string): Promise<boolean> {
     try {
       const existingHistory = await this.getWorkoutHistory();
@@ -62,6 +84,16 @@ export class WorkoutHistoryService {
       
       await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyData));
       return true;
+    } catch (error) {
+      console.error('Error removing workout history:', error);
+      return false;
+    }
+  }
+
+  async removeAllHistory(): Promise<boolean> {
+    try {
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify([]));
+      return true
     } catch (error) {
       console.error('Error removing workout history:', error);
       return false;

@@ -24,12 +24,16 @@ export const useWorkoutCompletion = () => {
       // Convert all workouts to history with the current date
       const completionDate = new Date();
       
-      const workoutHistoryPromises = workouts.map(workout => {
-        const workoutHistory = WorkoutHistoryService.workoutDayToHistory(workout, completionDate);
-        return workoutHistoryService.createWorkoutHistory(workoutHistory);
-      });
+      const workoutHistories = workouts.map(workout => 
+        WorkoutHistoryService.workoutDayToHistory(workout, completionDate)
+      );
       
-      await Promise.all(workoutHistoryPromises);
+      // Create all workout histories at once to avoid race conditions
+      const success = await workoutHistoryService.createBulkWorkoutHistories(workoutHistories);
+      
+      if (!success) {
+        throw new Error('Failed to create workout histories');
+      }
 
       // Move to next day
       const nextDay = currentDay < totalDays ? currentDay + 1 : 1;
