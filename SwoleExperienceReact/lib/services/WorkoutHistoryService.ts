@@ -84,6 +84,16 @@ export class WorkoutHistoryService {
     }
   }
 
+  async removeAllHistory(): Promise<boolean> {
+    try {
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify([]));
+      return true;
+    } catch (error) {
+      console.error('Error removing all workout history:', error);
+      return false;
+    }
+  }
+
   // Convert WorkoutDay to WorkoutHistory
   static workoutDayToHistory(workoutDay: WorkoutDay, date?: Date): WorkoutHistory {
     const dateToLog = date || new Date();
