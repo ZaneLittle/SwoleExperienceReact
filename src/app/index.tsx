@@ -1,4 +1,4 @@
-import { Link } from 'expo-router';
+import { Link } from 'react-router-dom';
 import { Text, View, StyleSheet } from 'react-native';
 import { useThemeColors } from '../hooks/useThemeColors';
 
@@ -10,9 +10,9 @@ export default function HomeScreen() {
       <Text style={[styles.title, { color: colors.text.primary }]}>SwoleExperience</Text>
       <Text style={[styles.subtitle, { color: colors.text.secondary }]}>A simple weight tracker and workout planner</Text>
       <View style={styles.links}>
-        <Link href="/weight" style={[styles.link, { color: colors.primary }]}>Go to Weight Tracker</Link>
-        <Link href="/workouts" style={[styles.link, { color: colors.primary }]}>Go to Workouts</Link>
-        <Link href="/settings" style={[styles.link, { color: colors.primary }]}>Go to Settings</Link>
+        <Link to="/weight" style={[styles.link, { color: colors.primary }]}>Go to Weight Tracker</Link>
+        <Link to="/workouts" style={[styles.link, { color: colors.primary }]}>Go to Workouts</Link>
+        <Link to="/settings" style={[styles.link, { color: colors.primary }]}>Go to Settings</Link>
       </View>
     </View>
   );

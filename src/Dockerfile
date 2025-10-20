@@ -15,6 +15,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package*.json ./
+COPY tsconfig.json ./
+COPY index.js ./
+COPY App.tsx ./
 COPY app.json ./
 COPY app/ ./app/
 COPY components/ ./components/
@@ -23,15 +26,11 @@ COPY lib/ ./lib/
 COPY hooks/ ./hooks/
 COPY index.js ./
 COPY babel.config.js ./
-COPY tsconfig.json ./
 COPY jest.setup.js ./
 COPY public/ ./public/
 
-# Build the web version
-RUN npx expo export --platform web
-
-# Copy public files to dist directory
-RUN cp -r public/* dist/ || true
+# Build the web version with Expo/Metro
+RUN npm run build
 
 # Production image
 FROM nginx:alpine AS runner
