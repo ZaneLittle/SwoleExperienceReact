@@ -39,10 +39,8 @@ export default function WeightScreen() {
   // Refresh data when the screen comes into focus (e.g., when switching tabs)
   useFocusEffect(
     React.useCallback(() => {
-      if (!loading) {
-        loadData();
-      }
-    }, [loading])
+      loadData();
+    }, [])
   );
 
   const handleWeightAdded = () => {
