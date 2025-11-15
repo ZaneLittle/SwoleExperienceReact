@@ -6,15 +6,25 @@ on:
 jobs:
   auto-approve:
     runs-on: ubuntu-latest
-    if: |
-      github.event.issue.pull_request != null &&
-      github.event.comment.user.login == github.repository_owner
     permissions:
       pull-requests: write
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Debug - Show event data
+        run: |
+          echo "=== Event Debug Information ==="
+          echo "Event action: ${{ github.event.action }}"
+          echo "Comment body: '${{ github.event.comment.body }}'"
+          echo "Issue number: ${{ github.event.issue.number }}"
+          echo "Issue URL: ${{ github.event.issue.html_url }}"
+          echo "Commenter: ${{ github.event.comment.user.login }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          echo "Is PR: ${{ github.event.issue.pull_request != null }}"
+          echo "PR URL: ${{ github.event.issue.pull_request.url }}"
+          echo "Event name: ${{ github.event_name }}"
 
       - name: Check comment and approve PR
         id: approve
@@ -25,23 +35,25 @@ jobs:
           PR_NUMBER="${{ github.event.issue.number }}"
           REPO="${{ github.repository }}"
           
-          echo "=== Debug Information ==="
-          echo "Comment body: '$COMMENT_BODY'"
+          echo "=== Processing Comment ==="
+          echo "Comment body (trimmed): '$COMMENT_BODY'"
           echo "PR number: $PR_NUMBER"
-          echo "Commenter: ${{ github.event.comment.user.login }}"
-          echo "Repository owner: ${{ github.repository_owner }}"
-          echo "Repository: $REPO"
-          echo "Has GH_PAT: ${{ secrets.GH_PAT != '' }}"
+          
+          # Check if this is a PR (not just an issue)
+          if [ -z "${{ github.event.issue.pull_request.url }}" ]; then
+            echo "❌ This is not a pull request comment. Skipping."
+            exit 0
+          fi
           
           # Validate it's the repository owner
           if [ "${{ github.event.comment.user.login }}" != "${{ github.repository_owner }}" ]; then
-            echo "❌ Commenter is not repository owner."
+            echo "❌ Commenter (${{ github.event.comment.user.login }}) is not repository owner (${{ github.repository_owner }}). Skipping."
             exit 0
           fi
           
           # Check if comment matches
           if [ "$COMMENT_BODY" != "APPROVED" ]; then
-            echo "❌ Comment does not match 'APPROVED' (received: '$COMMENT_BODY')"
+            echo "❌ Comment does not match 'APPROVED' (received: '$COMMENT_BODY'). Skipping."
             exit 0
           fi
           
