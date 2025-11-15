@@ -56,8 +56,7 @@
     "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
     "testEnvironment": "jsdom",
     "moduleNameMapper": {
-      "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage",
-      "^react-native$": "<rootDir>/node_modules/react-native"
+      "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage"
     }
   }
 }
