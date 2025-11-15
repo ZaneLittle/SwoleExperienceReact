@@ -1,3 +1,7 @@
 .vscode
 .DS_Store
 .idea
+node_modules/
+SwoleExperienceReact/node_modules/
+SwoleExperienceReact/.expo
+SwoleExperienceReact/expo-env.d.ts

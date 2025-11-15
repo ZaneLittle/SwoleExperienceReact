@@ -89,7 +89,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       const workoutData: WorkoutDay = {
         id: workout?.id || Date.now().toString(),
         day,
-        dayOrder: defaultOrder,
+        dayOrder: workout?.dayOrder ?? defaultOrder,
         name: name.trim(),
         weight: Number(weight),
         sets: Number(sets),

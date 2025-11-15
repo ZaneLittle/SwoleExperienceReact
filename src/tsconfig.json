@@ -3,6 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
       "@/components/*": [
