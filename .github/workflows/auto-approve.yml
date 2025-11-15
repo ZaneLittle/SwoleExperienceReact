@@ -7,16 +7,34 @@ jobs:
   auto-approve:
     runs-on: ubuntu-latest
     if: |
-      github.event.issue.pull_request != '' &&
-      github.event.comment.user.login == github.repository_owner &&
-      github.event.comment.body == 'APPROVED'
+      github.event.issue.pull_request != null &&
+      github.event.comment.user.login == github.repository_owner
     permissions:
       pull-requests: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Approve PR
-        run: gh pr review ${{ github.event.issue.number }} --approve
+      - name: Check comment and approve PR
+        id: approve
+        run: |
+          COMMENT_BODY=$(echo "${{ github.event.comment.body }}" | xargs)
+          PR_NUMBER="${{ github.event.issue.number }}"
+          
+          echo "Comment body: '$COMMENT_BODY'"
+          echo "PR number: $PR_NUMBER"
+          echo "Commenter: ${{ github.event.comment.user.login }}"
+          echo "Repository owner: ${{ github.repository_owner }}"
+          
+          if [ "$COMMENT_BODY" = "APPROVED" ]; then
+            echo "Approving PR #$PR_NUMBER"
+            gh pr review $PR_NUMBER --approve --body "Auto-approved by workflow"
+            echo "approved=true" >> $GITHUB_OUTPUT
+          else
+            echo "Comment does not match 'APPROVED' (received: '$COMMENT_BODY')"
+            echo "approved=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
