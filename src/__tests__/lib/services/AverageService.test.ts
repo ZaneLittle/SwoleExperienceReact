@@ -432,13 +432,16 @@ describe('AverageService', () => {
     });
 
     it('handles different timezones correctly', async () => {
+      // Use dates that are on the same UTC day but at different times
+      // Using times that are well within the day (8am and 8pm UTC) ensures
+      // they'll be on the same local day in all timezones (including UTC in CI)
       const weights: Weight[] = [
         createMockWeight({ 
-          dateTime: new Date('2024-01-15T23:30:00Z'), 
+          dateTime: new Date('2024-01-15T08:00:00Z'), 
           weight: 180.0 
         }),
         createMockWeight({ 
-          dateTime: new Date('2024-01-16T00:30:00Z'), 
+          dateTime: new Date('2024-01-15T20:00:00Z'), 
           weight: 181.0 
         }),
       ];
