@@ -1,22 +1,34 @@
 // Setup for React Native Testing Library
 import 'react-native-gesture-handler/jestSetup';
 
-// Mock React Native components for testing
+// Mock react-native components for React Native Testing Library
 jest.mock('react-native', () => {
   const React = require('react');
-
+  
+  // Create simple component functions
+  const createComponent = (name) => {
+    const Comp = (props) => React.createElement(name, props, props?.children);
+    Comp.displayName = name;
+    return Comp;
+  };
+  
   return {
+    View: createComponent('View'),
+    Text: createComponent('Text'),
+    TextInput: createComponent('TextInput'),
+    TouchableOpacity: createComponent('TouchableOpacity'),
+    ScrollView: (props) => React.createElement('ScrollView', props, props?.children),
+    KeyboardAvoidingView: (props) => React.createElement('KeyboardAvoidingView', props, props?.children),
+    Modal: (props) => props?.visible ? React.createElement('View', props, props?.children) : null,
+    ActivityIndicator: createComponent('ActivityIndicator'),
     Alert: {
       alert: jest.fn(),
     },
-    Modal: ({ children, visible, ...props }) => {
-      return visible ? React.createElement('View', props, children) : null;
+    Platform: {
+      OS: 'web', // Default to web for consistent test behavior in jsdom environment.
+                 // Individual tests can override this if needed for platform-specific testing.
+      select: jest.fn((obj) => obj.web || obj.default),
     },
-    View: 'View',
-    Text: 'Text',
-    TouchableOpacity: 'TouchableOpacity',
-    ScrollView: 'ScrollView',
-    ActivityIndicator: 'ActivityIndicator',
     StyleSheet: {
       create: jest.fn((styles) => styles),
     },
