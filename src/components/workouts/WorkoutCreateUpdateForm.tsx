@@ -48,6 +48,12 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   const [supersetId, setSupersetId] = useState<string>('');
   const [showAlternativeDropdown, setShowAlternativeDropdown] = useState(false);
   const [showSupersetDropdown, setShowSupersetDropdown] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    weight?: string;
+    sets?: string;
+    reps?: string;
+  }>({});
 
   useEffect(() => {
     if (workout?.altParentId) {
@@ -60,26 +66,35 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     } else {
       setSupersetId('');
     }
+    setErrors({});
   }, [workout]);
 
   const validateForm = (): boolean => {
+    const newErrors: {
+      name?: string;
+      weight?: string;
+      sets?: string;
+      reps?: string;
+    } = {};
+
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Name is required');
-      return false;
+      newErrors.name = 'Name is required';
     }
-    if (!weight || isNaN(Number(weight)) || Number(weight) < 0) {
-      Alert.alert('Validation Error', 'Please enter a valid weight (must be 0 or greater)');
-      return false;
+    const weightNum = Number(weight);
+    if (weight === '' || weight.trim() === '' || isNaN(weightNum) || weightNum < 0) {
+      newErrors.weight = 'Please enter a valid weight';
     }
-    if (!sets || isNaN(Number(sets)) || Number(sets) < 0) {
-      Alert.alert('Validation Error', 'Please enter a valid number of sets (must be 0 or greater)');
-      return false;
+    const setsNum = Number(sets);
+    if (sets === '' || sets.trim() === '' || isNaN(setsNum) || setsNum < 0) {
+      newErrors.sets = 'Please enter a valid number of sets';
     }
-    if (!reps || isNaN(Number(reps)) || Number(reps) < 0) {
-      Alert.alert('Validation Error', 'Please enter a valid number of reps (must be 0 or greater)');
-      return false;
+    const repsNum = Number(reps);
+    if (reps === '' || reps.trim() === '' || isNaN(repsNum) || repsNum < 0) {
+      newErrors.reps = 'Please enter a valid number of reps';
     }
-    return true;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
@@ -171,7 +186,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     onChangeText: (text: string) => void,
     placeholder: string,
     keyboardType: 'default' | 'numeric' = 'default',
-    multiline: boolean = false
+    multiline: boolean = false,
+    error?: string,
+    errorKey?: keyof typeof errors
   ) => (
     <View style={styles.inputContainer}>
       <Text style={[styles.inputLabel, { color: colors.text.primary }]}>{label}</Text>
@@ -182,17 +199,30 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           { 
             backgroundColor: colors.surface, 
             color: colors.text.primary,
-            borderColor: colors.border 
+            borderColor: error ? '#ff4444' : colors.border 
           }
         ]}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(text) => {
+          onChangeText(text);
+          // Clear error when user starts typing
+          if (errorKey && errors[errorKey]) {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors[errorKey];
+              return newErrors;
+            });
+          }
+        }}
         placeholder={placeholder}
         placeholderTextColor={colors.text.tertiary}
         keyboardType={keyboardType}
         multiline={multiline}
         numberOfLines={multiline ? 4 : 1}
       />
+      {error && (
+        <Text style={[styles.errorText, { color: '#ff4444' }]}>{error}</Text>
+      )}
     </View>
   );
 
@@ -331,12 +361,12 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.form, { backgroundColor: colors.background }]}>
-          {renderInputField('Name', name, setName, 'Exercise name')}
+          {renderInputField('Name', name, setName, 'Exercise name', 'default', false, errors.name, 'name')}
           
           <View style={styles.row}>
-            {renderInputField('Weight', weight, setWeight, '0', 'numeric')}
-            {renderInputField('Sets', sets, setSets, '0', 'numeric')}
-            {renderInputField('Reps', reps, setReps, '0', 'numeric')}
+            {renderInputField('Weight', weight, setWeight, '0', 'numeric', false, errors.weight, 'weight')}
+            {renderInputField('Sets', sets, setSets, '0', 'numeric', false, errors.sets, 'sets')}
+            {renderInputField('Reps', reps, setReps, '0', 'numeric', false, errors.reps, 'reps')}
           </View>
 
           <View style={styles.row}>
@@ -509,5 +539,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     fontWeight: '600',
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#ff4444',
   },
 });
