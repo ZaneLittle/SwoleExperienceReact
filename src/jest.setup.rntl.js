@@ -32,6 +32,9 @@ jest.mock('react-native', () => {
     StyleSheet: {
       create: jest.fn((styles) => styles),
     },
+    Dimensions: {
+      get: jest.fn(() => ({ width: 375, height: 812 })),
+    },
   };
 });
 
