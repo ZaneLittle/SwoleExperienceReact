@@ -7,7 +7,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import { WorkoutValidator } from '../../lib/models/Workout';
+import { Workout } from '../../lib/models/Workout';
 import { WorkoutCardProps, WorkoutCardWorkout } from './WorkoutCardTypes';
 import { WorkoutCardHeader } from './WorkoutCardHeader';
 import { WorkoutCardMetrics } from './WorkoutCardMetrics';
@@ -55,8 +55,15 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     return allowDelete && !hasAlternativesOrSupersets;
   }, [allowDelete, hasAlternativesOrSupersets]);
 
-  const handleLongPress = () => {
-    if (allowUpdate && onUpdate && 'day' in workout) {
+  const handleLongPress = (workoutToUpdate?: Workout) => {
+    if (!allowUpdate || !onUpdate) return;
+    
+    if (workoutToUpdate) {
+      const workoutDay = workoutsInDay.find(w => w.id === workoutToUpdate.id);
+      if (workoutDay) {
+        onUpdate(workoutDay);
+      }
+    } else if ('day' in workout) {
       onUpdate(workout as any);
     }
   };
@@ -109,7 +116,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     <View key={alternative.id} style={styles.card}>
       <TouchableOpacity
         style={styles.infoSection}
-        onLongPress={handleLongPress}
+        onLongPress={() => handleLongPress(alternative)}
         activeOpacity={0.7}
       >
         <View style={styles.workoutInfo}>
@@ -120,7 +127,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
             canDelete={false}
             allowUpdate={allowUpdate}
             onDelete={() => {}}
-            onUpdate={handleLongPress}
+            onUpdate={() => handleLongPress(alternative)}
           />
           <WorkoutCardMetrics workout={alternative} />
         </View>
