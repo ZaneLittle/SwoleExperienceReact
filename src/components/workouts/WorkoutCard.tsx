@@ -35,18 +35,6 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
   const [currentAlternativeIndex, setCurrentAlternativeIndex] = useState(0);
 
   // Memoized calculations for better performance
-  const mainNote = useMemo(() => {
-    let note = workout.notes;
-    for (const superset of supersets) {
-      if (note) {
-        note += `\n${superset.notes}`;
-      } else {
-        note = superset.notes;
-      }
-    }
-    return note;
-  }, [workout.notes, supersets]);
-
   const hasAlternativesOrSupersets = useMemo(() => {
     return (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0);
   }, [alternatives, supersets]);
@@ -85,7 +73,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <TouchableOpacity
         style={styles.infoSection}
-        onLongPress={handleLongPress}
+        onLongPress={() => handleLongPress()}
         activeOpacity={0.7}
       >
         <View style={styles.workoutInfo}>
@@ -108,7 +96,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
         onUpdate={handleLongPress}
       />
       
-      <WorkoutCardNotes notes={mainNote || ''} isMain />
+      <WorkoutCardNotes notes={workout.notes || ''} isMain />
     </View>
   );
 

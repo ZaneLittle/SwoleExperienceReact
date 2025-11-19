@@ -454,7 +454,7 @@ describe('WorkoutCard', () => {
   });
 
   describe('Memoized calculations - mainNote', () => {
-    it('should combine main workout notes with superset notes', () => {
+    it('should return only main workout notes, not superset notes', () => {
       const workout: WorkoutDay = createMockWorkoutDay({
         id: 'main-1',
         name: 'Main',
@@ -480,20 +480,12 @@ describe('WorkoutCard', () => {
         },
       ];
 
-      // Simulate mainNote calculation
-      let note = workout.notes;
-      for (const superset of supersets) {
-        if (note) {
-          note += `\n${superset.notes}`;
-        } else {
-          note = superset.notes;
-        }
-      }
+      const note = workout.notes;
 
-      expect(note).toBe('Main notes\nSuperset 1 notes\nSuperset 2 notes');
+      expect(note).toBe('Main notes');
     });
 
-    it('should use superset notes when main workout has no notes', () => {
+    it('should return undefined when main workout has no notes', () => {
       const workout: WorkoutDay = createMockWorkoutDay({
         id: 'main-1',
         name: 'Main',
@@ -511,20 +503,12 @@ describe('WorkoutCard', () => {
         },
       ];
 
-      // Simulate mainNote calculation
-      let note = workout.notes;
-      for (const superset of supersets) {
-        if (note) {
-          note += `\n${superset.notes}`;
-        } else {
-          note = superset.notes;
-        }
-      }
+      const note = workout.notes;
 
-      expect(note).toBe('Superset notes');
+      expect(note).toBeUndefined();
     });
 
-    it('should return undefined when both workout and supersets have no notes', () => {
+    it('should return undefined when main workout has no notes even if supersets have notes', () => {
       const workout: WorkoutDay = createMockWorkoutDay({
         id: 'main-1',
         name: 'Main',
@@ -542,20 +526,12 @@ describe('WorkoutCard', () => {
         },
       ];
 
-      // Simulate mainNote calculation
-      let note = workout.notes;
-      for (const superset of supersets) {
-        if (note) {
-          note += `\n${superset.notes}`;
-        } else {
-          note = superset.notes;
-        }
-      }
+      const note = workout.notes;
 
       expect(note).toBeUndefined();
     });
 
-    it('should handle empty supersets array', () => {
+    it('should return main workout notes regardless of supersets array', () => {
       const workout: WorkoutDay = createMockWorkoutDay({
         id: 'main-1',
         name: 'Main',
@@ -564,15 +540,7 @@ describe('WorkoutCard', () => {
 
       const supersets: Workout[] = [];
 
-      // Simulate mainNote calculation
-      let note = workout.notes;
-      for (const superset of supersets) {
-        if (note) {
-          note += `\n${superset.notes}`;
-        } else {
-          note = superset.notes;
-        }
-      }
+      const note = workout.notes;
 
       expect(note).toBe('Main notes');
     });
