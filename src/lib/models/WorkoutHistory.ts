@@ -1,27 +1,13 @@
-import { Workout, WorkoutData, WorkoutConverter } from './Workout';
+import { Workout, WorkoutConverter } from './Workout';
 
 export interface WorkoutHistory extends Workout {
   workoutId: string;
   date: string;
 }
 
-export interface WorkoutHistoryData extends WorkoutData {
-  workoutId: string;
-  date: string;
-}
-
 export const WorkoutHistoryConverter = {
-  toData: (workoutHistory: WorkoutHistory): WorkoutHistoryData => ({
-    ...WorkoutConverter.toData(workoutHistory),
-    workoutId: workoutHistory.workoutId,
-    date: workoutHistory.date,
-  }),
-
-  fromData: (data: WorkoutHistoryData): WorkoutHistory => ({
-    ...WorkoutConverter.fromData(data),
-    workoutId: data.workoutId,
-    date: data.date,
-  }),
+  toData: (workoutHistory: WorkoutHistory): WorkoutHistory => workoutHistory,
+  fromData: (data: WorkoutHistory): WorkoutHistory => data,
 };
 
 export class WorkoutHistoryValidator {

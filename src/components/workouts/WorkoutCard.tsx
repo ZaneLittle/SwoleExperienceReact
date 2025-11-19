@@ -7,8 +7,8 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import { Workout } from '../../lib/models/Workout';
-import { WorkoutCardProps, WorkoutCardWorkout } from './WorkoutCardTypes';
+import { WorkoutDay } from '../../lib/models/WorkoutDay';
+import { WorkoutCardProps } from './WorkoutCardTypes';
 import { WorkoutCardHeader } from './WorkoutCardHeader';
 import { WorkoutCardMetrics } from './WorkoutCardMetrics';
 import { WorkoutCardNotes } from './WorkoutCardNotes';
@@ -20,16 +20,11 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
   workout,
-  allowDelete = false,
-  allowUpdate = false,
   onDelete,
   onUpdate,
   workoutsInDay = [],
   alternatives = [],
   supersets = [],
-  isSupersetsEnabled = false,
-  isAlternativesEnabled = false,
-  isProgressionHelperEnabled = false,
 }) => {
   const colors = useThemeColors();
   const [currentAlternativeIndex, setCurrentAlternativeIndex] = useState(0);
@@ -39,25 +34,25 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     return (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0);
   }, [alternatives, supersets]);
 
-  const canDelete = useMemo(() => {
-    return allowDelete && !hasAlternativesOrSupersets;
-  }, [allowDelete, hasAlternativesOrSupersets]);
+  const isHistoryItem = useMemo(() => {
+    return 'workoutId' in workout;
+  }, [workout]);
 
-  const handleLongPress = (workoutToUpdate?: Workout) => {
-    if (!allowUpdate || !onUpdate) return;
-    
-    if (workoutToUpdate) {
-      const workoutDay = workoutsInDay.find(w => w.id === workoutToUpdate.id);
-      if (workoutDay) {
-        onUpdate(workoutDay);
-      }
-    } else if ('day' in workout) {
-      onUpdate(workout as any);
-    }
+  const canDelete = useMemo(() => {
+    return !hasAlternativesOrSupersets && !isHistoryItem;
+  }, [hasAlternativesOrSupersets, isHistoryItem]);
+
+  const canUpdate = useMemo(() => {
+    return !isHistoryItem;
+  }, [isHistoryItem]);
+
+  const handleUpdate = (workoutDay: WorkoutDay) => {
+    if (!canUpdate || !onUpdate) return;
+    onUpdate(workoutDay);
   };
 
   const handleDelete = () => {
-    if (allowDelete && onDelete && 'day' in workout) {
+    if (canDelete && onDelete && 'day' in workout) {
       Alert.alert(
         'Delete Workout',
         'Are you sure you want to delete this workout?',
@@ -73,7 +68,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <TouchableOpacity
         style={styles.infoSection}
-        onLongPress={() => handleLongPress()}
+        onLongPress={canUpdate ? () => handleUpdate(workout as WorkoutDay) : undefined}
         activeOpacity={0.7}
       >
         <View style={styles.workoutInfo}>
@@ -82,9 +77,9 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
             hasPrevious={false}
             hasNext={alternatives.length > 0}
             canDelete={canDelete}
-            allowUpdate={allowUpdate}
+            allowUpdate={canUpdate}
             onDelete={handleDelete}
-            onUpdate={handleLongPress}
+            onUpdate={() => handleUpdate(workout as WorkoutDay)}
           />
           <WorkoutCardMetrics workout={workout} />
         </View>
@@ -94,8 +89,11 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
       
       <WorkoutCardSupersets
         supersets={supersets}
-        allowUpdate={allowUpdate}
-        onUpdate={handleLongPress}
+        allowUpdate={canUpdate}
+        onUpdate={(superset) => {
+          const workoutDay = workoutsInDay.find(w => w.id === superset.id);
+          if (workoutDay) handleUpdate(workoutDay);
+        }}
       />
     </View>
   );
@@ -104,7 +102,10 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
     <View key={alternative.id} style={styles.card}>
       <TouchableOpacity
         style={styles.infoSection}
-        onLongPress={() => handleLongPress(alternative)}
+        onLongPress={canUpdate ? () => {
+          const workoutDay = workoutsInDay.find(w => w.id === alternative.id);
+          if (workoutDay) handleUpdate(workoutDay);
+        } : undefined}
         activeOpacity={0.7}
       >
         <View style={styles.workoutInfo}>
@@ -113,9 +114,12 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
             hasPrevious={index > 0}
             hasNext={index < alternatives.length - 1}
             canDelete={false}
-            allowUpdate={allowUpdate}
+            allowUpdate={canUpdate}
             onDelete={() => {}}
-            onUpdate={() => handleLongPress(alternative)}
+            onUpdate={() => {
+              const workoutDay = workoutsInDay.find(w => w.id === alternative.id);
+              if (workoutDay) handleUpdate(workoutDay);
+            }}
           />
           <WorkoutCardMetrics workout={alternative} />
         </View>

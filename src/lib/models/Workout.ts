@@ -9,39 +9,9 @@ export interface Workout {
   altParentId?: string;
 }
 
-export interface WorkoutData {
-  id: string;
-  name: string;
-  weight: number;
-  sets: number;
-  reps: number;
-  notes?: string;
-  supersetParentId?: string;
-  altParentId?: string;
-}
-
 export const WorkoutConverter = {
-  toData: (workout: Workout): WorkoutData => ({
-    id: workout.id,
-    name: workout.name,
-    weight: workout.weight,
-    sets: workout.sets,
-    reps: workout.reps,
-    notes: workout.notes,
-    supersetParentId: workout.supersetParentId,
-    altParentId: workout.altParentId,
-  }),
-
-  fromData: (data: WorkoutData): Workout => ({
-    id: data.id,
-    name: data.name,
-    weight: data.weight,
-    sets: data.sets,
-    reps: data.reps,
-    notes: data.notes,
-    supersetParentId: data.supersetParentId,
-    altParentId: data.altParentId,
-  }),
+  toData: (workout: Workout): Workout => workout,
+  fromData: (data: Workout): Workout => data,
 };
 
 // Validation constants

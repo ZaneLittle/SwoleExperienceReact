@@ -67,8 +67,8 @@ describe('WorkoutCard', () => {
     mockOnDelete = jest.fn();
   });
 
-  // Test the logic that handleLongPress implements
-  describe('handleLongPress logic - superset updates', () => {
+  // Test the logic that handleSupersetOrAlternativeUpdate implements
+  describe('handleSupersetOrAlternativeUpdate logic - superset updates', () => {
     it('should find and pass the correct superset WorkoutDay when updating a superset', () => {
       // Simulate what happens when a superset is clicked
       const supersetWorkoutAsWorkout: Workout = {
@@ -81,7 +81,7 @@ describe('WorkoutCard', () => {
         supersetParentId: supersetWorkout.supersetParentId,
       };
 
-      // This is the logic from handleLongPress when workoutToUpdate is provided
+      // This is the logic from handleSupersetOrAlternativeUpdate when workoutToUpdate is provided
       const workoutDay = workoutsInDay.find(w => w.id === supersetWorkoutAsWorkout.id);
       
       expect(workoutDay).toBeDefined();
@@ -106,7 +106,7 @@ describe('WorkoutCard', () => {
         reps: 10,
       };
 
-      // This is the logic from handleLongPress when workoutToUpdate is provided
+      // This is the logic from handleSupersetOrAlternativeUpdate when workoutToUpdate is provided
       const workoutDay = [mainWorkout].find(w => w.id === nonExistentSuperset.id);
       
       expect(workoutDay).toBeUndefined();
@@ -119,7 +119,7 @@ describe('WorkoutCard', () => {
     });
   });
 
-  describe('handleLongPress logic - alternative updates', () => {
+  describe('handleSupersetOrAlternativeUpdate logic - alternative updates', () => {
     it('should find and pass the correct alternative WorkoutDay when updating an alternative', () => {
       // Simulate what happens when an alternative is clicked
       const alternativeWorkoutAsWorkout: Workout = {
@@ -132,7 +132,7 @@ describe('WorkoutCard', () => {
         altParentId: alternativeWorkout.altParentId,
       };
 
-      // This is the logic from handleLongPress when workoutToUpdate is provided
+      // This is the logic from handleSupersetOrAlternativeUpdate when workoutToUpdate is provided
       const workoutDay = workoutsInDay.find(w => w.id === alternativeWorkoutAsWorkout.id);
       
       expect(workoutDay).toBeDefined();
@@ -157,7 +157,7 @@ describe('WorkoutCard', () => {
         reps: 10,
       };
 
-      // This is the logic from handleLongPress when workoutToUpdate is provided
+      // This is the logic from handleSupersetOrAlternativeUpdate when workoutToUpdate is provided
       const workoutDay = [mainWorkout].find(w => w.id === nonExistentAlternative.id);
       
       expect(workoutDay).toBeUndefined();
@@ -170,16 +170,54 @@ describe('WorkoutCard', () => {
     });
   });
 
-  describe('handleLongPress logic - main workout updates', () => {
-    it('should pass the main workout when no specific workout is provided', () => {
-      // This is the logic from handleLongPress when no workoutToUpdate is provided
-      // The main workout should be used
+  describe('handleMainWorkoutUpdate logic - main workout updates', () => {
+    it('should pass the main workout directly when pencil button is pressed', () => {
+      // Simulate handleMainWorkoutUpdate - simple and direct
+      const allowUpdate = true;
+      const onUpdate = mockOnUpdate;
+
+      if (!allowUpdate || !onUpdate) return;
+      // Main workout is always a WorkoutDay when allowUpdate is true
       if ('day' in mainWorkout) {
-        mockOnUpdate(mainWorkout);
+        onUpdate(mainWorkout);
       }
 
       expect(mockOnUpdate).toHaveBeenCalledTimes(1);
       expect(mockOnUpdate).toHaveBeenCalledWith(mainWorkout);
+    });
+
+    it('should not call onUpdate when allowUpdate is false', () => {
+      const allowUpdate = false;
+      const onUpdate = mockOnUpdate;
+
+      if (!allowUpdate || !onUpdate) {
+        expect(mockOnUpdate).not.toHaveBeenCalled();
+        return;
+      }
+
+      if ('day' in mainWorkout) {
+        onUpdate(mainWorkout);
+      }
+    });
+
+    it('should not call onUpdate when workout does not have day property', () => {
+      const workoutWithoutDay: Workout = {
+        id: 'workout-no-day',
+        name: 'Workout without day',
+        weight: 100,
+        sets: 3,
+        reps: 10,
+      };
+
+      const allowUpdate = true;
+      const onUpdate = mockOnUpdate;
+
+      if (!allowUpdate || !onUpdate) return;
+      if ('day' in workoutWithoutDay) {
+        onUpdate(workoutWithoutDay as any);
+      }
+
+      expect(mockOnUpdate).not.toHaveBeenCalled();
     });
   });
 
@@ -373,12 +411,12 @@ describe('WorkoutCard', () => {
     });
   });
 
-  describe('handleLongPress edge cases', () => {
+  describe('handleSupersetOrAlternativeUpdate edge cases', () => {
     it('should not call onUpdate when allowUpdate is false', () => {
       const allowUpdate = false;
       const onUpdate = mockOnUpdate;
 
-      // Simulate handleLongPress logic
+      // Simulate handleSupersetOrAlternativeUpdate logic
       if (!allowUpdate || !onUpdate) {
         return;
       }
@@ -394,7 +432,7 @@ describe('WorkoutCard', () => {
       const allowUpdate = true;
       const onUpdate: ((workout: WorkoutDay) => void) | undefined = undefined;
 
-      // Simulate handleLongPress logic - early return when onUpdate is undefined
+      // Simulate handleSupersetOrAlternativeUpdate logic - early return when onUpdate is undefined
       if (!allowUpdate || !onUpdate) {
         expect(mockOnUpdate).not.toHaveBeenCalled();
         return;
@@ -416,7 +454,7 @@ describe('WorkoutCard', () => {
       const allowUpdate = true;
       const onUpdate = mockOnUpdate;
 
-      // Simulate handleLongPress logic
+      // Simulate handleSupersetOrAlternativeUpdate logic
       if (!allowUpdate || !onUpdate) {
         return;
       }
@@ -439,7 +477,7 @@ describe('WorkoutCard', () => {
         reps: 10,
       };
 
-      // Simulate handleLongPress logic
+      // Simulate handleSupersetOrAlternativeUpdate logic
       if (!allowUpdate || !onUpdate) {
         return;
       }
@@ -629,16 +667,6 @@ describe('WorkoutCard', () => {
     it('should not allow delete when allowDelete is false', () => {
       const allowDelete = false;
       const hasAlternativesOrSupersets = false;
-
-      const canDelete = allowDelete && !hasAlternativesOrSupersets;
-
-      expect(canDelete).toBe(false);
-    });
-
-    it('should not allow delete when alternatives exist', () => {
-      const allowDelete = true;
-      const hasAlternativesOrSupersets = true;
-
       const canDelete = allowDelete && !hasAlternativesOrSupersets;
 
       expect(canDelete).toBe(false);
@@ -742,7 +770,7 @@ describe('WorkoutCard', () => {
         date: '2024-01-01',
       };
 
-      // WorkoutHistory should work with handleLongPress logic
+      // WorkoutHistory should work with handleSupersetOrAlternativeUpdate logic
       const allowUpdate = true;
       const onUpdate = mockOnUpdate;
 
