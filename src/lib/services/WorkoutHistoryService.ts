@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import uuid from 'react-native-uuid';
-import { WorkoutHistory, WorkoutHistoryData, WorkoutHistoryConverter } from '../models/WorkoutHistory';
+import { WorkoutHistory } from '../models/WorkoutHistory';
 import { WorkoutDay } from '../models/WorkoutDay';
 
 const WORKOUT_HISTORY_STORAGE_KEY = 'workout_history';
@@ -22,8 +22,7 @@ export class WorkoutHistoryService {
       const historyJson = await AsyncStorage.getItem(WORKOUT_HISTORY_STORAGE_KEY);
       if (!historyJson) return [];
 
-      const historyData: WorkoutHistoryData[] = JSON.parse(historyJson);
-      const history = historyData.map(WorkoutHistoryConverter.fromData);
+      const history: WorkoutHistory[] = JSON.parse(historyJson);
 
       // console.log(`json: ${historyJson}`)
       // console.log(`parsed data: ${history}`)
@@ -43,14 +42,9 @@ export class WorkoutHistoryService {
   async createWorkoutHistory(workoutHistory: WorkoutHistory): Promise<boolean> {
     try {
       const existingHistory = await this.getWorkoutHistory();
-      const historyData = WorkoutHistoryConverter.toData(workoutHistory);
-      
-      const historyDataArray = [
-        historyData,
-        ...existingHistory.map(WorkoutHistoryConverter.toData)
-      ];
+      const historyArray = [workoutHistory, ...existingHistory];
 
-      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyDataArray));
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyArray));
       return true;
     } catch (error) {
       console.error('Error creating workout history:', error);
@@ -61,14 +55,9 @@ export class WorkoutHistoryService {
   async createBulkWorkoutHistories(workoutHistories: WorkoutHistory[]): Promise<boolean> {
     try {
       const existingHistory = await this.getWorkoutHistory();
-      const newHistoryData = workoutHistories.map(WorkoutHistoryConverter.toData);
-      
-      const historyDataArray = [
-        ...newHistoryData,
-        ...existingHistory.map(WorkoutHistoryConverter.toData)
-      ];
+      const historyArray = [...workoutHistories, ...existingHistory];
 
-      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyDataArray));
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyArray));
       return true;
     } catch (error) {
       console.error('Error creating multiple workout histories:', error);
@@ -80,20 +69,9 @@ export class WorkoutHistoryService {
     try {
       const existingHistory = await this.getWorkoutHistory();
       const filteredHistory = existingHistory.filter(entry => entry.id !== id);
-      const historyData = filteredHistory.map(WorkoutHistoryConverter.toData);
       
-      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyData));
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(filteredHistory));
       return true;
-    } catch (error) {
-      console.error('Error removing workout history:', error);
-      return false;
-    }
-  }
-
-  async removeAllHistory(): Promise<boolean> {
-    try {
-      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify([]));
-      return true
     } catch (error) {
       console.error('Error removing workout history:', error);
       return false;
@@ -107,8 +85,7 @@ export class WorkoutHistoryService {
         h.id === workoutHistory.id ? workoutHistory : h
       );
       
-      const historyData = updatedHistory.map(WorkoutHistoryConverter.toData);
-      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(historyData));
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
       return true;
     } catch (error) {
       console.error('Error updating workout history:', error);

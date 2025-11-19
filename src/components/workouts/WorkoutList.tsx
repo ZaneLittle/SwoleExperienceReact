@@ -115,35 +115,16 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
     primaryWorkouts.forEach((workout) => {
       const alternatives = getAlternatives(workout, workoutList);
       const supersets = getSupersets(workout, workoutList);
-      
-      if (workout.name === "Workout with superset" || workout.name === "Bench Press") {
-        console.log(`Debug ${workout.name}:`, {
-          workoutId: 'workoutId' in workout ? workout.workoutId : workout.id,
-          alternativesFound: alternatives.map(a => a.name),
-          supersetsFound: supersets.map(s => s.name),
-          allWorkouts: workoutList.map(w => ({
-            name: w.name,
-            id: 'workoutId' in w ? w.workoutId : w.id,
-            altParentId: w.altParentId,
-            supersetParentId: w.supersetParentId
-          }))
-        });
-      }
 
       cards.push(
         <WorkoutCard
           key={workout.id}
           workout={workout}
-          allowDelete={!isHistory}
-          allowUpdate={!isHistory}
           onDelete={onDeleteWorkout}
           onUpdate={onUpdateWorkout}
           workoutsInDay={isHistory ? [] : (workoutList as WorkoutDay[])}
           alternatives={alternatives}
           supersets={supersets}
-          isSupersetsEnabled={isSupersetsEnabled}
-          isAlternativesEnabled={isAlternativesEnabled}
-          isProgressionHelperEnabled={isProgressionHelperEnabled}
         />
       );
     });

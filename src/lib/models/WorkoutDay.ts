@@ -1,27 +1,13 @@
-import { Workout, WorkoutData, WorkoutConverter } from './Workout';
+import { Workout, WorkoutConverter } from './Workout';
 
 export interface WorkoutDay extends Workout {
   day: number;
   dayOrder: number;
 }
 
-export interface WorkoutDayData extends WorkoutData {
-  day: number;
-  dayOrder: number;
-}
-
 export const WorkoutDayConverter = {
-  toData: (workoutDay: WorkoutDay): WorkoutDayData => ({
-    ...WorkoutConverter.toData(workoutDay),
-    day: workoutDay.day,
-    dayOrder: workoutDay.dayOrder,
-  }),
-
-  fromData: (data: WorkoutDayData): WorkoutDay => ({
-    ...WorkoutConverter.fromData(data),
-    day: data.day,
-    dayOrder: data.dayOrder,
-  }),
+  toData: (workoutDay: WorkoutDay): WorkoutDay => workoutDay,
+  fromData: (data: WorkoutDay): WorkoutDay => data,
 };
 
 export class WorkoutDayValidator {

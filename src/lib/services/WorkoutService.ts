@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import uuid from 'react-native-uuid';
-import { WorkoutDay, WorkoutDayData, WorkoutDayConverter, WorkoutDayValidator } from '../models/WorkoutDay';
+import { WorkoutDay, WorkoutDayValidator } from '../models/WorkoutDay';
 import { WorkoutValidator } from '../models/Workout';
 
 const WORKOUT_STORAGE_KEY = 'workouts';
@@ -24,8 +24,7 @@ class WorkoutService {
       const workoutsJson = await AsyncStorage.getItem(WORKOUT_STORAGE_KEY);
       if (!workoutsJson) return [];
 
-      const workoutsData: WorkoutDayData[] = JSON.parse(workoutsJson);
-      const workouts = workoutsData.map(WorkoutDayConverter.fromData);
+      const workouts: WorkoutDay[] = JSON.parse(workoutsJson);
 
       if (day !== undefined) {
         return workouts
@@ -56,14 +55,9 @@ class WorkoutService {
       WorkoutValidator.validate(workout);
       
       const existingWorkouts = await this.getWorkouts();
-      const workoutData = WorkoutDayConverter.toData(workout);
-      
-      const workoutsData = [
-        workoutData,
-        ...existingWorkouts.map(WorkoutDayConverter.toData)
-      ];
+      const workoutsArray = [workout, ...existingWorkouts];
 
-      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workoutsData));
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workoutsArray));
       return true;
     } catch (error) {
       console.error('Error creating workout:', error);
@@ -75,9 +69,8 @@ class WorkoutService {
     try {
       const existingWorkouts = await this.getWorkouts();
       const filteredWorkouts = existingWorkouts.filter(workout => workout.id !== id);
-      const workoutsData = filteredWorkouts.map(WorkoutDayConverter.toData);
       
-      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workoutsData));
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(filteredWorkouts));
       return true;
     } catch (error) {
       console.error('Error removing workout:', error);
@@ -94,8 +87,7 @@ class WorkoutService {
         w.id === workout.id ? workout : w
       );
       
-      const workoutsData = updatedWorkouts.map(WorkoutDayConverter.toData);
-      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workoutsData));
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts));
       return true;
     } catch (error) {
       console.error('Error updating workout:', error);
@@ -118,8 +110,7 @@ class WorkoutService {
         return workout;
       });
       
-      const workoutsData = updatedWorkouts.map(WorkoutDayConverter.toData);
-      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(workoutsData));
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts));
       return true;
     } catch (error) {
       console.error('Error reordering workouts:', error);
