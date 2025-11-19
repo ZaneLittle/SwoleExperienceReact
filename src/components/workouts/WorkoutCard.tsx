@@ -90,13 +90,13 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
         </View>
       </TouchableOpacity>
       
+      <WorkoutCardNotes notes={workout.notes || ''} isMain />
+      
       <WorkoutCardSupersets
         supersets={supersets}
         allowUpdate={allowUpdate}
         onUpdate={handleLongPress}
       />
-      
-      <WorkoutCardNotes notes={workout.notes || ''} isMain />
     </View>
   );
 
