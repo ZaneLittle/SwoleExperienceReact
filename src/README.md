@@ -3,7 +3,7 @@
 React Native (Expo) app with web support via expo-router.
 
 ## Commands
-- Install: `npm install`
-- Web: `npm run web`
-- Android: `npm run android`
-- Dev server: `npm start`
+- Install: `pnpm install`
+- Web: `pnpm run web`
+- Android: `pnpm run android`
+- Dev server: `pnpm start`

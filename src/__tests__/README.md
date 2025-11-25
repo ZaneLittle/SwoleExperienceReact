@@ -113,16 +113,16 @@ The test suite provides comprehensive coverage for:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm run test:watch
+pnpm run test:watch
 
 # Run tests with coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Run specific test file
-npm test WeightEntryForm.test.tsx
+pnpm test WeightEntryForm.test.tsx
 ```
 
 ## Test Configuration
