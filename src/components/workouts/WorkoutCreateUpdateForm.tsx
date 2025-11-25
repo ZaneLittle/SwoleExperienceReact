@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Modal,
@@ -15,6 +14,7 @@ import { WorkoutDay } from '../../lib/models/WorkoutDay';
 import { WorkoutValidator } from '../../lib/models/Workout';
 import { workoutService } from '../../lib/services/WorkoutService';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { confirmAlert } from '../../utils/confirm';
 
 interface WorkoutCreateUpdateFormProps {
   workout?: WorkoutDay;
@@ -123,10 +123,10 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       if (success) {
         onSave(workoutData);
       } else {
-        Alert.alert('Error', 'Failed to save workout');
+        confirmAlert('Error', 'Failed to save workout');
       }
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'An error occurred');
+      confirmAlert('Error', error instanceof Error ? error.message : 'An error occurred');
     }
   };
 

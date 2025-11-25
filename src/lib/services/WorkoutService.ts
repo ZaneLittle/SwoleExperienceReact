@@ -180,6 +180,45 @@ class WorkoutService {
       return false;
     }
   }
+
+  async reorderDays(): Promise<boolean> {
+    try {
+      const workouts = await this.getWorkouts();
+      if (workouts.length === 0) return true;
+
+      // Find all unique days that have workouts, sorted
+      const daysWithWorkouts = Array.from(new Set(workouts.map(w => w.day))).sort((a, b) => a - b);
+      
+      // If days are already sequential starting from 1, no reordering needed
+      const isSequential = daysWithWorkouts.every((day, index) => day === index + 1);
+      if (isSequential) return true;
+
+      // Create mapping from old day to new day (1, 2, 3, ...)
+      const dayMapping = new Map<number, number>();
+      daysWithWorkouts.forEach((oldDay, index) => {
+        dayMapping.set(oldDay, index + 1);
+      });
+
+      // Update all workouts with new day numbers
+      const updatedWorkouts = workouts.map(workout => ({
+        ...workout,
+        day: dayMapping.get(workout.day) || workout.day,
+      }));
+
+      // Update current day if it was affected
+      const currentDay = await this.getCurrentDay();
+      const newCurrentDay = dayMapping.get(currentDay) || currentDay;
+      if (newCurrentDay !== currentDay) {
+        await this.setCurrentDay(newCurrentDay);
+      }
+
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts));
+      return true;
+    } catch (error) {
+      console.error('Error reordering days:', error);
+      return false;
+    }
+  }
 }
 
 export const workoutService = WorkoutService.getInstance();

@@ -19,7 +19,10 @@ jest.mock('react-native', () => {
     TouchableOpacity: createComponent('TouchableOpacity'),
     ScrollView: (props) => React.createElement('ScrollView', props, props?.children),
     KeyboardAvoidingView: (props) => React.createElement('KeyboardAvoidingView', props, props?.children),
-    Modal: (props) => props?.visible ? React.createElement('View', props, props?.children) : null,
+    Modal: (props) => {
+      if (!props?.visible) return null;
+      return React.createElement('View', { testID: 'modal', ...props }, props?.children);
+    },
     ActivityIndicator: createComponent('ActivityIndicator'),
     Alert: {
       alert: jest.fn(),
