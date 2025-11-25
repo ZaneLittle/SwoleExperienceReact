@@ -1,13 +1,16 @@
 import { renderHook, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 import { workoutService } from '../../lib/services/WorkoutService';
+import { confirmAlert } from '../../utils/confirm';
 
 // Mock dependencies
 jest.mock('../../lib/services/WorkoutService');
+jest.mock('../../utils/confirm', () => ({
+  confirmAlert: jest.fn(),
+}));
 
 const mockWorkoutService = workoutService as jest.Mocked<typeof workoutService>;
-const mockAlert = Alert.alert as jest.MockedFunction<typeof Alert.alert>;
+const mockConfirmAlert = confirmAlert as jest.MockedFunction<typeof confirmAlert>;
 
 describe('useWorkoutForm', () => {
   beforeEach(() => {
@@ -82,7 +85,7 @@ describe('useWorkoutForm', () => {
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
     expect(mockOnRefresh).toHaveBeenCalled();
-    expect(mockAlert).not.toHaveBeenCalled();
+    expect(mockConfirmAlert).not.toHaveBeenCalled();
   });
 
   it('should handle delete workout failure', async () => {
@@ -107,7 +110,7 @@ describe('useWorkoutForm', () => {
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
     expect(mockOnRefresh).not.toHaveBeenCalled();
-    expect(mockAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
+    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
   });
 
   it('should handle delete workout error', async () => {
@@ -132,7 +135,7 @@ describe('useWorkoutForm', () => {
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
     expect(mockOnRefresh).not.toHaveBeenCalled();
-    expect(mockAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
+    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
   });
 
   it('should handle save workout', () => {
