@@ -1,11 +1,11 @@
-import React from 'react';
+import React from 'react'
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-} from 'react-native';
-import { useThemeColors } from '../hooks/useThemeColors';
+} from 'react-native'
+import { useThemeColors } from '../hooks/useThemeColors'
 
 interface DateTimeButtonsProps {
   date: Date;
@@ -18,19 +18,19 @@ export const DateTimeButtons: React.FC<DateTimeButtonsProps> = ({
   onDatePress,
   onTimePress,
 }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
   const formatDateOnly = (date: Date) => {
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const year = date.getFullYear().toString().slice(-2);
-    return `${month}/${day}/${year}`;
-  };
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const year = date.getFullYear().toString().slice(-2)
+    return `${month}/${day}/${year}`
+  }
 
   const formatTime = (date: Date) => {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-  };
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
 
   return (
     <View style={styles.dateTimeContainer}>
@@ -51,8 +51,8 @@ export const DateTimeButtons: React.FC<DateTimeButtonsProps> = ({
         </TouchableOpacity>
       </View>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   dateTimeContainer: {
@@ -97,4 +97,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
-});
+})

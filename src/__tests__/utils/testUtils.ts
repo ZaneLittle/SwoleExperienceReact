@@ -1,9 +1,9 @@
-import { v4 } from 'react-native-uuid';
-import { Weight } from '../../lib/models/Weight';
-import { Average } from '../../lib/models/Average';
-import { Workout } from '../../lib/models/Workout';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutHistory } from '../../lib/models/WorkoutHistory';
+import { v4 } from 'react-native-uuid'
+import { Weight } from '../../lib/models/Weight'
+import { Average } from '../../lib/models/Average'
+import { Workout } from '../../lib/models/Workout'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutHistory } from '../../lib/models/WorkoutHistory'
 
 // Helper to create mock weights
 export const createMockWeight = (overrides?: Partial<Weight>): Weight => ({
@@ -11,7 +11,7 @@ export const createMockWeight = (overrides?: Partial<Weight>): Weight => ({
   dateTime: new Date(),
   weight: 180.0,
   ...overrides,
-});
+})
 
 // Helper to create mock averages
 export const createMockAverage = (overrides?: Partial<Average>): Average => ({
@@ -20,7 +20,7 @@ export const createMockAverage = (overrides?: Partial<Average>): Average => ({
   threeDayAverage: null,
   sevenDayAverage: null,
   ...overrides,
-});
+})
 
 // Helper to create mock workouts
 export const createMockWorkout = (overrides?: Partial<Workout>): Workout => ({
@@ -30,7 +30,7 @@ export const createMockWorkout = (overrides?: Partial<Workout>): Workout => ({
   sets: 3,
   reps: 10,
   ...overrides,
-});
+})
 
 // Helper to create mock workout days
 export const createMockWorkoutDay = (overrides?: Partial<WorkoutDay>): WorkoutDay => ({
@@ -42,7 +42,7 @@ export const createMockWorkoutDay = (overrides?: Partial<WorkoutDay>): WorkoutDa
   day: 1,
   dayOrder: 0,
   ...overrides,
-});
+})
 
 // Helper to create mock workout history
 export const createMockWorkoutHistory = (overrides?: Partial<WorkoutHistory>): WorkoutHistory => ({
@@ -54,30 +54,30 @@ export const createMockWorkoutHistory = (overrides?: Partial<WorkoutHistory>): W
   sets: 3,
   reps: 10,
   ...overrides,
-});
+})
 
 // Helper to create a series of mock weights
 export const createMockWeights = (count: number, startWeight: number = 180): Weight[] => {
-  const weights: Weight[] = [];
+  const weights: Weight[] = []
   for (let i = 0; i < count; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - (count - 1 - i)); // Go back in time
-    weights.push(createMockWeight({ dateTime: date, weight: startWeight + i }));
+    const date = new Date()
+    date.setDate(date.getDate() - (count - 1 - i)) // Go back in time
+    weights.push(createMockWeight({ dateTime: date, weight: startWeight + i }))
   }
-  return weights;
-};
+  return weights
+}
 
 // Helper to create a series of mock workout days
 export const createMockWorkoutDays = (count: number, day: number = 1): WorkoutDay[] => {
-  const workoutDays: WorkoutDay[] = [];
+  const workoutDays: WorkoutDay[] = []
   for (let i = 0; i < count; i++) {
     workoutDays.push(createMockWorkoutDay({ 
       id: `workout-${i}`,
       name: `Exercise ${i}`,
       weight: 100 + i * 10,
       day,
-      dayOrder: i 
-    }));
+      dayOrder: i, 
+    }))
   }
-  return workoutDays;
-};
+  return workoutDays
+}

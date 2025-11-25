@@ -1,47 +1,47 @@
-import { renderHook, act } from '@testing-library/react-native';
-import { useWorkoutForm } from '../../hooks/useWorkoutForm';
-import { workoutService } from '../../lib/services/WorkoutService';
-import { confirmAlert } from '../../utils/confirm';
+import { renderHook, act } from '@testing-library/react-native'
+import { useWorkoutForm } from '../../hooks/useWorkoutForm'
+import { workoutService } from '../../lib/services/WorkoutService'
+import { confirmAlert } from '../../utils/confirm'
 
 // Mock dependencies
-jest.mock('../../lib/services/WorkoutService');
+jest.mock('../../lib/services/WorkoutService')
 jest.mock('../../utils/confirm', () => ({
   confirmAlert: jest.fn(),
-}));
+}))
 
-const mockWorkoutService = workoutService as jest.Mocked<typeof workoutService>;
-const mockConfirmAlert = confirmAlert as jest.MockedFunction<typeof confirmAlert>;
+const mockWorkoutService = workoutService as jest.Mocked<typeof workoutService>
+const mockConfirmAlert = confirmAlert as jest.MockedFunction<typeof confirmAlert>
 
 describe('useWorkoutForm', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks()
     
     // Default mock implementations
-    mockWorkoutService.removeWorkout.mockResolvedValue(true);
-  });
+    mockWorkoutService.removeWorkout.mockResolvedValue(true)
+  })
 
   it('should initialize with default values', () => {
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
-    expect(result.current.showForm).toBe(false);
-    expect(result.current.editingWorkout).toBeUndefined();
-    expect(typeof result.current.handleAddWorkout).toBe('function');
-    expect(typeof result.current.handleEditWorkout).toBe('function');
-    expect(typeof result.current.handleDeleteWorkout).toBe('function');
-    expect(typeof result.current.handleSaveWorkout).toBe('function');
-    expect(typeof result.current.handleCancelForm).toBe('function');
-  });
+    expect(result.current.showForm).toBe(false)
+    expect(result.current.editingWorkout).toBeUndefined()
+    expect(typeof result.current.handleAddWorkout).toBe('function')
+    expect(typeof result.current.handleEditWorkout).toBe('function')
+    expect(typeof result.current.handleDeleteWorkout).toBe('function')
+    expect(typeof result.current.handleSaveWorkout).toBe('function')
+    expect(typeof result.current.handleCancelForm).toBe('function')
+  })
 
   it('should handle add workout', () => {
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     act(() => {
-      result.current.handleAddWorkout();
-    });
+      result.current.handleAddWorkout()
+    })
 
-    expect(result.current.showForm).toBe(true);
-    expect(result.current.editingWorkout).toBeUndefined();
-  });
+    expect(result.current.showForm).toBe(true)
+    expect(result.current.editingWorkout).toBeUndefined()
+  })
 
   it('should handle edit workout', () => {
     const mockWorkout = {
@@ -51,18 +51,18 @@ describe('useWorkoutForm', () => {
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     act(() => {
-      result.current.handleEditWorkout(mockWorkout);
-    });
+      result.current.handleEditWorkout(mockWorkout)
+    })
 
-    expect(result.current.showForm).toBe(true);
-    expect(result.current.editingWorkout).toEqual(mockWorkout);
-  });
+    expect(result.current.showForm).toBe(true)
+    expect(result.current.editingWorkout).toEqual(mockWorkout)
+  })
 
   it('should handle delete workout successfully', async () => {
     const mockWorkout = {
@@ -72,21 +72,21 @@ describe('useWorkoutForm', () => {
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    const mockOnRefresh = jest.fn();
+    const mockOnRefresh = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh);
-    });
+      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
 
-    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
-    expect(mockOnRefresh).toHaveBeenCalled();
-    expect(mockConfirmAlert).not.toHaveBeenCalled();
-  });
+    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
+    expect(mockOnRefresh).toHaveBeenCalled()
+    expect(mockConfirmAlert).not.toHaveBeenCalled()
+  })
 
   it('should handle delete workout failure', async () => {
     const mockWorkout = {
@@ -96,22 +96,22 @@ describe('useWorkoutForm', () => {
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    mockWorkoutService.removeWorkout.mockResolvedValue(false);
-    const mockOnRefresh = jest.fn();
+    mockWorkoutService.removeWorkout.mockResolvedValue(false)
+    const mockOnRefresh = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh);
-    });
+      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
 
-    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
-    expect(mockOnRefresh).not.toHaveBeenCalled();
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
-  });
+    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
+    expect(mockOnRefresh).not.toHaveBeenCalled()
+    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout')
+  })
 
   it('should handle delete workout error', async () => {
     const mockWorkout = {
@@ -121,49 +121,49 @@ describe('useWorkoutForm', () => {
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    mockWorkoutService.removeWorkout.mockRejectedValue(new Error('Service error'));
-    const mockOnRefresh = jest.fn();
+    mockWorkoutService.removeWorkout.mockRejectedValue(new Error('Service error'))
+    const mockOnRefresh = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh);
-    });
+      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
 
-    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1');
-    expect(mockOnRefresh).not.toHaveBeenCalled();
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout');
-  });
+    expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
+    expect(mockOnRefresh).not.toHaveBeenCalled()
+    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout')
+  })
 
   it('should handle save workout', () => {
-    const mockOnRefresh = jest.fn();
-    const mockWorkout = {
+    const mockOnRefresh = jest.fn()
+    const _mockWorkout = {
       id: '1',
       name: 'Exercise 1',
       weight: 100,
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     // Set form as visible first
     act(() => {
-      result.current.setShowForm(true);
-    });
+      result.current.setShowForm(true)
+    })
 
     act(() => {
-      result.current.handleSaveWorkout(mockOnRefresh);
-    });
+      result.current.handleSaveWorkout(mockOnRefresh)
+    })
 
-    expect(result.current.showForm).toBe(false);
-    expect(mockOnRefresh).toHaveBeenCalled();
-  });
+    expect(result.current.showForm).toBe(false)
+    expect(mockOnRefresh).toHaveBeenCalled()
+  })
 
   it('should handle cancel form', () => {
     const mockWorkout = {
@@ -173,22 +173,22 @@ describe('useWorkoutForm', () => {
       sets: 3,
       reps: 10,
       day: 1,
-      dayOrder: 0
-    };
+      dayOrder: 0,
+    }
 
-    const { result } = renderHook(() => useWorkoutForm());
+    const { result } = renderHook(() => useWorkoutForm())
 
     // Set form as visible and editing first
     act(() => {
-      result.current.setShowForm(true);
-      result.current.setEditingWorkout(mockWorkout);
-    });
+      result.current.setShowForm(true)
+      result.current.setEditingWorkout(mockWorkout)
+    })
 
     act(() => {
-      result.current.handleCancelForm();
-    });
+      result.current.handleCancelForm()
+    })
 
-    expect(result.current.showForm).toBe(false);
-    expect(result.current.editingWorkout).toBeUndefined();
-  });
-});
+    expect(result.current.showForm).toBe(false)
+    expect(result.current.editingWorkout).toBeUndefined()
+  })
+})

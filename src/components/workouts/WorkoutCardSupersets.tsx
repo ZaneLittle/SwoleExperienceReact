@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Workout } from '../../lib/models/Workout';
-import { WorkoutCardHeader } from './WorkoutCardHeader';
-import { WorkoutCardMetrics } from './WorkoutCardMetrics';
-import { WorkoutCardNotes } from './WorkoutCardNotes';
-import { SPACING } from '../../lib/constants/ui';
+import React from 'react'
+import { View, StyleSheet } from 'react-native'
+import { Workout } from '../../lib/models/Workout'
+import { WorkoutCardHeader } from './WorkoutCardHeader'
+import { WorkoutCardMetrics } from './WorkoutCardMetrics'
+import { WorkoutCardNotes } from './WorkoutCardNotes'
+import { SPACING } from '../../lib/constants/ui'
 
 interface WorkoutCardSupersetsProps {
   supersets: Workout[];
@@ -17,7 +17,7 @@ export const WorkoutCardSupersets: React.FC<WorkoutCardSupersetsProps> = ({
   allowUpdate,
   onUpdate,
 }) => {
-  if (!supersets.length) return null;
+  if (!supersets.length) return null
 
   return (
     <View style={styles.supersetsContainer}>
@@ -37,8 +37,8 @@ export const WorkoutCardSupersets: React.FC<WorkoutCardSupersetsProps> = ({
         </View>
       ))}
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   supersetsContainer: {
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
   supersetItem: {
     marginVertical: SPACING.xs,
   },
-});
+})

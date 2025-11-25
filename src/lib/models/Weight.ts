@@ -22,4 +22,4 @@ export const WeightConverter = {
     dateTime: new Date(data.dateTime),
     weight: data.weight,
   }),
-};
+}

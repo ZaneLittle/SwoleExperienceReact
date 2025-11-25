@@ -1,15 +1,15 @@
-import React from 'react';
+import React from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm';
-import { useThemeColors } from '../../hooks/useThemeColors';
+} from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutFormModalProps {
   visible: boolean;
@@ -36,8 +36,8 @@ export const WorkoutFormModal: React.FC<WorkoutFormModalProps> = ({
   isAlternativesEnabled,
   isProgressionHelperEnabled,
 }) => {
-  const insets = useSafeAreaInsets();
-  const colors = useThemeColors();
+  const insets = useSafeAreaInsets()
+  const colors = useThemeColors()
 
   return (
     <Modal
@@ -72,8 +72,8 @@ export const WorkoutFormModal: React.FC<WorkoutFormModalProps> = ({
         />
       </View>
     </Modal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   modalContainer: {
@@ -97,4 +97,4 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 18,
   },
-});
+})

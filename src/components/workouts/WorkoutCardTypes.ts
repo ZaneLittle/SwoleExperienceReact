@@ -1,6 +1,6 @@
-import { Workout } from '../../lib/models/Workout';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutHistory } from '../../lib/models/WorkoutHistory';
+import { Workout } from '../../lib/models/Workout'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutHistory } from '../../lib/models/WorkoutHistory'
 
 export interface WorkoutCardCallbacks {
   onDelete?: (workout: WorkoutDay) => void;

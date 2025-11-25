@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -7,63 +7,62 @@ import {
   StyleSheet,
   Alert,
   Platform,
-} from 'react-native';
-import { Weight } from '../../lib/models/Weight';
-import { weightService } from '../../lib/services/WeightService';
-import { averageService } from '../../lib/services/AverageService';
-import { DatePickerModal } from '../DatePickerModal';
-import { TimePickerModal } from '../TimePickerModal';
-import { DateTimeButtons } from '../DateTimeButtons';
-import { handleError, ErrorCodes } from '../../lib/utils/errorHandler';
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui';
-import { useThemeColors } from '../../hooks/useThemeColors';
+} from 'react-native'
+import { weightService } from '../../lib/services/WeightService'
+import { averageService } from '../../lib/services/AverageService'
+import { DatePickerModal } from '../DatePickerModal'
+import { TimePickerModal } from '../TimePickerModal'
+import { DateTimeButtons } from '../DateTimeButtons'
+import { handleError } from '../../lib/utils/errorHandler'
+import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WeightEntryFormProps {
   onWeightAdded: () => void;
 }
 
 export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded }) => {
-  const [weight, setWeight] = useState('');
-  const [date, setDate] = useState(new Date());
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
-  const colors = useThemeColors();
+  const [weight, setWeight] = useState('')
+  const [date, setDate] = useState(new Date())
+  const [showDateModal, setShowDateModal] = useState(false)
+  const [showTimeModal, setShowTimeModal] = useState(false)
+  const colors = useThemeColors()
 
   const handleSubmit = async () => {
-    const weightValue = parseFloat(weight);
+    const weightValue = parseFloat(weight)
     
     if (isNaN(weightValue) || weightValue <= 0) {
-      Alert.alert('Error', 'Please enter a valid weight');
-      return;
+      Alert.alert('Error', 'Please enter a valid weight')
+      return
     }
 
     try {
       const success = await weightService.addWeight({
         dateTime: date,
         weight: weightValue,
-      });
+      })
 
       if (success) {
         // Recalculate averages
-        const weights = await weightService.getWeights();
-        await averageService.calculateAverages(weights);
+        const weights = await weightService.getWeights()
+        await averageService.calculateAverages(weights)
         
-        setWeight('');
-        setDate(new Date());
-        onWeightAdded();
-        Alert.alert('Success', 'Weight added successfully!');
+        setWeight('')
+        setDate(new Date())
+        onWeightAdded()
+        Alert.alert('Success', 'Weight added successfully!')
       } else {
-        Alert.alert('Error', 'Failed to add weight');
+        Alert.alert('Error', 'Failed to add weight')
       }
     } catch (error) {
-      handleError(error, { component: 'WeightEntryForm', action: 'handleSubmit' });
+      handleError(error, { component: 'WeightEntryForm', action: 'handleSubmit' })
     }
-  };
+  }
 
   const handleDatePress = () => {
     if (Platform.OS === 'web') {
       // Use custom modal for web platform
-      setShowDateModal(true);
+      setShowDateModal(true)
     } else {
       // Use enhanced Alert.alert for mobile platforms
       Alert.alert(
@@ -73,45 +72,45 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Today', 
-            onPress: () => setDate(new Date()) 
+            onPress: () => setDate(new Date()), 
           },
           { 
             text: 'Yesterday', 
             onPress: () => {
-              const yesterday = new Date();
-              yesterday.setDate(yesterday.getDate() - 1);
-              setDate(yesterday);
-            }
+              const yesterday = new Date()
+              yesterday.setDate(yesterday.getDate() - 1)
+              setDate(yesterday)
+            },
           },
           { 
             text: '2 Days Ago', 
             onPress: () => {
-              const twoDaysAgo = new Date();
-              twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-              setDate(twoDaysAgo);
-            }
+              const twoDaysAgo = new Date()
+              twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+              setDate(twoDaysAgo)
+            },
           },
           { 
             text: '1 Week Ago', 
             onPress: () => {
-              const weekAgo = new Date();
-              weekAgo.setDate(weekAgo.getDate() - 7);
-              setDate(weekAgo);
-            }
+              const weekAgo = new Date()
+              weekAgo.setDate(weekAgo.getDate() - 7)
+              setDate(weekAgo)
+            },
           },
           { 
             text: 'Custom Date', 
-            onPress: () => showMobileDateInput()
-          }
-        ]
-      );
+            onPress: () => showMobileDateInput(),
+          },
+        ],
+      )
     }
-  };
+  }
 
   const handleTimePress = () => {
     if (Platform.OS === 'web') {
       // Use custom modal for web platform
-      setShowTimeModal(true);
+      setShowTimeModal(true)
     } else {
       // Use enhanced Alert.alert for mobile platforms
       Alert.alert(
@@ -122,63 +121,63 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
           { 
             text: '06:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(6, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(6, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: '08:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(8, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(8, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: '12:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(12, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(12, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: '14:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(14, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(14, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: '18:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(18, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(18, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: '20:00', 
             onPress: () => {
-              const newDate = new Date(date);
-              newDate.setHours(20, 0);
-              setDate(newDate);
-            }
+              const newDate = new Date(date)
+              newDate.setHours(20, 0)
+              setDate(newDate)
+            },
           },
           { 
             text: 'Now', 
-            onPress: () => setDate(new Date())
+            onPress: () => setDate(new Date()),
           },
           { 
             text: 'Custom Time', 
-            onPress: () => showMobileTimeInput()
-          }
-        ]
-      );
+            onPress: () => showMobileTimeInput(),
+          },
+        ],
+      )
     }
-  };
+  }
 
   const showMobileDateInput = () => {
     Alert.prompt(
@@ -191,25 +190,25 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
           onPress: (inputDate?: string) => {
             if (inputDate) {
               try {
-                const parsedDate = new Date(inputDate);
+                const parsedDate = new Date(inputDate)
                 if (!isNaN(parsedDate.getTime())) {
-                  const newDate = new Date(date);
-                  newDate.setFullYear(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
-                  setDate(newDate);
+                  const newDate = new Date(date)
+                  newDate.setFullYear(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate())
+                  setDate(newDate)
                 } else {
-                  Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format');
+                  Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
                 }
               } catch (error) {
-                Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format');
+                Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
               }
             }
-          }
-        }
+          },
+        },
       ],
       'plain-text',
-      date.toISOString().split('T')[0]
-    );
-  };
+      date.toISOString().split('T')[0],
+    )
+  }
 
   const showMobileTimeInput = () => {
     Alert.prompt(
@@ -222,25 +221,25 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
           onPress: (inputTime?: string) => {
             if (inputTime) {
               try {
-                const [hours, minutes] = inputTime.split(':').map(Number);
+                const [hours, minutes] = inputTime.split(':').map(Number)
                 if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
-                  const newDate = new Date(date);
-                  newDate.setHours(hours, minutes, 0, 0);
-                  setDate(newDate);
+                  const newDate = new Date(date)
+                  newDate.setHours(hours, minutes, 0, 0)
+                  setDate(newDate)
                 } else {
-                  Alert.alert('Invalid Time', 'Please enter a valid time in HH:MM format (24-hour)');
+                  Alert.alert('Invalid Time', 'Please enter a valid time in HH:MM format (24-hour)')
                 }
               } catch (error) {
-                Alert.alert('Invalid Time', 'Please enter a valid time in HH:MM format (24-hour)');
+                Alert.alert('Invalid Time', 'Please enter a valid time in HH:MM format (24-hour)')
               }
             }
-          }
-        }
+          },
+        },
       ],
       'plain-text',
-      date.toTimeString().slice(0, 5)
-    );
-  };
+      date.toTimeString().slice(0, 5),
+    )
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -257,7 +256,7 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
               style={[styles.weightInput, { 
                 backgroundColor: colors.background, 
                 color: colors.text.primary,
-                borderColor: colors.border 
+                borderColor: colors.border, 
               }]}
               value={weight}
               onChangeText={setWeight}
@@ -288,8 +287,8 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
         onTimeSelected={setDate}
       />
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -342,4 +341,4 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sizes.xl,
     fontWeight: TYPOGRAPHY.weights.bold,
   },
-});
+})

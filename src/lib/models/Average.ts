@@ -26,4 +26,4 @@ export const AverageConverter = {
     threeDayAverage: data.threeDayAverage,
     sevenDayAverage: data.sevenDayAverage,
   }),
-};
+}

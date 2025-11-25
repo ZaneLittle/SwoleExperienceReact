@@ -15,7 +15,7 @@ export const LIGHT_COLORS = {
   },
   border: '#C6C6C8',
   separator: '#C6C6C8',
-} as const;
+} as const
 
 export const DARK_COLORS = {
   primary: '#0A84FF',
@@ -33,9 +33,9 @@ export const DARK_COLORS = {
   },
   border: '#48484A',
   separator: '#48484A',
-} as const;
+} as const
 
-export const COLORS = LIGHT_COLORS; // Default fallback
+export const COLORS = LIGHT_COLORS // Default fallback
 
 export const SPACING = {
   xs: 4,
@@ -45,7 +45,7 @@ export const SPACING = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
-} as const;
+} as const
 
 export const TYPOGRAPHY = {
   sizes: {
@@ -63,14 +63,14 @@ export const TYPOGRAPHY = {
     semibold: '600' as const,
     bold: '700' as const,
   },
-} as const;
+} as const
 
 export const BORDER_RADIUS = {
   sm: 4,
   md: 8,
   lg: 12,
   xl: 16,
-} as const;
+} as const
 
 export const SHADOWS = {
   sm: {
@@ -94,4 +94,4 @@ export const SHADOWS = {
     shadowRadius: 8,
     elevation: 5,
   },
-} as const;
+} as const

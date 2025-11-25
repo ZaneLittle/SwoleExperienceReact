@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-} from 'react-native';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutValidator } from '../../lib/models/Workout';
-import { workoutService } from '../../lib/services/WorkoutService';
-import { useThemeColors } from '../../hooks/useThemeColors';
-import { confirmAlert } from '../../utils/confirm';
+} from 'react-native'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutValidator } from '../../lib/models/Workout'
+import { workoutService } from '../../lib/services/WorkoutService'
+import { useThemeColors } from '../../hooks/useThemeColors'
+import { confirmAlert } from '../../utils/confirm'
 
 interface WorkoutCreateUpdateFormProps {
   workout?: WorkoutDay;
@@ -38,36 +38,36 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   isSupersetsEnabled = false,
   isAlternativesEnabled = false,
 }) => {
-  const colors = useThemeColors();
-  const [name, setName] = useState(workout?.name || '');
-  const [weight, setWeight] = useState(workout?.weight?.toString() || '');
-  const [sets, setSets] = useState(workout?.sets?.toString() || '');
-  const [reps, setReps] = useState(workout?.reps?.toString() || '');
-  const [notes, setNotes] = useState(workout?.notes || '');
-  const [alternativeId, setAlternativeId] = useState<string>('');
-  const [supersetId, setSupersetId] = useState<string>('');
-  const [showAlternativeDropdown, setShowAlternativeDropdown] = useState(false);
-  const [showSupersetDropdown, setShowSupersetDropdown] = useState(false);
+  const colors = useThemeColors()
+  const [name, setName] = useState(workout?.name || '')
+  const [weight, setWeight] = useState(workout?.weight?.toString() || '')
+  const [sets, setSets] = useState(workout?.sets?.toString() || '')
+  const [reps, setReps] = useState(workout?.reps?.toString() || '')
+  const [notes, setNotes] = useState(workout?.notes || '')
+  const [alternativeId, setAlternativeId] = useState<string>('')
+  const [supersetId, setSupersetId] = useState<string>('')
+  const [showAlternativeDropdown, setShowAlternativeDropdown] = useState(false)
+  const [showSupersetDropdown, setShowSupersetDropdown] = useState(false)
   const [errors, setErrors] = useState<{
     name?: string;
     weight?: string;
     sets?: string;
     reps?: string;
-  }>({});
+  }>({})
 
   useEffect(() => {
     if (workout?.altParentId) {
-      setAlternativeId(workout.altParentId);
+      setAlternativeId(workout.altParentId)
     } else {
-      setAlternativeId('');
+      setAlternativeId('')
     }
     if (workout?.supersetParentId) {
-      setSupersetId(workout.supersetParentId);
+      setSupersetId(workout.supersetParentId)
     } else {
-      setSupersetId('');
+      setSupersetId('')
     }
-    setErrors({});
-  }, [workout]);
+    setErrors({})
+  }, [workout])
 
   const validateForm = (): boolean => {
     const newErrors: {
@@ -75,30 +75,30 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       weight?: string;
       sets?: string;
       reps?: string;
-    } = {};
+    } = {}
 
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = 'Name is required'
     }
-    const weightNum = Number(weight);
+    const weightNum = Number(weight)
     if (weight === '' || weight.trim() === '' || isNaN(weightNum) || weightNum < 0) {
-      newErrors.weight = 'Please enter a valid weight';
+      newErrors.weight = 'Please enter a valid weight'
     }
-    const setsNum = Number(sets);
+    const setsNum = Number(sets)
     if (sets === '' || sets.trim() === '' || isNaN(setsNum) || setsNum < 0) {
-      newErrors.sets = 'Please enter a valid number of sets';
+      newErrors.sets = 'Please enter a valid number of sets'
     }
-    const repsNum = Number(reps);
+    const repsNum = Number(reps)
     if (reps === '' || reps.trim() === '' || isNaN(repsNum) || repsNum < 0) {
-      newErrors.reps = 'Please enter a valid number of reps';
+      newErrors.reps = 'Please enter a valid number of reps'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) return
 
     try {
       const workoutData: WorkoutDay = {
@@ -112,73 +112,73 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
         notes: notes.trim() || undefined,
         altParentId: alternativeId || undefined,
         supersetParentId: supersetId || undefined,
-      };
+      }
 
-      WorkoutValidator.validate(workoutData);
+      WorkoutValidator.validate(workoutData)
 
       const success = workout 
         ? await workoutService.updateWorkout(workoutData)
-        : await workoutService.createWorkout(workoutData);
+        : await workoutService.createWorkout(workoutData)
 
       if (success) {
-        onSave(workoutData);
+        onSave(workoutData)
       } else {
-        confirmAlert('Error', 'Failed to save workout');
+        confirmAlert('Error', 'Failed to save workout')
       }
     } catch (error) {
-      confirmAlert('Error', error instanceof Error ? error.message : 'An error occurred');
+      confirmAlert('Error', error instanceof Error ? error.message : 'An error occurred')
     }
-  };
+  }
 
   const getPossibleAlternatives = (): WorkoutDay[] => {
     if (workout?.id) {
-      const isCurrentWorkoutUsedAsAlternative = workoutsInDay.some(w => w.altParentId === workout.id);
+      const isCurrentWorkoutUsedAsAlternative = workoutsInDay.some(w => w.altParentId === workout.id)
       if (isCurrentWorkoutUsedAsAlternative) {
-        return [];
+        return []
       }
     }
     
-    return workoutsInDay.filter(w => w.id !== workout?.id);
-  };
+    return workoutsInDay.filter(w => w.id !== workout?.id)
+  }
 
   const getAlternativesForDropdown = (): WorkoutDay[] => {
-    return getPossibleAlternatives();
-  };
+    return getPossibleAlternatives()
+  }
 
   const hasAlternativesToShow = (): boolean => {
-    if (workout?.altParentId) return true;
-    return workoutsInDay.length > 0;
-  };
+    if (workout?.altParentId) return true
+    return workoutsInDay.length > 0
+  }
 
   const getPossibleSupersets = (): WorkoutDay[] => {
     if (workout?.id) {
-      const isCurrentWorkoutUsedAsSuperset = workoutsInDay.some(w => w.supersetParentId === workout.id);
+      const isCurrentWorkoutUsedAsSuperset = workoutsInDay.some(w => w.supersetParentId === workout.id)
       if (isCurrentWorkoutUsedAsSuperset) {
-        return [];
+        return []
       }
     }
     
-    return workoutsInDay.filter(w => w.id !== workout?.id);
-  };
+    return workoutsInDay.filter(w => w.id !== workout?.id)
+  }
 
   const getSupersetsForDropdown = (): WorkoutDay[] => {
-    return getPossibleSupersets();
-  };
+    return getPossibleSupersets()
+  }
 
   const hasSupersetsToShow = (): boolean => {
-    if (workout?.supersetParentId) return true;
-    return workoutsInDay.length > 0;
-  };
+    if (workout?.supersetParentId) return true
+    return workoutsInDay.length > 0
+  }
 
   const getOtherAlternatives = (): WorkoutDay[] => {
-    if (!workout) return [];
-    return workoutsInDay.filter(w => w.altParentId === workout.id);
-  };
+    if (!workout) return []
+    return workoutsInDay.filter(w => w.altParentId === workout.id)
+  }
 
   const getOtherSupersets = (): WorkoutDay[] => {
-    if (!workout) return [];
-    return workoutsInDay.filter(w => w.supersetParentId === workout.id);
-  };
+    if (!workout) return []
+    return workoutsInDay.filter(w => w.supersetParentId === workout.id)
+  }
 
   const renderInputField = (
     label: string,
@@ -188,7 +188,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     keyboardType: 'default' | 'numeric' = 'default',
     multiline: boolean = false,
     error?: string,
-    errorKey?: keyof typeof errors
+    errorKey?: keyof typeof errors,
   ) => (
     <View style={styles.inputContainer}>
       <Text style={[styles.inputLabel, { color: colors.text.primary }]}>{label}</Text>
@@ -199,19 +199,19 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           { 
             backgroundColor: colors.surface, 
             color: colors.text.primary,
-            borderColor: error ? '#ff4444' : colors.border 
-          }
+            borderColor: error ? '#ff4444' : colors.border, 
+          },
         ]}
         value={value}
         onChangeText={(text) => {
-          onChangeText(text);
+          onChangeText(text)
           // Clear error when user starts typing
           if (errorKey && errors[errorKey]) {
             setErrors(prev => {
-              const newErrors = { ...prev };
-              delete newErrors[errorKey];
-              return newErrors;
-            });
+              const newErrors = { ...prev }
+              delete newErrors[errorKey]
+              return newErrors
+            })
           }
         }}
         placeholder={placeholder}
@@ -224,7 +224,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
         <Text style={[styles.errorText, { color: '#ff4444' }]}>{error}</Text>
       )}
     </View>
-  );
+  )
 
   const renderDropdown = (
     label: string,
@@ -233,10 +233,10 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     options: WorkoutDay[],
     emptyOption: string,
     showModal: boolean,
-    setShowModal: (show: boolean) => void
+    setShowModal: (show: boolean) => void,
   ) => {
-    const selectedOption = options.find(option => option.id === value);
-    const displayText = selectedOption ? selectedOption.name : emptyOption;
+    const selectedOption = options.find(option => option.id === value)
+    const displayText = selectedOption ? selectedOption.name : emptyOption
 
     return (
       <View style={styles.inputContainer}>
@@ -264,8 +264,8 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
               <TouchableOpacity
                 style={styles.dropdownModalOption}
                 onPress={() => {
-                  onValueChange('');
-                  setShowModal(false);
+                  onValueChange('')
+                  setShowModal(false)
                 }}
               >
                 <Text style={[styles.dropdownModalText, { color: colors.text.primary }]}>{emptyOption}</Text>
@@ -275,11 +275,11 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
                   key={option.id}
                   style={[
                     styles.dropdownModalOption,
-                    index === options.length - 1 && styles.dropdownModalOptionLast
+                    index === options.length - 1 && styles.dropdownModalOptionLast,
                   ]}
                   onPress={() => {
-                    onValueChange(option.id);
-                    setShowModal(false);
+                    onValueChange(option.id)
+                    setShowModal(false)
                   }}
                 >
                   <Text style={[styles.dropdownModalText, { color: colors.text.primary }]}>{option.name}</Text>
@@ -289,16 +289,15 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           </TouchableOpacity>
         </Modal>
       </View>
-    );
-  };
+    )
+  }
 
   const renderAlternatives = () => {
-    if (!isAlternativesEnabled || workoutsInDay.length === 0) return null;
+    if (!isAlternativesEnabled || workoutsInDay.length === 0) return null
 
-    const possibleAlternatives = getPossibleAlternatives();
-    const otherAlternatives = getOtherAlternatives();
+    const otherAlternatives = getOtherAlternatives()
 
-    if (!hasAlternativesToShow() && otherAlternatives.length === 0) return null;
+    if (!hasAlternativesToShow() && otherAlternatives.length === 0) return null
 
     return (
       <View style={styles.section}>
@@ -309,7 +308,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           getAlternativesForDropdown(),
           'Select alternative',
           showAlternativeDropdown,
-          setShowAlternativeDropdown
+          setShowAlternativeDropdown,
         )}
         {otherAlternatives.length > 0 && (
           <View style={styles.otherItemsContainer}>
@@ -320,16 +319,15 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           </View>
         )}
       </View>
-    );
-  };
+    )
+  }
 
   const renderSupersets = () => {
-    if (!isSupersetsEnabled || workoutsInDay.length === 0) return null;
+    if (!isSupersetsEnabled || workoutsInDay.length === 0) return null
 
-    const possibleSupersets = getPossibleSupersets();
-    const otherSupersets = getOtherSupersets();
+    const otherSupersets = getOtherSupersets()
 
-    if (!hasSupersetsToShow() && otherSupersets.length === 0) return null;
+    if (!hasSupersetsToShow() && otherSupersets.length === 0) return null
 
     return (
       <View style={styles.section}>
@@ -340,7 +338,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           getSupersetsForDropdown(),
           'Select superset',
           showSupersetDropdown,
-          setShowSupersetDropdown
+          setShowSupersetDropdown,
         )}
         {otherSupersets.length > 0 && (
           <View style={styles.otherItemsContainer}>
@@ -351,8 +349,8 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
           </View>
         )}
       </View>
-    );
-  };
+    )
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -396,8 +394,8 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -545,4 +543,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#ff4444',
   },
-});
+})

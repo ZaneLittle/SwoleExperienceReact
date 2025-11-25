@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Workout } from '../../lib/models/Workout';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../lib/constants/ui';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import React from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { Workout } from '../../lib/models/Workout'
+import { COLORS, SPACING, TYPOGRAPHY } from '../../lib/constants/ui'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutCardHeaderProps {
   workout: Workout;
@@ -23,7 +23,7 @@ export const WorkoutCardHeader: React.FC<WorkoutCardHeaderProps> = ({
   onDelete,
   onUpdate,
 }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
   
   return (
     <View style={styles.nameRow}>
@@ -55,8 +55,8 @@ export const WorkoutCardHeader: React.FC<WorkoutCardHeaderProps> = ({
       
       {hasNext && <View style={styles.chevronRight} />}
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   nameRow: {
@@ -115,4 +115,4 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sizes.md,
     fontWeight: TYPOGRAPHY.weights.bold,
   },
-});
+})

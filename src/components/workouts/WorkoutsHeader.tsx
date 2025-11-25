@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutsHeaderProps {
   dayText: string;
@@ -15,14 +15,14 @@ export const WorkoutsHeader: React.FC<WorkoutsHeaderProps> = ({
   onPreviousDay,
   onNextDay,
 }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
 
   if (!hasContent) {
     return (
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={styles.spacer} testID="header-spacer" />
       </View>
-    );
+    )
   }
 
   return (
@@ -49,8 +49,8 @@ export const WorkoutsHeader: React.FC<WorkoutsHeaderProps> = ({
       </View>
       <View style={styles.spacer} />
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   header: {
@@ -96,4 +96,4 @@ const styles = StyleSheet.create({
   spacer: {
     width: 36,
   },
-});
+})

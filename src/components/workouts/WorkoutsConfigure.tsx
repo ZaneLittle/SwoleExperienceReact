@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -6,83 +6,83 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { workoutService } from '../../lib/services/WorkoutService';
-import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm';
-import { useThemeColors } from '../../hooks/useThemeColors';
-import { confirm, confirmDelete, confirmAlert } from '../../utils/confirm';
+} from 'react-native'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { workoutService } from '../../lib/services/WorkoutService'
+import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
+import { useThemeColors } from '../../hooks/useThemeColors'
+import { confirm, confirmAlert } from '../../utils/confirm'
 
 interface WorkoutsConfigureProps {
   onBack: () => void;
 }
 
 export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
-  const colors = useThemeColors();
-  const [workouts, setWorkouts] = useState<WorkoutDay[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [editingWorkout, setEditingWorkout] = useState<WorkoutDay | undefined>();
-  const [showForm, setShowForm] = useState(false);
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [totalDays, setTotalDays] = useState(0);
+  const colors = useThemeColors()
+  const [workouts, setWorkouts] = useState<WorkoutDay[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [editingWorkout, setEditingWorkout] = useState<WorkoutDay | undefined>()
+  const [showForm, setShowForm] = useState(false)
+  const [selectedDay, setSelectedDay] = useState(1)
+  const [totalDays, setTotalDays] = useState(0)
 
   const loadWorkouts = async () => {
     try {
-      setIsLoading(true);
+      setIsLoading(true)
       const [workoutsData, uniqueDays] = await Promise.all([
         workoutService.getWorkouts(),
         workoutService.getUniqueDays(),
-      ]);
+      ])
       
-      setWorkouts(workoutsData);
-      setTotalDays(uniqueDays);
+      setWorkouts(workoutsData)
+      setTotalDays(uniqueDays)
     } catch (error) {
-      console.error('Error loading workouts:', error);
-      confirmAlert('Error', 'Failed to load workouts');
+      console.error('Error loading workouts:', error)
+      confirmAlert('Error', 'Failed to load workouts')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    loadWorkouts();
-  }, []);
+    loadWorkouts()
+  }, [])
 
   const handleAddWorkout = () => {
-    setEditingWorkout(undefined);
-    setShowForm(true);
-  };
+    setEditingWorkout(undefined)
+    setShowForm(true)
+  }
 
   const handleEditWorkout = (workout: WorkoutDay) => {
-    setEditingWorkout(workout);
-    setShowForm(true);
-  };
+    setEditingWorkout(workout)
+    setShowForm(true)
+  }
 
   const handleDeleteWorkout = async (workout: WorkoutDay) => {
-    console.log('handleDeleteWorkout called for:', workout.name, 'day:', workout.day);
+    console.log('handleDeleteWorkout called for:', workout.name, 'day:', workout.day)
     try {
       // Delete the workout immediately
-      const success = await workoutService.removeWorkout(workout.id);
+      const success = await workoutService.removeWorkout(workout.id)
       if (!success) {
-        confirmAlert('Error', 'Failed to delete workout');
-        return;
+        confirmAlert('Error', 'Failed to delete workout')
+        return
       }
 
       // Reload workouts to get updated state
-      await loadWorkouts();
+      await loadWorkouts()
 
       // Check if this was the last workout in the day
-      const updatedWorkouts = await workoutService.getWorkouts();
-      const dayWorkouts = updatedWorkouts.filter(w => w.day === workout.day);
-      const isLastWorkoutInDay = dayWorkouts.length === 0;
+      const updatedWorkouts = await workoutService.getWorkouts()
+      const dayWorkouts = updatedWorkouts.filter(w => w.day === workout.day)
+      const isLastWorkoutInDay = dayWorkouts.length === 0
 
       if (isLastWorkoutInDay) {
         // Check if this is the last day
-        const uniqueDays = Array.from(new Set(updatedWorkouts.map(w => w.day))).sort((a, b) => a - b);
-        const isLastDay = uniqueDays.length > 0 && workout.day === uniqueDays[uniqueDays.length - 1];
+        const uniqueDays = Array.from(new Set(updatedWorkouts.map(w => w.day))).sort((a, b) => a - b)
+        const isLastDay = uniqueDays.length > 0 && workout.day === uniqueDays[uniqueDays.length - 1]
 
         if (!isLastDay) {
-          console.log('Showing delete day alert after workout deletion');
+          console.log('Showing delete day alert after workout deletion')
           confirm(
             'Delete Day?',
             `This was the last workout in Day ${workout.day}. Do you want to delete the entire day?`,
@@ -91,101 +91,89 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
                 text: 'Keep Day',
                 style: 'cancel',
                 onPress: () => {
-                  console.log('Keep Day pressed - day already empty');
+                  console.log('Keep Day pressed - day already empty')
                   // Day is already empty, just reload
-                  loadWorkouts();
+                  loadWorkouts()
                 },
               },
               {
                 text: 'Delete Day',
                 style: 'destructive',
                 onPress: () => {
-                  console.log('Delete Day pressed');
+                  console.log('Delete Day pressed')
                   handleDeleteDay(workout.day).catch(error => {
-                    console.error('Error deleting day:', error);
-                    confirmAlert('Error', 'Failed to delete day');
-                  });
+                    console.error('Error deleting day:', error)
+                    confirmAlert('Error', 'Failed to delete day')
+                  })
                 },
               },
-            ]
-          );
+            ],
+          )
         }
       }
     } catch (error) {
-      console.error('Error in handleDeleteWorkout:', error);
-      confirmAlert('Error', 'Failed to delete workout');
+      console.error('Error in handleDeleteWorkout:', error)
+      confirmAlert('Error', 'Failed to delete workout')
     }
-  };
+  }
 
-  const handleDeleteDay = async (day: number) => {
+  const handleDeleteDay = async (_day: number) => {
     await workoutService.reorderDays().catch(() => {
-      confirmAlert('Error', 'Failed to reorder days');
-    });
+      confirmAlert('Error', 'Failed to reorder days')
+    })
       
-    loadWorkouts();  
-  };
+    loadWorkouts()  
+  }
 
-  const handleSaveWorkout = (workout: WorkoutDay) => {
-    setShowForm(false);
-    loadWorkouts();
-  };
+  const handleSaveWorkout = (_workout: WorkoutDay) => {
+    setShowForm(false)
+    loadWorkouts()
+  }
 
   const handleMoveWorkout = async (workout: WorkoutDay, direction: 'up' | 'down') => {
     try {
-      const dayWorkouts = getWorkoutsForDay(selectedDay);
-      const currentIndex = dayWorkouts.findIndex(w => w.id === workout.id);
+      const dayWorkouts = getWorkoutsForDay(selectedDay)
+      const currentIndex = dayWorkouts.findIndex(w => w.id === workout.id)
       
-      if (direction === 'up' && currentIndex === 0) return; // Already at top
-      if (direction === 'down' && currentIndex === dayWorkouts.length - 1) return; // Already at bottom
+      if (direction === 'up' && currentIndex === 0) return // Already at top
+      if (direction === 'down' && currentIndex === dayWorkouts.length - 1) return // Already at bottom
       
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
       const newOrder = [...dayWorkouts];
       
       // Swap the workouts
-      [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]];
+      [newOrder[currentIndex], newOrder[newIndex]] = [newOrder[newIndex], newOrder[currentIndex]]
       
       // Update dayOrder for all workouts
-      const reorderedIds = newOrder.map(w => w.id);
-      const success = await workoutService.reorderWorkouts(selectedDay, reorderedIds);
+      const reorderedIds = newOrder.map(w => w.id)
+      const success = await workoutService.reorderWorkouts(selectedDay, reorderedIds)
       
       if (success) {
-        loadWorkouts();
+        loadWorkouts()
       } else {
-        confirmAlert('Error', 'Failed to reorder workouts');
+        confirmAlert('Error', 'Failed to reorder workouts')
       }
     } catch (error) {
-      console.error('Error reordering workouts:', error);
-      confirmAlert('Error', 'Failed to reorder workouts');
+      console.error('Error reordering workouts:', error)
+      confirmAlert('Error', 'Failed to reorder workouts')
     }
-  };
+  }
 
   const getWorkoutsForDay = (day: number): WorkoutDay[] => {
-    return workouts.filter(w => w.day === day).sort((a, b) => a.dayOrder - b.dayOrder);
-  };
+    return workouts.filter(w => w.day === day).sort((a, b) => a.dayOrder - b.dayOrder)
+  }
 
 
-  const hasAlternativesOrSupersets = (workout: WorkoutDay): boolean => {
-    const dayWorkouts = getWorkoutsForDay(workout.day);
-    const hasAlternatives = dayWorkouts.some(w => w.altParentId === workout.id);
-    const hasSupersets = dayWorkouts.some(w => w.supersetParentId === workout.id);
-    return hasAlternatives || hasSupersets;
-  };
-
-  const canDelete = (workout: WorkoutDay): boolean => {
-    // In configuration mode, allow deletion of any workout
-    // The relationship validation should be handled in the main workout screen
-    return true;
-  };
 
   const handleNextDay = () => {
-    const nextDay = selectedDay + 1;
+    const nextDay = selectedDay + 1
     
     if (nextDay > (totalDays || 0)) {
       // If going to a new day, automatically create it
-      setTotalDays(nextDay);
+      setTotalDays(nextDay)
     }
-    setSelectedDay(nextDay);
-  };
+    setSelectedDay(nextDay)
+  }
 
   const renderDaySelector = () => (
     <View style={styles.daySelector}>
@@ -202,7 +190,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         <Text style={[
           styles.dayText, 
           selectedDay > (totalDays || 0) && styles.newDayTextStyle,
-          { color: colors.text.primary }
+          { color: colors.text.primary },
         ]}>
           Day {selectedDay}
         </Text>
@@ -216,12 +204,12 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         <View style={[
           styles.navButtonRight, 
           { 
-            borderLeftColor: colors.primary
-          }
+            borderLeftColor: colors.primary,
+          },
         ]} />
       </TouchableOpacity>
     </View>
-  );
+  )
 
   const renderWorkoutItem = (workout: WorkoutDay, index: number, totalItems: number) => (
     <View style={[styles.workoutItem, { backgroundColor: colors.surface }]}>
@@ -257,12 +245,12 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => {
-                handleDeleteWorkout(workout);
+                handleDeleteWorkout(workout)
               }}
             >
               <Text style={[
                 styles.deleteButtonText,
-                { color: colors.error }
+                { color: colors.error },
               ]}>×</Text>
             </TouchableOpacity>
           </View>
@@ -279,13 +267,13 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         )}
       </View>
     </View>
-  );
+  )
 
   const renderWorkoutList = () => {
-    const dayWorkouts = getWorkoutsForDay(selectedDay);
+    const dayWorkouts = getWorkoutsForDay(selectedDay)
     
     if (dayWorkouts.length === 0) {
-      const isNewDay = selectedDay > (totalDays || 0);
+      const isNewDay = selectedDay > (totalDays || 0)
       return (
         <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
           <Text style={[styles.emptyStateText, { color: colors.text.secondary }]}>
@@ -296,8 +284,8 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
               style={[
                 styles.addButton, 
                 { 
-                  backgroundColor: colors.primary
-                }
+                  backgroundColor: colors.primary,
+                },
               ]} 
               onPress={handleAddWorkout}
             >
@@ -305,8 +293,8 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             </TouchableOpacity>
             {!isNewDay && (() => {
               // Check if this is the last day
-              const uniqueDays = Array.from(new Set(workouts.map(w => w.day))).sort((a, b) => a - b);
-              const isLastDay = uniqueDays.length > 0 && selectedDay === uniqueDays[uniqueDays.length - 1];
+              const uniqueDays = Array.from(new Set(workouts.map(w => w.day))).sort((a, b) => a - b)
+              const isLastDay = uniqueDays.length > 0 && selectedDay === uniqueDays[uniqueDays.length - 1]
               
               return !isLastDay && (
                 <TouchableOpacity 
@@ -326,24 +314,24 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
                           style: 'destructive',
                           onPress: () => handleDeleteDay(selectedDay),
                         },
-                      ]
-                    );
+                      ],
+                    )
                   }}
                 >
                   <Text style={styles.deleteDayButtonText}>Delete Day</Text>
                 </TouchableOpacity>
-              );
+              )
             })()}
           </View>
         </View>
-      );
+      )
     }
 
     return (
       <View style={[styles.workoutListContainer, { backgroundColor: colors.background }]}>
         <ScrollView style={styles.workoutList}>
           {dayWorkouts.map((workout, index) => 
-            renderWorkoutItem(workout, index, dayWorkouts.length)
+            renderWorkoutItem(workout, index, dayWorkouts.length),
           )}
         </ScrollView>
         
@@ -351,16 +339,16 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
           style={[
             styles.addButton, 
             { 
-              backgroundColor: colors.primary
-            }
+              backgroundColor: colors.primary,
+            },
           ]} 
           onPress={handleAddWorkout}
         >
           <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
         </TouchableOpacity>
       </View>
-    );
-  };
+    )
+  }
 
   const renderFormModal = () => (
     <View style={styles.modalOverlay}>
@@ -390,7 +378,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         />
       </View>
     </View>
-  );
+  )
 
   if (isLoading) {
     return (
@@ -398,7 +386,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading workouts...</Text>
       </View>
-    );
+    )
   }
 
   return (
@@ -418,7 +406,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
 
       {showForm && renderFormModal()}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -678,4 +666,4 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 18,
   },
-});
+})

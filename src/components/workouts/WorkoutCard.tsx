@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react'
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   Dimensions,
-} from 'react-native';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutCardProps } from './WorkoutCardTypes';
-import { WorkoutCardHeader } from './WorkoutCardHeader';
-import { WorkoutCardMetrics } from './WorkoutCardMetrics';
-import { WorkoutCardNotes } from './WorkoutCardNotes';
-import { WorkoutCardSupersets } from './WorkoutCardSupersets';
-import { COLORS, SPACING, SHADOWS, BORDER_RADIUS } from '../../lib/constants/ui';
-import { useThemeColors } from '../../hooks/useThemeColors';
-import { confirmDelete } from '../../utils/confirm';
+} from 'react-native'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutCardProps } from './WorkoutCardTypes'
+import { WorkoutCardHeader } from './WorkoutCardHeader'
+import { WorkoutCardMetrics } from './WorkoutCardMetrics'
+import { WorkoutCardNotes } from './WorkoutCardNotes'
+import { WorkoutCardSupersets } from './WorkoutCardSupersets'
+import { SPACING, SHADOWS, BORDER_RADIUS } from '../../lib/constants/ui'
+import { useThemeColors } from '../../hooks/useThemeColors'
+import { confirmDelete } from '../../utils/confirm'
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window')
 
 export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
   workout,
@@ -26,40 +26,39 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
   alternatives = [],
   supersets = [],
 }) => {
-  const colors = useThemeColors();
-  const [currentAlternativeIndex, setCurrentAlternativeIndex] = useState(0);
+  const colors = useThemeColors()
 
   // Memoized calculations for better performance
   const hasAlternativesOrSupersets = useMemo(() => {
-    return (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0);
-  }, [alternatives, supersets]);
+    return (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0)
+  }, [alternatives, supersets])
 
   const isHistoryItem = useMemo(() => {
-    return 'workoutId' in workout;
-  }, [workout]);
+    return 'workoutId' in workout
+  }, [workout])
 
   const canDelete = useMemo(() => {
-    return !hasAlternativesOrSupersets && !isHistoryItem;
-  }, [hasAlternativesOrSupersets, isHistoryItem]);
+    return !hasAlternativesOrSupersets && !isHistoryItem
+  }, [hasAlternativesOrSupersets, isHistoryItem])
 
   const canUpdate = useMemo(() => {
-    return !isHistoryItem;
-  }, [isHistoryItem]);
+    return !isHistoryItem
+  }, [isHistoryItem])
 
   const handleUpdate = (workoutDay: WorkoutDay) => {
-    if (!canUpdate || !onUpdate) return;
-    onUpdate(workoutDay);
-  };
+    if (!canUpdate || !onUpdate) return
+    onUpdate(workoutDay)
+  }
 
   const handleDelete = () => {
     if (canDelete && onDelete && 'day' in workout) {
       confirmDelete(
         'Delete Workout',
         'Are you sure you want to delete this workout?',
-        () => onDelete(workout as any)
-      );
+        () => onDelete(workout as any),
+      )
     }
-  };
+  }
 
   const renderMainCard = () => (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -88,20 +87,20 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
         supersets={supersets}
         allowUpdate={canUpdate}
         onUpdate={(superset) => {
-          const workoutDay = workoutsInDay.find(w => w.id === superset.id);
-          if (workoutDay) handleUpdate(workoutDay);
+          const workoutDay = workoutsInDay.find(w => w.id === superset.id)
+          if (workoutDay) handleUpdate(workoutDay)
         }}
       />
     </View>
-  );
+  )
 
   const renderAlternativeCard = (alternative: any, index: number) => (
     <View key={alternative.id} style={styles.card}>
       <TouchableOpacity
         style={styles.infoSection}
         onLongPress={canUpdate ? () => {
-          const workoutDay = workoutsInDay.find(w => w.id === alternative.id);
-          if (workoutDay) handleUpdate(workoutDay);
+          const workoutDay = workoutsInDay.find(w => w.id === alternative.id)
+          if (workoutDay) handleUpdate(workoutDay)
         } : undefined}
         activeOpacity={0.7}
       >
@@ -114,8 +113,8 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
             allowUpdate={canUpdate}
             onDelete={() => {}}
             onUpdate={() => {
-              const workoutDay = workoutsInDay.find(w => w.id === alternative.id);
-              if (workoutDay) handleUpdate(workoutDay);
+              const workoutDay = workoutsInDay.find(w => w.id === alternative.id)
+              if (workoutDay) handleUpdate(workoutDay)
             }}
           />
           <WorkoutCardMetrics workout={alternative} />
@@ -123,15 +122,15 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
       </TouchableOpacity>
       <WorkoutCardNotes notes={alternative.notes || ''} />
     </View>
-  );
+  )
 
   const renderCardList = () => {
-    const cards = [<View key="main">{renderMainCard()}</View>];
+    const cards = [<View key="main">{renderMainCard()}</View>]
     alternatives.forEach((alternative, index) => {
-      cards.push(<View key={`alt-${alternative.id}-${index}`}>{renderAlternativeCard(alternative, index)}</View>);
-    });
-    return cards;
-  };
+      cards.push(<View key={`alt-${alternative.id}-${index}`}>{renderAlternativeCard(alternative, index)}</View>)
+    })
+    return cards
+  }
 
   return (
     <View style={styles.container}>
@@ -144,10 +143,10 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
         {renderCardList()}
       </ScrollView>
     </View>
-  );
-});
+  )
+})
 
-WorkoutCard.displayName = 'WorkoutCard';
+WorkoutCard.displayName = 'WorkoutCard'
 
 const styles = StyleSheet.create({
   container: {
@@ -173,4 +172,4 @@ const styles = StyleSheet.create({
   workoutInfo: {
     paddingBottom: SPACING.sm,
   },
-});
+})

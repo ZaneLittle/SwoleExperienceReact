@@ -1,13 +1,13 @@
-import React from 'react';
+import React from 'react'
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Modal,
-} from 'react-native';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { BORDER_RADIUS, SPACING, SHADOWS } from '../lib/constants/ui';
+} from 'react-native'
+import { useThemeColors } from '../hooks/useThemeColors'
+import { BORDER_RADIUS, SPACING, SHADOWS } from '../lib/constants/ui'
 
 export interface ConfirmationButton {
   text: string;
@@ -30,24 +30,24 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   buttons,
   onRequestClose,
 }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
 
   const getButtonStyle = (button: ConfirmationButton) => {
     if (button.style === 'destructive') {
-      return { backgroundColor: colors.error };
+      return { backgroundColor: colors.error }
     }
     if (button.style === 'cancel') {
-      return { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border };
+      return { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }
     }
-    return { backgroundColor: colors.primary };
-  };
+    return { backgroundColor: colors.primary }
+  }
 
   const getButtonTextStyle = (button: ConfirmationButton) => {
     if (button.style === 'destructive' || button.style === 'default') {
-      return { color: '#fff' };
+      return { color: '#fff' }
     }
-    return { color: colors.text.primary };
-  };
+    return { color: colors.text.primary }
+  }
 
   return (
     <Modal
@@ -79,9 +79,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                   buttons.length >= 2 && styles.buttonFlex,
                 ]}
                 onPress={() => {
-                  button.onPress();
+                  button.onPress()
                   if (onRequestClose) {
-                    onRequestClose();
+                    onRequestClose()
                   }
                 }}
               >
@@ -94,8 +94,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   overlay: {
@@ -143,5 +143,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+})
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   Modal,
   TextInput,
   Alert,
-} from 'react-native';
-import { useThemeColors } from '../hooks/useThemeColors';
+} from 'react-native'
+import { useThemeColors } from '../hooks/useThemeColors'
 
 interface DatePickerModalProps {
   visible: boolean;
@@ -23,45 +23,45 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   onClose,
   onDateSelected,
 }) => {
-  const colors = useThemeColors();
-  const [tempDate, setTempDate] = useState(currentDate);
-  const [customDateInput, setCustomDateInput] = useState('');
-  const [showCustomDateInput, setShowCustomDateInput] = useState(false);
+  const colors = useThemeColors()
+  const [tempDate, setTempDate] = useState(currentDate)
+  const [customDateInput, setCustomDateInput] = useState('')
+  const [showCustomDateInput, setShowCustomDateInput] = useState(false)
 
   const formatDateOnly = (date: Date) => {
-    return date.toLocaleDateString();
-  };
+    return date.toLocaleDateString()
+  }
 
   const addDays = (date: Date, days: number) => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-  };
+    const result = new Date(date)
+    result.setDate(result.getDate() + days)
+    return result
+  }
 
   const handleCustomDateSubmit = () => {
     if (customDateInput.trim()) {
       try {
-        const parsedDate = new Date(customDateInput);
+        const parsedDate = new Date(customDateInput)
         if (!isNaN(parsedDate.getTime())) {
-          const newDate = new Date(currentDate);
-          newDate.setFullYear(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
-          onDateSelected(newDate);
-          setShowCustomDateInput(false);
-          setCustomDateInput('');
-          onClose();
+          const newDate = new Date(currentDate)
+          newDate.setFullYear(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate())
+          onDateSelected(newDate)
+          setShowCustomDateInput(false)
+          setCustomDateInput('')
+          onClose()
         } else {
-          Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format');
+          Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
         }
       } catch (error) {
-        Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format');
+        Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
       }
     }
-  };
+  }
 
   const handleDateSelect = () => {
-    onDateSelected(tempDate);
-    onClose();
-  };
+    onDateSelected(tempDate)
+    onClose()
+  }
 
   return (
     <Modal
@@ -151,8 +151,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.cancelButton]} 
                   onPress={() => {
-                    setShowCustomDateInput(false);
-                    setCustomDateInput('');
+                    setShowCustomDateInput(false)
+                    setCustomDateInput('')
                   }}
                 >
                   <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
@@ -169,8 +169,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         </View>
       </View>
     </Modal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   modalOverlay: {
@@ -281,4 +281,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
-});
+})

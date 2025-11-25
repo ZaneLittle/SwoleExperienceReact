@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react'
+import { Text, StyleSheet, TouchableOpacity } from 'react-native'
 
 interface CompleteWorkoutButtonProps {
   visible: boolean;
@@ -12,7 +12,7 @@ export const CompleteWorkoutButton: React.FC<CompleteWorkoutButtonProps> = ({
   isCompleting,
   onComplete,
 }) => {
-  if (!visible) return null;
+  if (!visible) return null
   
   return (
     <TouchableOpacity 
@@ -26,8 +26,8 @@ export const CompleteWorkoutButton: React.FC<CompleteWorkoutButtonProps> = ({
         <Text style={styles.completeButtonText}>Complete Day</Text>
       )}
     </TouchableOpacity>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   completeButton: {
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-});
+})

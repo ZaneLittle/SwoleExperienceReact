@@ -1,15 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Workout } from '../../lib/models/Workout';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../lib/constants/ui';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import { Workout } from '../../lib/models/Workout'
+import { COLORS, TYPOGRAPHY } from '../../lib/constants/ui'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutCardMetricsProps {
   workout: Workout;
 }
 
 export const WorkoutCardMetrics: React.FC<WorkoutCardMetricsProps> = ({ workout }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
   
   return (
     <View style={styles.metricsRow}>
@@ -23,8 +23,8 @@ export const WorkoutCardMetrics: React.FC<WorkoutCardMetricsProps> = ({ workout 
         Reps: <Text style={[styles.metricValue, { color: colors.text.primary }]}>{workout.reps}</Text>
       </Text>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   metricsRow: {
@@ -39,4 +39,4 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.weights.semibold,
     color: COLORS.text.primary,
   },
-});
+})

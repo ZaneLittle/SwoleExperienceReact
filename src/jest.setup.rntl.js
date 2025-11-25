@@ -10,7 +10,7 @@ jest.mock('react-native', () => {
     const Comp = (props) => React.createElement(name, props, props?.children);
     Comp.displayName = name;
     return Comp;
-  };
+  }
   
   return {
     View: createComponent('View'),
@@ -38,8 +38,8 @@ jest.mock('react-native', () => {
     Dimensions: {
       get: jest.fn(() => ({ width: 375, height: 812 })),
     },
-  };
-});
+  }
+})
 
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
@@ -47,7 +47,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 // Mock react-native-gesture-handler
-jest.mock('react-native-gesture-handler', () => {});
+jest.mock('react-native-gesture-handler', () => {})
 
 // Mock react-native-screens
-jest.mock('react-native-screens', () => {});
+jest.mock('react-native-screens', () => {})
