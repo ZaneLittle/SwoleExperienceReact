@@ -21,6 +21,7 @@ COPY components/ ./components/
 COPY contexts/ ./contexts/
 COPY lib/ ./lib/
 COPY hooks/ ./hooks/
+COPY utils/ ./utils/
 COPY index.js ./
 COPY babel.config.js ./
 COPY tsconfig.json ./
