@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -9,13 +9,13 @@ import {
   TextInput,
   Modal,
   Platform,
-} from 'react-native';
-import { DatePickerModal } from '../DatePickerModal';
-import { TimePickerModal } from '../TimePickerModal';
-import { Weight } from '../../lib/models/Weight';
-import { weightService } from '../../lib/services/WeightService';
-import { averageService } from '../../lib/services/AverageService';
-import { useThemeColors } from '../../hooks/useThemeColors';
+} from 'react-native'
+import { DatePickerModal } from '../DatePickerModal'
+import { TimePickerModal } from '../TimePickerModal'
+import { Weight } from '../../lib/models/Weight'
+import { weightService } from '../../lib/services/WeightService'
+import { averageService } from '../../lib/services/AverageService'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WeightHistoryProps {
   onWeightDeleted: () => void;
@@ -23,37 +23,37 @@ interface WeightHistoryProps {
 }
 
 export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, weights }) => {
-  const colors = useThemeColors();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editedWeight, setEditedWeight] = useState('');
-  const [editWeight, setEditWeight] = useState<Weight | null>(null);
-  const [editedDate, setEditedDate] = useState(new Date());
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [showTimeModal, setShowTimeModal] = useState(false);
+  const colors = useThemeColors()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editedWeight, setEditedWeight] = useState('')
+  const [editWeight, setEditWeight] = useState<Weight | null>(null)
+  const [editedDate, setEditedDate] = useState(new Date())
+  const [showDateModal, setShowDateModal] = useState(false)
+  const [showTimeModal, setShowTimeModal] = useState(false)
 
   const handleDelete = async (id: string) => {
     
     const performDelete = async () => {
       try {
-        const success = await weightService.removeWeight(id);
+        const success = await weightService.removeWeight(id)
         if (success) {
           // Recalculate averages after deletion
-          const updatedWeights = await weightService.getWeights();
-          await averageService.calculateAverages(updatedWeights);
-          onWeightDeleted();
+          const updatedWeights = await weightService.getWeights()
+          await averageService.calculateAverages(updatedWeights)
+          onWeightDeleted()
         } else {
-          console.error('Failed to remove weight');
+          console.error('Failed to remove weight')
         }
       } catch (error) {
-        console.error('Error in handleDelete:', error);
+        console.error('Error in handleDelete:', error)
       }
-    };
+    }
 
     if (Platform.OS === 'web') {
       // Use browser's native confirm dialog for web
-      const confirmed = window.confirm('Are you sure you want to delete this weight entry?');
+      const confirmed = window.confirm('Are you sure you want to delete this weight entry?')
       if (confirmed) {
-        await performDelete();
+        await performDelete()
       }
     } else {
       // Use React Native Alert for mobile platforms
@@ -67,21 +67,21 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
             style: 'destructive',
             onPress: performDelete,
           },
-        ]
-      );
+        ],
+      )
     }
-  };
+  }
 
   const handleEdit = (weight: Weight) => {
-    setEditingId(weight.id);
-    setEditedWeight(weight.weight.toString());
-  };
+    setEditingId(weight.id)
+    setEditedWeight(weight.weight.toString())
+  }
 
   const handleEditSubmit = async (weight: Weight) => {
-    const weightValue = parseFloat(editedWeight);
+    const weightValue = parseFloat(editedWeight)
     if (isNaN(weightValue) || weightValue <= 0) {
-      Alert.alert('Error', 'Please enter a valid weight');
-      return;
+      Alert.alert('Error', 'Please enter a valid weight')
+      return
     }
 
     try {
@@ -89,22 +89,22 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
         id: weight.id,
         dateTime: weight.dateTime,
         weight: weightValue,
-      });
+      })
 
       if (success) {
         // Recalculate averages
-        const updatedWeights = await weightService.getWeights();
-        await averageService.calculateAverages(updatedWeights);
-        onWeightDeleted(); // Use the same callback to refresh the list
-        setEditingId(null); // Exit edit mode
+        const updatedWeights = await weightService.getWeights()
+        await averageService.calculateAverages(updatedWeights)
+        onWeightDeleted() // Use the same callback to refresh the list
+        setEditingId(null) // Exit edit mode
       } else {
-        Alert.alert('Error', 'Failed to update weight');
+        Alert.alert('Error', 'Failed to update weight')
       }
     } catch (error) {
-      console.error('Error updating weight:', error);
-      Alert.alert('Error', 'Failed to update weight');
+      console.error('Error updating weight:', error)
+      Alert.alert('Error', 'Failed to update weight')
     }
-  };
+  }
 
   const renderItem = ({ item }: { item: Weight }) => (
     <View style={[styles.weightItem, { backgroundColor: colors.surface }]}>
@@ -124,7 +124,7 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
               style={[styles.weightInputSmall, { 
                 backgroundColor: colors.surface, 
                 color: colors.text.primary,
-                borderColor: colors.border 
+                borderColor: colors.border, 
               }]}
               value={editedWeight}
               onChangeText={setEditedWeight}
@@ -157,14 +157,14 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
         </TouchableOpacity>
       </View>
     </View>
-  );
+  )
 
   if (!weights || weights.length === 0) {
     return (
       <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.emptyText, { color: colors.text.secondary }]}>No weight entries yet</Text>
       </View>
-    );
+    )
   }
 
   return (
@@ -211,7 +211,7 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
                   style={[styles.weightInput, { 
                     backgroundColor: colors.background, 
                     color: colors.text.primary,
-                    borderColor: colors.border 
+                    borderColor: colors.border, 
                   }]}
                   value={editedWeight}
                   onChangeText={setEditedWeight}
@@ -246,8 +246,8 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
         currentDate={editedDate}
         onClose={() => setShowDateModal(false)}
         onDateSelected={date => {
-          setEditedDate(date);
-          setShowDateModal(false);
+          setEditedDate(date)
+          setShowDateModal(false)
         }}
       />
 
@@ -256,13 +256,13 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
         currentDate={editedDate}
         onClose={() => setShowTimeModal(false)}
         onTimeSelected={date => {
-          setEditedDate(date);
-          setShowTimeModal(false);
+          setEditedDate(date)
+          setShowTimeModal(false)
         }}
       />
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   weightContainer: {
@@ -420,4 +420,4 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
   },
-});
+})

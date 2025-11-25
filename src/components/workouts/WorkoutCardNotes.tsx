@@ -1,18 +1,18 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import React from 'react'
+import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutCardNotesProps {
   notes: string;
   isMain?: boolean;
 }
 
-export const WorkoutCardNotes: React.FC<WorkoutCardNotesProps> = ({ notes, isMain = false }) => {
-  const colors = useThemeColors();
+export const WorkoutCardNotes: React.FC<WorkoutCardNotesProps> = ({ notes }) => {
+  const colors = useThemeColors()
   
   if (!notes || notes.trim() === '') {
-    return null;
+    return null
   }
 
   return (
@@ -21,8 +21,8 @@ export const WorkoutCardNotes: React.FC<WorkoutCardNotesProps> = ({ notes, isMai
         <Text style={[styles.notesText, { color: colors.text.secondary }]}>{notes}</Text>
       </ScrollView>
     </View>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   notesContainer: {
@@ -37,4 +37,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: TYPOGRAPHY.sizes.sm,
   },
-});
+})

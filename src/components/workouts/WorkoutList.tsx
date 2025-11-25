@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import {
   View,
   Text,
@@ -6,13 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-} from 'react-native';
-import { WorkoutDay } from '../../lib/models/WorkoutDay';
-import { WorkoutHistory } from '../../lib/models/WorkoutHistory';
-import { Workout } from '../../lib/models/Workout';
-import { workoutService } from '../../lib/services/WorkoutService';
-import { WorkoutCard } from './WorkoutCard';
-import { useThemeColors } from '../../hooks/useThemeColors';
+} from 'react-native'
+import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { WorkoutHistory } from '../../lib/models/WorkoutHistory'
+import { Workout } from '../../lib/models/Workout'
+import { WorkoutCard } from './WorkoutCard'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutListProps {
   workouts: WorkoutDay[];
@@ -35,46 +34,42 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
   onGoToToday,
   onUpdateWorkout,
   onDeleteWorkout,
-  isSupersetsEnabled = false,
-  isAlternativesEnabled = false,
-  isProgressionHelperEnabled = false,
+  isSupersetsEnabled: _isSupersetsEnabled = false,
+  isAlternativesEnabled: _isAlternativesEnabled = false,
+  isProgressionHelperEnabled: _isProgressionHelperEnabled = false,
 }) => {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
   const dataIsEmpty = (): boolean => {
-    return workouts.length === 0 && history.length === 0;
-  };
+    return workouts.length === 0 && history.length === 0
+  }
 
-  const isWorkoutsPopulated = (): boolean => {
-    return workouts.length > 0;
-  };
-
-  const getAlternatives = (workout: Workout, workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
-    const id = 'workoutId' in workout ? workout.workoutId : workout.id;
+  const getAlternatives = (workout: Workout, _workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
+    const id = 'workoutId' in workout ? workout.workoutId : workout.id
     return workoutList
       .filter(w => ('workoutId' in w ? w.workoutId : w.id) !== id)
-      .filter(w => w.altParentId === id) as Workout[];
-  };
+      .filter(w => w.altParentId === id) as Workout[]
+  }
 
-  const getSupersets = (workout: Workout, workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
-    const id = 'workoutId' in workout ? workout.workoutId : workout.id;
+  const getSupersets = (workout: Workout, _workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
+    const id = 'workoutId' in workout ? workout.workoutId : workout.id
     return workoutList
       .filter(w => ('workoutId' in w ? w.workoutId : w.id) !== id)
-      .filter(w => w.supersetParentId === id) as Workout[];
-  };
+      .filter(w => w.supersetParentId === id) as Workout[]
+  }
 
-  const altExists = (workout: WorkoutDay | WorkoutHistory, workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
-    return !!workout.altParentId;
-  };
+  const altExists = (workout: WorkoutDay | WorkoutHistory, _workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
+    return !!workout.altParentId
+  }
 
-  const supersetExists = (workout: WorkoutDay | WorkoutHistory, workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
-    return !!workout.supersetParentId;
-  };
+  const supersetExists = (workout: WorkoutDay | WorkoutHistory, _workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
+    return !!workout.supersetParentId
+  }
 
-  const renderHistoryHeader = (showHeader: boolean = true) => (
+  const renderHistoryHeader = () => (
     <View style={styles.historyHeader}>
       <Text style={styles.historyHeaderText}>Completed</Text>
     </View>
-  );
+  )
 
   const renderAddWorkoutPlaceholder = () => (
     <View style={styles.placeholderContainer}>
@@ -86,7 +81,7 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
         </Text>
       </View>
     </View>
-  );
+  )
 
   const renderGoToTodayPlaceholder = () => (
     <TouchableOpacity style={styles.placeholderContainer} onPress={onGoToToday}>
@@ -96,25 +91,25 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
         <Text style={styles.goToTodayText}>Go to today</Text>
       </View>
     </TouchableOpacity>
-  );
+  )
 
   const renderWorkoutCards = (workoutList: (WorkoutDay | WorkoutHistory)[], isHistory: boolean = false, showCompletedHeader: boolean = false) => {
-    if (workoutList.length === 0) return null;
+    if (workoutList.length === 0) return null
 
-    const cards: React.ReactElement[] = [];
+    const cards: React.ReactElement[] = []
     
     if (isHistory || showCompletedHeader) {
-      cards.push(<View key="history-header">{renderHistoryHeader()}</View>);
+      cards.push(<View key="history-header">{renderHistoryHeader()}</View>)
     }
 
     // Filter out workouts that are alternatives or supersets of other workouts
     const primaryWorkouts = workoutList.filter(w => 
-      !altExists(w, workoutList) && !supersetExists(w, workoutList)
-    );
+      !altExists(w, workoutList) && !supersetExists(w, workoutList),
+    )
 
     primaryWorkouts.forEach((workout) => {
-      const alternatives = getAlternatives(workout, workoutList);
-      const supersets = getSupersets(workout, workoutList);
+      const alternatives = getAlternatives(workout, workoutList)
+      const supersets = getSupersets(workout, workoutList)
 
       cards.push(
         <WorkoutCard
@@ -125,12 +120,12 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
           workoutsInDay={isHistory ? [] : (workoutList as WorkoutDay[])}
           alternatives={alternatives}
           supersets={supersets}
-        />
-      );
-    });
+        />,
+      )
+    })
 
-    return cards;
-  };
+    return cards
+  }
 
   if (isLoading) {
     return (
@@ -138,15 +133,15 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.text.secondary }]}>Loading...</Text>
       </View>
-    );
+    )
   }
 
   if (!isHistory && dataIsEmpty()) {
-    return renderAddWorkoutPlaceholder();
+    return renderAddWorkoutPlaceholder()
   }
 
   if (isHistory && dataIsEmpty()) {
-    return renderGoToTodayPlaceholder();
+    return renderGoToTodayPlaceholder()
   }
 
   return (
@@ -154,7 +149,7 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
       {!isHistory && renderWorkoutCards(workouts, false)}
       {history.length > 0 && renderWorkoutCards(history, isHistory, !isHistory)}
     </ScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -223,4 +218,4 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 16,
   },
-});
+})

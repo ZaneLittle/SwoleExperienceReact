@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
-} from 'react-native';
-import { useThemeColors } from '../hooks/useThemeColors';
+} from 'react-native'
+import { useThemeColors } from '../hooks/useThemeColors'
 
 interface TimePickerModalProps {
   visible: boolean;
@@ -21,25 +21,25 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   onClose,
   onTimeSelected,
 }) => {
-  const colors = useThemeColors();
-  const [tempTime, setTempTime] = useState(currentDate);
+  const colors = useThemeColors()
+  const [tempTime, setTempTime] = useState(currentDate)
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
 
   const setTime = (date: Date, hours: number, minutes: number) => {
-    const result = new Date(date);
-    result.setHours(hours, minutes, 0, 0);
-    return result;
-  };
+    const result = new Date(date)
+    result.setHours(hours, minutes, 0, 0)
+    return result
+  }
 
   const handleTimeSelect = () => {
-    const newDate = new Date(currentDate);
-    newDate.setHours(tempTime.getHours(), tempTime.getMinutes());
-    onTimeSelected(newDate);
-    onClose();
-  };
+    const newDate = new Date(currentDate)
+    newDate.setHours(tempTime.getHours(), tempTime.getMinutes())
+    onTimeSelected(newDate)
+    onClose()
+  }
 
   return (
     <Modal
@@ -66,9 +66,9 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                   <TouchableOpacity 
                     style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => {
-                      const newTime = new Date(tempTime);
-                      newTime.setHours(tempTime.getHours() - 1);
-                      setTempTime(newTime);
+                      const newTime = new Date(tempTime)
+                      newTime.setHours(tempTime.getHours() - 1)
+                      setTempTime(newTime)
                     }}
                   >
                     <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>-</Text>
@@ -79,9 +79,9 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                   <TouchableOpacity 
                     style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => {
-                      const newTime = new Date(tempTime);
-                      newTime.setHours(tempTime.getHours() + 1);
-                      setTempTime(newTime);
+                      const newTime = new Date(tempTime)
+                      newTime.setHours(tempTime.getHours() + 1)
+                      setTempTime(newTime)
                     }}
                   >
                     <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>+</Text>
@@ -95,9 +95,9 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                   <TouchableOpacity 
                     style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => {
-                      const newTime = new Date(tempTime);
-                      newTime.setMinutes(tempTime.getMinutes() - 15);
-                      setTempTime(newTime);
+                      const newTime = new Date(tempTime)
+                      newTime.setMinutes(tempTime.getMinutes() - 15)
+                      setTempTime(newTime)
                     }}
                   >
                     <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>-</Text>
@@ -108,9 +108,9 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                   <TouchableOpacity 
                     style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
                     onPress={() => {
-                      const newTime = new Date(tempTime);
-                      newTime.setMinutes(tempTime.getMinutes() + 15);
-                      setTempTime(newTime);
+                      const newTime = new Date(tempTime)
+                      newTime.setMinutes(tempTime.getMinutes() + 15)
+                      setTempTime(newTime)
                     }}
                   >
                     <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>+</Text>
@@ -167,8 +167,8 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
         </View>
       </View>
     </Modal>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   modalOverlay: {
@@ -269,4 +269,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-});
+})

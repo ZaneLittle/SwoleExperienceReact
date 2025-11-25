@@ -1,6 +1,6 @@
-import React, { Component, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../lib/constants/ui';
+import React, { Component, ReactNode } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
+import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../lib/constants/ui'
 
 interface Props {
   children: ReactNode;
@@ -15,31 +15,31 @@ interface State {
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false };
+    super(props)
+    this.state = { hasError: false }
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('ErrorBoundary caught an error:', error, errorInfo)
     
     // Call custom error handler if provided
     if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+      this.props.onError(error, errorInfo)
     }
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false, error: undefined });
-  };
+    this.setState({ hasError: false, error: undefined })
+  }
 
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
-        return this.props.fallback;
+        return this.props.fallback
       }
 
       return (
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.content}>
             <Text style={styles.title}>Oops! Something went wrong</Text>
             <Text style={styles.message}>
-              We're sorry, but something unexpected happened. Please try again.
+              We&apos;re sorry, but something unexpected happened. Please try again.
             </Text>
             
             {__DEV__ && this.state.error && (
@@ -65,10 +65,10 @@ export class ErrorBoundary extends Component<Props, State> {
             </TouchableOpacity>
           </View>
         </View>
-      );
+      )
     }
 
-    return this.props.children;
+    return this.props.children
   }
 }
 
@@ -139,4 +139,4 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.weights.semibold,
     textAlign: 'center',
   },
-});
+})

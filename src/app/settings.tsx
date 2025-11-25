@@ -1,37 +1,37 @@
-import React, { useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Switch, Platform, Modal, Alert } from 'react-native';
-import WorkoutsConfigure from '../components/workouts/WorkoutsConfigure';
-import { useTheme, ThemeMode } from '../contexts/ThemeContext';
-import { useThemeColors } from '../hooks/useThemeColors';
-import { workoutHistoryService } from '../lib/services/WorkoutHistoryService';
+import React, { useState } from 'react'
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Alert } from 'react-native'
+import WorkoutsConfigure from '../components/workouts/WorkoutsConfigure'
+import { useTheme, ThemeMode } from '../contexts/ThemeContext'
+import { useThemeColors } from '../hooks/useThemeColors'
+import { workoutHistoryService } from '../lib/services/WorkoutHistoryService'
 
 export default function SettingsScreen() {
-  const [showWorkoutConfig, setShowWorkoutConfig] = useState(false);
-  const [showClearHistoryModal, setShowClearHistoryModal] = useState(false);
-  const { themeMode, setThemeMode } = useTheme();
-  const colors = useThemeColors();
+  const [showWorkoutConfig, setShowWorkoutConfig] = useState(false)
+  const [showClearHistoryModal, setShowClearHistoryModal] = useState(false)
+  const { themeMode, setThemeMode } = useTheme()
+  const colors = useThemeColors()
 
   if (showWorkoutConfig) {
-    return <WorkoutsConfigure onBack={() => setShowWorkoutConfig(false)} />;
+    return <WorkoutsConfigure onBack={() => setShowWorkoutConfig(false)} />
   }
 
   const handleThemeModeChange = (mode: ThemeMode) => {
-    setThemeMode(mode);
-  };
+    setThemeMode(mode)
+  }
 
   const handleClearHistory = async () => {
     try {
-      const success = await workoutHistoryService.removeAllHistory();
+      const success = await workoutHistoryService.removeAllHistory()
       if (success) {
-        Alert.alert('Success', 'All workout history has been cleared.');
+        Alert.alert('Success', 'All workout history has been cleared.')
       } else {
-        Alert.alert('Error', 'Failed to clear workout history. Please try again.');
+        Alert.alert('Error', 'Failed to clear workout history. Please try again.')
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred while clearing workout history.');
+      Alert.alert('Error', 'An unexpected error occurred while clearing workout history.')
     }
-    setShowClearHistoryModal(false);
-  };
+    setShowClearHistoryModal(false)
+  }
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -126,9 +126,9 @@ export default function SettingsScreen() {
             style={[styles.settingItem, { backgroundColor: colors.surface }]}
             onPress={() => {
               // Open GitHub repository in external browser
-              const url = 'https://github.com/ZaneLittle/SwoleExperience/';
+              const url = 'https://github.com/ZaneLittle/SwoleExperience/'
               if (Platform.OS === 'web' && window.open) {
-                window.open(url, '_blank');
+                window.open(url, '_blank')
               }
             }}
           >
@@ -176,7 +176,7 @@ export default function SettingsScreen() {
         </View>
       </Modal>
     </ScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -284,6 +284,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-});
+})
 
 

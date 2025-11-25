@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { ConfirmationModal, ConfirmationButton } from '../components/ConfirmationModal';
+import { useState, useCallback } from 'react'
+import { ConfirmationModal, ConfirmationButton } from '../components/ConfirmationModal'
 
 export interface ConfirmationOptions {
   title: string;
@@ -9,15 +9,15 @@ export interface ConfirmationOptions {
 }
 
 export const useConfirmation = () => {
-  const [confirmation, setConfirmation] = useState<ConfirmationOptions | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationOptions | null>(null)
 
   const showConfirmation = useCallback((options: ConfirmationOptions) => {
-    setConfirmation(options);
-  }, []);
+    setConfirmation(options)
+  }, [])
 
   const hideConfirmation = useCallback(() => {
-    setConfirmation(null);
-  }, []);
+    setConfirmation(null)
+  }, [])
 
   const ConfirmationComponent = confirmation ? (
     <ConfirmationModal
@@ -27,17 +27,17 @@ export const useConfirmation = () => {
       buttons={confirmation.buttons}
       onRequestClose={() => {
         if (confirmation.onRequestClose) {
-          confirmation.onRequestClose();
+          confirmation.onRequestClose()
         }
-        hideConfirmation();
+        hideConfirmation()
       }}
     />
-  ) : null;
+  ) : null
 
   return {
     showConfirmation,
     hideConfirmation,
     ConfirmationComponent,
-  };
-};
+  }
+}
 

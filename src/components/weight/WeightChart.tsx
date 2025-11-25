@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useDailyStats } from '../../hooks/useDailyStats';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import { VictoryChart, VictoryTheme, VictoryAxis, VictoryGroup, VictoryLine, VictoryScatter, VictoryArea } from 'victory';
-import { Weight } from '../../lib/models/Weight';
-import { Average } from '../../lib/models/Average';
-import { useThemeColors } from '../../hooks/useThemeColors';
+import React, { useState } from 'react'
+import { useDailyStats } from '../../hooks/useDailyStats'
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native'
+import { VictoryChart, VictoryTheme, VictoryAxis, VictoryGroup, VictoryLine, VictoryScatter, VictoryArea } from 'victory'
+import { Weight } from '../../lib/models/Weight'
+import { Average } from '../../lib/models/Average'
+import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WeightChartProps {
   weights: Weight[];
@@ -20,22 +20,24 @@ interface ChartOptions {
 
 
 export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) => {
-  const colors = useThemeColors();
-  const [containerWidth, setContainerWidth] = useState<number>(Dimensions.get('window').width);
+  const colors = useThemeColors()
+  const [containerWidth, setContainerWidth] = useState<number>(Dimensions.get('window').width)
   const [options, setOptions] = React.useState<ChartOptions>({
     showMinMax: true,
     showAverage: true,
     showThreeDayAverage: true,
     showSevenDayAverage: true,
-  });
+  })
 
+  // Prepare chart data - must be called before any early returns
+  const { dailyStats, averageData, yDomain, stats } = useDailyStats(weights, averages)
 
   const renderStatCard = (value: number | undefined, label: string, change?: number, isTrendOnly?: boolean) => {
     const getChevronColor = () => {
-      if (label.includes('3 Day')) return 'rgba(75, 192, 192, 1)';
-      if (label.includes('7 Day')) return 'rgba(153, 102, 255, 1)';
-      return colors.text.secondary;
-    };
+      if (label.includes('3 Day')) return 'rgba(75, 192, 192, 1)'
+      if (label.includes('7 Day')) return 'rgba(153, 102, 255, 1)'
+      return colors.text.secondary
+    }
 
     return (
       <View style={[styles.statCard, { backgroundColor: colors.background }]}>
@@ -52,9 +54,8 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
         )}
         <Text style={[styles.statLabel, { color: colors.text.secondary }]}>{label}</Text>
       </View>
-    );
-  };
-
+    )
+  }
 
   if (weights.length < 2) {
     return (
@@ -66,18 +67,15 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
           }
         </Text>
       </View>
-    );
+    )
   }
-
-  // Prepare chart data
-  const { dailyStats, averageData, yDomain, stats } = useDailyStats(weights, averages);
   
   return (
     <View
       style={[styles.container, { backgroundColor: colors.surface }]}
       onLayout={event => {
-        const { width } = event.nativeEvent.layout;
-        setContainerWidth(width);
+        const { width } = event.nativeEvent.layout
+        setContainerWidth(width)
       }}
     >
       <Text style={[styles.title, { color: colors.text.primary }]}>Weight Trends</Text>
@@ -133,18 +131,18 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
           <VictoryAxis
             tickFormat={(date: any) => {
               if (date instanceof Date) {
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
               }
               // Handle timestamps (numbers)
               if (typeof date === 'number') {
-                return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
               }
               // Handle string dates
               if (typeof date === 'string') {
-                return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
               }
               // Fallback for other types
-              return String(date);
+              return String(date)
             }}
             style={{
               axis: { stroke: colors.border },
@@ -268,8 +266,8 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
         </VictoryChart>
       </View>
     </View>
-  );
-};
+  )
+}
 
 
 const styles = StyleSheet.create({
@@ -370,4 +368,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     padding: 40,
   },
-});
+})

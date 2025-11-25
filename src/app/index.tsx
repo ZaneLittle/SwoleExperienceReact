@@ -1,9 +1,9 @@
-import { Link } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
-import { useThemeColors } from '../hooks/useThemeColors';
+import { Link } from 'expo-router'
+import { Text, View, StyleSheet } from 'react-native'
+import { useThemeColors } from '../hooks/useThemeColors'
 
 export default function HomeScreen() {
-  const colors = useThemeColors();
+  const colors = useThemeColors()
   
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -15,7 +15,7 @@ export default function HomeScreen() {
         <Link href="/settings" style={[styles.link, { color: colors.primary }]}>Go to Settings</Link>
       </View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -24,6 +24,6 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 8 },
   links: { marginTop: 24, gap: 12 },
   link: { marginTop: 8 },
-});
+})
 
 

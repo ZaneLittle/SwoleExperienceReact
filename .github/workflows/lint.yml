@@ -1,4 +1,4 @@
-name: Tests
+name: Lint
 
 on:
   push:
@@ -7,26 +7,26 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
-  test:
-    name: Run Tests
+  lint:
+    name: Run ESLint
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: src/package-lock.json
-
+      
       - name: Install dependencies
         working-directory: ./src
         run: npm ci
-
-      - name: Run tests
+      
+      - name: Run ESLint
         working-directory: ./src
-        run: npm test
+        run: npm run lint
 

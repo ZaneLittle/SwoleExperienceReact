@@ -12,7 +12,7 @@ export interface Workout {
 export const WorkoutConverter = {
   toData: (workout: Workout): Workout => workout,
   fromData: (data: Workout): Workout => data,
-};
+}
 
 // Validation constants
 export const WORKOUT_CONSTRAINTS = {
@@ -20,35 +20,35 @@ export const WORKOUT_CONSTRAINTS = {
   WEIGHT_LIMIT: 9999,
   SETS_LIMIT: 9999,
   REPS_LIMIT: 9999,
-} as const;
+} as const
 
 export class WorkoutValidator {
   static validate(workout: Workout): void {
     if (workout.notes && workout.notes.length > WORKOUT_CONSTRAINTS.NOTES_LENGTH_LIMIT) {
-      throw new Error(`Notes cannot exceed ${WORKOUT_CONSTRAINTS.NOTES_LENGTH_LIMIT} characters.`);
+      throw new Error(`Notes cannot exceed ${WORKOUT_CONSTRAINTS.NOTES_LENGTH_LIMIT} characters.`)
     }
     if (workout.weight > WORKOUT_CONSTRAINTS.WEIGHT_LIMIT) {
-      throw new Error(`Weight cannot exceed ${WORKOUT_CONSTRAINTS.WEIGHT_LIMIT}.`);
+      throw new Error(`Weight cannot exceed ${WORKOUT_CONSTRAINTS.WEIGHT_LIMIT}.`)
     }
     if (workout.reps > WORKOUT_CONSTRAINTS.REPS_LIMIT) {
-      throw new Error(`Reps cannot exceed ${WORKOUT_CONSTRAINTS.REPS_LIMIT}.`);
+      throw new Error(`Reps cannot exceed ${WORKOUT_CONSTRAINTS.REPS_LIMIT}.`)
     }
     if (workout.sets > WORKOUT_CONSTRAINTS.SETS_LIMIT) {
-      throw new Error(`Sets cannot exceed ${WORKOUT_CONSTRAINTS.SETS_LIMIT}.`);
+      throw new Error(`Sets cannot exceed ${WORKOUT_CONSTRAINTS.SETS_LIMIT}.`)
     }
   }
 
   static hasNote(workout: Workout): boolean {
-    return !!(workout.notes && workout.notes.trim() !== '');
+    return !!(workout.notes && workout.notes.trim() !== '')
   }
 
   static getAlternatives(workout: Workout, workoutList: Workout[]): Workout[] {
-    const id = workout.id;
-    return workoutList.filter(w => w.altParentId === id);
+    const id = workout.id
+    return workoutList.filter(w => w.altParentId === id)
   }
 
   static getSupersets(workout: Workout, workoutList: Workout[]): Workout[] {
-    const id = workout.id;
-    return workoutList.filter(w => w.supersetParentId === id);
+    const id = workout.id
+    return workoutList.filter(w => w.supersetParentId === id)
   }
 }

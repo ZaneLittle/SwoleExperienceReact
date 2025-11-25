@@ -31,7 +31,7 @@ jest.mock('react-native/Libraries/Alert/Alert', () => ({
 global.window = {
   ...global.window,
   confirm: jest.fn(),
-};
+}
 
 // Mock localStorage for web platform
 global.localStorage = {
@@ -41,7 +41,7 @@ global.localStorage = {
   clear: jest.fn(),
   length: 0,
   key: jest.fn(),
-};
+}
 
 // Silence specific console errors during tests
 const originalError = console.error;
@@ -60,9 +60,9 @@ beforeAll(() => {
       return;
     }
     originalError.call(console, ...args);
-  };
-});
+  }
+})
 
 afterAll(() => {
   console.error = originalError;
-});
+})

@@ -1,4 +1,4 @@
-import { ConfirmationButton } from '../components/ConfirmationModal';
+import { ConfirmationButton } from '../components/ConfirmationModal'
 
 // Global confirmation state - this will be managed by a provider
 let globalShowConfirmation: ((options: {
@@ -6,7 +6,7 @@ let globalShowConfirmation: ((options: {
   message: string;
   buttons: ConfirmationButton[];
   onRequestClose?: () => void;
-}) => void) | null = null;
+}) => void) | null = null
 
 export const setGlobalConfirmationHandler = (
   handler: (options: {
@@ -14,41 +14,41 @@ export const setGlobalConfirmationHandler = (
     message: string;
     buttons: ConfirmationButton[];
     onRequestClose?: () => void;
-  }) => void
+  }) => void,
 ) => {
-  globalShowConfirmation = handler;
-};
+  globalShowConfirmation = handler
+}
 
 export const confirm = (
   title: string,
   message: string,
-  buttons: ConfirmationButton[]
+  buttons: ConfirmationButton[],
 ): void => {
   if (globalShowConfirmation) {
-    globalShowConfirmation({ title, message, buttons });
+    globalShowConfirmation({ title, message, buttons })
   } else {
     // Fallback to console warning if handler not set
-    console.warn('Confirmation handler not set. Please use ConfirmationProvider.');
+    console.warn('Confirmation handler not set. Please use ConfirmationProvider.')
   }
-};
+}
 
 // Convenience functions
 export const confirmAlert = (
   title: string,
   message: string,
   onConfirm?: () => void,
-  onCancel?: () => void
+  onCancel?: () => void,
 ): void => {
-  const buttons: ConfirmationButton[] = [];
+  const buttons: ConfirmationButton[] = []
   
   if (onCancel) {
     buttons.push({
       text: 'Cancel',
       style: 'cancel',
       onPress: () => {
-        onCancel();
+        onCancel()
       },
-    });
+    })
   }
   
   buttons.push({
@@ -56,40 +56,40 @@ export const confirmAlert = (
     style: 'default',
     onPress: () => {
       if (onConfirm) {
-        onConfirm();
+        onConfirm()
       }
     },
-  });
+  })
 
-  confirm(title, message, buttons);
-};
+  confirm(title, message, buttons)
+}
 
 export const confirmDelete = (
   title: string,
   message: string,
   onConfirm: () => void,
-  onCancel?: () => void
+  onCancel?: () => void,
 ): void => {
-  const buttons: ConfirmationButton[] = [];
+  const buttons: ConfirmationButton[] = []
   
   if (onCancel) {
     buttons.push({
       text: 'Cancel',
       style: 'cancel',
       onPress: () => {
-        onCancel();
+        onCancel()
       },
-    });
+    })
   }
   
   buttons.push({
     text: 'Delete',
     style: 'destructive',
     onPress: () => {
-      onConfirm();
+      onConfirm()
     },
-  });
+  })
 
-  confirm(title, message, buttons);
-};
+  confirm(title, message, buttons)
+}
 
