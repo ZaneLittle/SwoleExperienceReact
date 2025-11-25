@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { WorkoutDay } from '../../lib/models/WorkoutDay';
@@ -18,6 +17,7 @@ import { useWorkoutData } from '../../hooks/useWorkoutData';
 import { useWorkoutCompletion } from '../../hooks/useWorkoutCompletion';
 import { useWorkoutForm } from '../../hooks/useWorkoutForm';
 import { useDayText } from '../../hooks/useDayText';
+import { confirmAlert } from '../../utils/confirm';
 
 export const WorkoutsScreen: React.FC = () => {
   const colors = useThemeColors();
@@ -94,7 +94,7 @@ export const WorkoutsScreen: React.FC = () => {
         await loadInitialData(savedCurrentDay);
       } catch (error) {
         console.error('Error initializing app:', error);
-        Alert.alert('Error', 'Failed to load app data');
+        confirmAlert('Error', 'Failed to load app data');
       }
     };
 

@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, Text } from 'react-native';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { ConfirmationProvider } from '../components/ConfirmationProvider';
 import { useThemeColors } from '../hooks/useThemeColors';
 
 function AppContent() {
@@ -64,7 +65,9 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppContent />
+        <ConfirmationProvider>
+          <AppContent />
+        </ConfirmationProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

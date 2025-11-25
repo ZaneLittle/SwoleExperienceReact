@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { WorkoutDay } from '../lib/models/WorkoutDay';
 import { workoutService } from '../lib/services/WorkoutService';
+import { confirmAlert } from '../utils/confirm';
 
 export const useWorkoutForm = () => {
   const [showForm, setShowForm] = useState(false);
@@ -23,11 +23,11 @@ export const useWorkoutForm = () => {
       if (success) {
         onRefresh();
       } else {
-        Alert.alert('Error', 'Failed to delete workout');
+        confirmAlert('Error', 'Failed to delete workout');
       }
     } catch (error) {
       console.error('Error deleting workout:', error);
-      Alert.alert('Error', 'Failed to delete workout');
+      confirmAlert('Error', 'Failed to delete workout');
     }
   };
 

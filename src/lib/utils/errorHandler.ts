@@ -1,4 +1,5 @@
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import { confirmAlert } from '../../utils/confirm';
 
 export interface ErrorContext {
   component?: string;
@@ -41,13 +42,7 @@ export const handleError = (error: unknown, context: ErrorContext = {}): void =>
   // Show user-friendly error message
   const userMessage = getUserFriendlyMessage(error);
   
-  if (Platform.OS === 'web') {
-    // Use browser alert for web
-    window.alert(userMessage);
-  } else {
-    // Use React Native Alert for mobile
-    Alert.alert('Error', userMessage);
-  }
+  confirmAlert('Error', userMessage);
 };
 
 const getUserFriendlyMessage = (error: unknown): string => {

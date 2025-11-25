@@ -5,13 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { WorkoutDay } from '../../lib/models/WorkoutDay';
 import { workoutService } from '../../lib/services/WorkoutService';
 import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { confirm, confirmDelete, confirmAlert } from '../../utils/confirm';
 
 interface WorkoutsConfigureProps {
   onBack: () => void;
@@ -38,7 +38,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
       setTotalDays(uniqueDays);
     } catch (error) {
       console.error('Error loading workouts:', error);
-      Alert.alert('Error', 'Failed to load workouts');
+      confirmAlert('Error', 'Failed to load workouts');
     } finally {
       setIsLoading(false);
     }
@@ -49,16 +49,6 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   }, []);
 
   const handleAddWorkout = () => {
-    // Check if we can add workouts to the current day
-    if (!canAddWorkoutToDay(selectedDay)) {
-      const highestDay = Math.max(...workouts.map(w => w.day), 0);
-      Alert.alert(
-        'Cannot Add Workout',
-        `You can only add workouts up to Day ${highestDay + 1}.`
-      );
-      return;
-    }
-    
     setEditingWorkout(undefined);
     setShowForm(true);
   };
@@ -69,17 +59,70 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   };
 
   const handleDeleteWorkout = async (workout: WorkoutDay) => {
+    console.log('handleDeleteWorkout called for:', workout.name, 'day:', workout.day);
     try {
+      // Delete the workout immediately
       const success = await workoutService.removeWorkout(workout.id);
-      if (success) {
-        loadWorkouts();
-      } else {
-        Alert.alert('Error', 'Failed to delete workout');
+      if (!success) {
+        confirmAlert('Error', 'Failed to delete workout');
+        return;
+      }
+
+      // Reload workouts to get updated state
+      await loadWorkouts();
+
+      // Check if this was the last workout in the day
+      const updatedWorkouts = await workoutService.getWorkouts();
+      const dayWorkouts = updatedWorkouts.filter(w => w.day === workout.day);
+      const isLastWorkoutInDay = dayWorkouts.length === 0;
+
+      if (isLastWorkoutInDay) {
+        // Check if this is the last day
+        const uniqueDays = Array.from(new Set(updatedWorkouts.map(w => w.day))).sort((a, b) => a - b);
+        const isLastDay = uniqueDays.length > 0 && workout.day === uniqueDays[uniqueDays.length - 1];
+
+        if (!isLastDay) {
+          console.log('Showing delete day alert after workout deletion');
+          confirm(
+            'Delete Day?',
+            `This was the last workout in Day ${workout.day}. Do you want to delete the entire day?`,
+            [
+              {
+                text: 'Keep Day',
+                style: 'cancel',
+                onPress: () => {
+                  console.log('Keep Day pressed - day already empty');
+                  // Day is already empty, just reload
+                  loadWorkouts();
+                },
+              },
+              {
+                text: 'Delete Day',
+                style: 'destructive',
+                onPress: () => {
+                  console.log('Delete Day pressed');
+                  handleDeleteDay(workout.day).catch(error => {
+                    console.error('Error deleting day:', error);
+                    confirmAlert('Error', 'Failed to delete day');
+                  });
+                },
+              },
+            ]
+          );
+        }
       }
     } catch (error) {
-      console.error('Error deleting workout:', error);
-      Alert.alert('Error', 'Failed to delete workout');
+      console.error('Error in handleDeleteWorkout:', error);
+      confirmAlert('Error', 'Failed to delete workout');
     }
+  };
+
+  const handleDeleteDay = async (day: number) => {
+    await workoutService.reorderDays().catch(() => {
+      confirmAlert('Error', 'Failed to reorder days');
+    });
+      
+    loadWorkouts();  
   };
 
   const handleSaveWorkout = (workout: WorkoutDay) => {
@@ -108,11 +151,11 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
       if (success) {
         loadWorkouts();
       } else {
-        Alert.alert('Error', 'Failed to reorder workouts');
+        confirmAlert('Error', 'Failed to reorder workouts');
       }
     } catch (error) {
       console.error('Error reordering workouts:', error);
-      Alert.alert('Error', 'Failed to reorder workouts');
+      confirmAlert('Error', 'Failed to reorder workouts');
     }
   };
 
@@ -120,14 +163,6 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     return workouts.filter(w => w.day === day).sort((a, b) => a.dayOrder - b.dayOrder);
   };
 
-  const canAddWorkoutToDay = (day: number): boolean => {
-    // Can always add to day 1
-    if (day === 1) return true;
-    
-    // For any other day, only prevent adding if it's more than 1 day beyond the highest existing day
-    const highestDay = Math.max(...workouts.map(w => w.day), 0);
-    return day <= highestDay + 1;
-  };
 
   const hasAlternativesOrSupersets = (workout: WorkoutDay): boolean => {
     const dayWorkouts = getWorkoutsForDay(workout.day);
@@ -144,15 +179,6 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
 
   const handleNextDay = () => {
     const nextDay = selectedDay + 1;
-    
-    // Check if we can add workouts to the next day
-    if (!canAddWorkoutToDay(nextDay)) {
-      Alert.alert(
-        'Cannot Add Day',
-        `You can only add workouts up to Day ${Math.max(...workouts.map(w => w.day), 0) + 1}.`
-      );
-      return;
-    }
     
     if (nextDay > (totalDays || 0)) {
       // If going to a new day, automatically create it
@@ -185,13 +211,12 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
       <TouchableOpacity 
         style={styles.dayButton}
         onPress={handleNextDay}
-        disabled={!canAddWorkoutToDay(selectedDay + 1)}
         testID="next-day-button"
       >
         <View style={[
           styles.navButtonRight, 
           { 
-            borderLeftColor: canAddWorkoutToDay(selectedDay + 1) ? colors.primary : colors.text.tertiary 
+            borderLeftColor: colors.primary
           }
         ]} />
       </TouchableOpacity>
@@ -232,7 +257,6 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             <TouchableOpacity 
               style={styles.actionButton}
               onPress={() => {
-                console.log('Delete button pressed for workout:', workout.name);
                 handleDeleteWorkout(workout);
               }}
             >
@@ -267,18 +291,50 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
           <Text style={[styles.emptyStateText, { color: colors.text.secondary }]}>
             {isNewDay ? `Create workouts for Day ${selectedDay}` : `No workouts for Day ${selectedDay}`}
           </Text>
-          <TouchableOpacity 
-            style={[
-              styles.addButton, 
-              { 
-                backgroundColor: canAddWorkoutToDay(selectedDay) ? colors.primary : colors.text.tertiary 
-              }
-            ]} 
-            onPress={handleAddWorkout}
-            disabled={!canAddWorkoutToDay(selectedDay)}
-          >
-            <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
-          </TouchableOpacity>
+          <View style={styles.emptyStateButtons}>
+            <TouchableOpacity 
+              style={[
+                styles.addButton, 
+                { 
+                  backgroundColor: colors.primary
+                }
+              ]} 
+              onPress={handleAddWorkout}
+            >
+              <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
+            </TouchableOpacity>
+            {!isNewDay && (() => {
+              // Check if this is the last day
+              const uniqueDays = Array.from(new Set(workouts.map(w => w.day))).sort((a, b) => a - b);
+              const isLastDay = uniqueDays.length > 0 && selectedDay === uniqueDays[uniqueDays.length - 1];
+              
+              return !isLastDay && (
+                <TouchableOpacity 
+                  style={styles.deleteDayButton} 
+                  onPress={() => {
+                    confirm(
+                      'Delete Day?',
+                      `Are you sure you want to delete Day ${selectedDay}?`,
+                      [
+                        {
+                          text: 'Cancel',
+                          style: 'cancel',
+                          onPress: () => {},
+                        },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: () => handleDeleteDay(selectedDay),
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={styles.deleteDayButtonText}>Delete Day</Text>
+                </TouchableOpacity>
+              );
+            })()}
+          </View>
         </View>
       );
     }
@@ -295,11 +351,10 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
           style={[
             styles.addButton, 
             { 
-              backgroundColor: canAddWorkoutToDay(selectedDay) ? colors.primary : colors.text.tertiary 
+              backgroundColor: colors.primary
             }
           ]} 
           onPress={handleAddWorkout}
-          disabled={!canAddWorkoutToDay(selectedDay)}
         >
           <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
         </TouchableOpacity>
@@ -463,6 +518,12 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
   },
+  emptyStateButtons: {
+    flexDirection: 'column',
+    gap: 12,
+    width: '100%',
+    paddingHorizontal: 16,
+  },
   workoutList: {
     paddingBottom: 20,
   },
@@ -535,10 +596,6 @@ const styles = StyleSheet.create({
     color: '#999',
     fontStyle: 'italic',
   },
-  workoutActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
   actionButton: {
     padding: 8,
   },
@@ -569,6 +626,19 @@ const styles = StyleSheet.create({
     marginBottom: 20, // Add extra bottom margin
   },
   addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  deleteDayButton: {
+    backgroundColor: '#ff3b30',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  deleteDayButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',

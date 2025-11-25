@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { WorkoutDay } from '../../lib/models/WorkoutDay';
 import { WorkoutCardProps } from './WorkoutCardTypes';
@@ -15,6 +14,7 @@ import { WorkoutCardNotes } from './WorkoutCardNotes';
 import { WorkoutCardSupersets } from './WorkoutCardSupersets';
 import { COLORS, SPACING, SHADOWS, BORDER_RADIUS } from '../../lib/constants/ui';
 import { useThemeColors } from '../../hooks/useThemeColors';
+import { confirmDelete } from '../../utils/confirm';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -53,13 +53,10 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
 
   const handleDelete = () => {
     if (canDelete && onDelete && 'day' in workout) {
-      Alert.alert(
+      confirmDelete(
         'Delete Workout',
         'Are you sure you want to delete this workout?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Delete', style: 'destructive', onPress: () => onDelete(workout as any) }
-        ]
+        () => onDelete(workout as any)
       );
     }
   };
