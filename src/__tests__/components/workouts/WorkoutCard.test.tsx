@@ -586,7 +586,7 @@ describe('WorkoutCard', () => {
 
   describe('Memoized calculations - hasAlternativesOrSupersets', () => {
     it('should return true when alternatives exist', () => {
-      const _alternatives: Workout[] = [
+      const alternatives: Workout[] = [
         {
           id: 'alt-1',
           name: 'Alternative 1',
@@ -595,7 +595,7 @@ describe('WorkoutCard', () => {
           reps: 10,
         },
       ]
-      const _supersets: Workout[] = []
+      const supersets: Workout[] = []
 
       const hasAlternativesOrSupersets = (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0)
 
@@ -603,8 +603,8 @@ describe('WorkoutCard', () => {
     })
 
     it('should return true when supersets exist', () => {
-      const _alternatives: Workout[] = []
-      const _supersets: Workout[] = [
+      const alternatives: Workout[] = []
+      const supersets: Workout[] = [
         {
           id: 'superset-1',
           name: 'Superset 1',
@@ -620,7 +620,7 @@ describe('WorkoutCard', () => {
     })
 
     it('should return true when both alternatives and supersets exist', () => {
-      const _alternatives: Workout[] = [
+      const alternatives: Workout[] = [
         {
           id: 'alt-1',
           name: 'Alternative 1',
@@ -629,7 +629,7 @@ describe('WorkoutCard', () => {
           reps: 10,
         },
       ]
-      const _supersets: Workout[] = [
+      const supersets: Workout[] = [
         {
           id: 'superset-1',
           name: 'Superset 1',
@@ -645,8 +645,8 @@ describe('WorkoutCard', () => {
     })
 
     it('should return false when neither alternatives nor supersets exist', () => {
-      const _alternatives: Workout[] = []
-      const _supersets: Workout[] = []
+      const alternatives: Workout[] = []
+      const supersets: Workout[] = []
 
       const hasAlternativesOrSupersets = (alternatives && alternatives.length > 0) || (supersets && supersets.length > 0)
 
@@ -711,7 +711,7 @@ describe('WorkoutCard', () => {
     })
 
     it('should calculate hasNext correctly for last alternative', () => {
-      const _alternatives: Workout[] = [
+      const alternatives: Workout[] = [
         { id: 'alt-1', name: 'Alt 1', weight: 100, sets: 3, reps: 10 },
         { id: 'alt-2', name: 'Alt 2', weight: 100, sets: 3, reps: 10 },
       ]
@@ -724,7 +724,7 @@ describe('WorkoutCard', () => {
     })
 
     it('should calculate hasNext correctly for middle alternative', () => {
-      const _alternatives: Workout[] = [
+      const alternatives: Workout[] = [
         { id: 'alt-1', name: 'Alt 1', weight: 100, sets: 3, reps: 10 },
         { id: 'alt-2', name: 'Alt 2', weight: 100, sets: 3, reps: 10 },
         { id: 'alt-3', name: 'Alt 3', weight: 100, sets: 3, reps: 10 },
@@ -738,7 +738,7 @@ describe('WorkoutCard', () => {
     })
 
     it('should calculate hasNext correctly for main card when alternatives exist', () => {
-      const _alternatives: Workout[] = [
+      const alternatives: Workout[] = [
         { id: 'alt-1', name: 'Alt 1', weight: 100, sets: 3, reps: 10 },
       ]
 
@@ -749,7 +749,7 @@ describe('WorkoutCard', () => {
     })
 
     it('should calculate hasNext correctly for main card when no alternatives exist', () => {
-      const _alternatives: Workout[] = []
+      const alternatives: Workout[] = []
 
       // Main card logic: hasNext = alternatives.length > 0
       const hasNext = alternatives.length > 0

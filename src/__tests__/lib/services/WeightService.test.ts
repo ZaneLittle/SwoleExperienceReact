@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { weightService } from '../../../lib/services/WeightService'
 import { WeightData } from '../../../lib/models/Weight'
+import { createMockWeight } from '../../utils/testUtils'
 
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>
 const mockGetItem = mockAsyncStorage.getItem as jest.MockedFunction<typeof mockAsyncStorage.getItem>
@@ -431,11 +432,13 @@ describe('WeightService', () => {
 
   describe('Edge Cases', () => {
     it('handles very large weight values', async () => {
+      // Use a recent date to avoid 60-day filtering issues
+      const recentDate = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
       mockGetItem.mockResolvedValueOnce(null)
       mockSetItem.mockResolvedValueOnce(undefined)
 
       const newWeight = {
-        dateTime: new Date('2024-01-15T10:00:00Z'),
+        dateTime: recentDate,
         weight: 999.999,
       }
 
