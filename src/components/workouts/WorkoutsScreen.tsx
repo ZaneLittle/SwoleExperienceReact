@@ -47,7 +47,6 @@ export const WorkoutsScreen: React.FC = () => {
     showForm,
     editingWorkout,
     handleEditWorkout,
-    handleDeleteWorkout,
     handleSaveWorkout,
     handleCancelForm,
   } = useWorkoutForm()
@@ -74,9 +73,7 @@ export const WorkoutsScreen: React.FC = () => {
     loadDataForOffset(dayOffset)
   }
 
-  const handleDelete = (workout: WorkoutDay) => {
-    handleDeleteWorkout(workout, handleRefresh)
-  }
+  // Delete functionality removed - workouts can only be deleted from the configure page
 
   const handleSave = (_workout: WorkoutDay) => {
     handleSaveWorkout(handleRefresh)
@@ -153,7 +150,7 @@ export const WorkoutsScreen: React.FC = () => {
           isHistory={dayOffset < 0}
           onGoToToday={handleGoToToday}
           onUpdateWorkout={handleEditWorkout}
-          onDeleteWorkout={handleDelete}
+          onDeleteWorkout={undefined}
           isSupersetsEnabled={isSupersetsEnabled}
           isAlternativesEnabled={isAlternativesEnabled}
           isProgressionHelperEnabled={isProgressionHelperEnabled}

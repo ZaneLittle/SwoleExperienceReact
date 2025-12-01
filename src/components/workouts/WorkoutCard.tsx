@@ -37,8 +37,8 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = React.memo(({
   }, [workout])
 
   const canDelete = useMemo(() => {
-    return !hasAlternativesOrSupersets && !isHistoryItem
-  }, [hasAlternativesOrSupersets, isHistoryItem])
+    return !hasAlternativesOrSupersets && !isHistoryItem && !!onDelete
+  }, [hasAlternativesOrSupersets, isHistoryItem, onDelete])
 
   const canUpdate = useMemo(() => {
     return !isHistoryItem
