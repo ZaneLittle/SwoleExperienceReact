@@ -1,16 +1,18 @@
 import { renderHook, act } from '@testing-library/react-native'
 import { useWorkoutForm } from '../../hooks/useWorkoutForm'
 import { workoutService } from '../../lib/services/WorkoutService'
-import { confirmAlert } from '../../utils/confirm'
+import { confirmAlert, confirmDelete } from '../../utils/confirm'
 
 // Mock dependencies
 jest.mock('../../lib/services/WorkoutService')
 jest.mock('../../utils/confirm', () => ({
   confirmAlert: jest.fn(),
+  confirmDelete: jest.fn(),
 }))
 
 const mockWorkoutService = workoutService as jest.Mocked<typeof workoutService>
 const mockConfirmAlert = confirmAlert as jest.MockedFunction<typeof confirmAlert>
+const mockConfirmDelete = confirmDelete as jest.MockedFunction<typeof confirmDelete>
 
 describe('useWorkoutForm', () => {
   beforeEach(() => {
@@ -76,11 +78,29 @@ describe('useWorkoutForm', () => {
     }
 
     const mockOnRefresh = jest.fn()
+    let confirmCallback: (() => void) | undefined
+
+    mockConfirmDelete.mockImplementation((title, message, onConfirm) => {
+      confirmCallback = onConfirm
+    })
 
     const { result } = renderHook(() => useWorkoutForm())
 
+    act(() => {
+      result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
+
+    expect(mockConfirmDelete).toHaveBeenCalledWith(
+      'Delete Workout',
+      'Are you sure you want to delete this workout?',
+      expect.any(Function),
+    )
+
+    // Simulate user confirming the deletion
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+      if (confirmCallback) {
+        await confirmCallback()
+      }
     })
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
@@ -101,11 +121,25 @@ describe('useWorkoutForm', () => {
 
     mockWorkoutService.removeWorkout.mockResolvedValue(false)
     const mockOnRefresh = jest.fn()
+    let confirmCallback: (() => void) | undefined
+
+    mockConfirmDelete.mockImplementation((title, message, onConfirm) => {
+      confirmCallback = onConfirm
+    })
 
     const { result } = renderHook(() => useWorkoutForm())
 
+    act(() => {
+      result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
+
+    expect(mockConfirmDelete).toHaveBeenCalled()
+
+    // Simulate user confirming the deletion
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+      if (confirmCallback) {
+        await confirmCallback()
+      }
     })
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
@@ -126,11 +160,25 @@ describe('useWorkoutForm', () => {
 
     mockWorkoutService.removeWorkout.mockRejectedValue(new Error('Service error'))
     const mockOnRefresh = jest.fn()
+    let confirmCallback: (() => void) | undefined
+
+    mockConfirmDelete.mockImplementation((title, message, onConfirm) => {
+      confirmCallback = onConfirm
+    })
 
     const { result } = renderHook(() => useWorkoutForm())
 
+    act(() => {
+      result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+    })
+
+    expect(mockConfirmDelete).toHaveBeenCalled()
+
+    // Simulate user confirming the deletion
     await act(async () => {
-      await result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
+      if (confirmCallback) {
+        await confirmCallback()
+      }
     })
 
     expect(mockWorkoutService.removeWorkout).toHaveBeenCalledWith('1')
