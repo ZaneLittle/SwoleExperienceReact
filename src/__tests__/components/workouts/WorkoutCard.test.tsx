@@ -292,85 +292,56 @@ describe('WorkoutCard', () => {
   })
 
   describe('handleDelete logic', () => {
-    it('should show alert when deleting a workout without alternatives or supersets', () => {
-      // Simulate handleDelete logic
+    it('should call onDelete when deleting a workout without alternatives or supersets', () => {
+      // Simulate handleDelete logic - now just calls onDelete directly
+      // (confirmation is handled in the hook)
       const allowDelete = true
       const _hasAlternativesOrSupersets = false
 
       if (allowDelete && mockOnDelete && 'day' in mainWorkout) {
-        mockAlert(
-          'Delete Workout',
-          'Are you sure you want to delete this workout?',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: () => mockOnDelete(mainWorkout) },
-          ],
-        )
-      }
-
-      expect(mockAlert).toHaveBeenCalledTimes(1)
-      expect(mockAlert).toHaveBeenCalledWith(
-        'Delete Workout',
-        'Are you sure you want to delete this workout?',
-        expect.arrayContaining([
-          expect.objectContaining({ text: 'Cancel' }),
-          expect.objectContaining({ text: 'Delete', style: 'destructive' }),
-        ]),
-      )
-
-      // Simulate user clicking Delete
-      const alertCall = mockAlert.mock.calls[0]
-      const deleteButton = alertCall[2]?.find((btn: any) => btn.text === 'Delete')
-      if (deleteButton && typeof deleteButton.onPress === 'function') {
-        deleteButton.onPress()
+        mockOnDelete(mainWorkout)
       }
 
       expect(mockOnDelete).toHaveBeenCalledTimes(1)
       expect(mockOnDelete).toHaveBeenCalledWith(mainWorkout)
+      // No alert should be shown - confirmation is handled in useWorkoutForm hook
+      expect(mockAlert).not.toHaveBeenCalled()
     })
 
-    it('should not show alert when allowDelete is false', () => {
+    it('should not call onDelete when allowDelete is false', () => {
       const allowDelete = false
       const onDelete = mockOnDelete
 
       // Simulate handleDelete logic - early return when allowDelete is false
       if (!allowDelete || !onDelete || !('day' in mainWorkout)) {
-        // Should not show alert
-        expect(mockAlert).not.toHaveBeenCalled()
+        // Should not call onDelete
+        expect(mockOnDelete).not.toHaveBeenCalled()
         return
       }
 
-      mockAlert(
-        'Delete Workout',
-        'Are you sure you want to delete this workout?',
-        [],
-      )
+      onDelete(mainWorkout)
     })
 
-    it('should not show alert when workout has alternatives or supersets', () => {
+    it('should not call onDelete when workout has alternatives or supersets', () => {
       const allowDelete = true
       const hasAlternativesOrSupersets = true
 
       const canDelete = allowDelete && !hasAlternativesOrSupersets
 
-      // Simulate handleDelete logic - canDelete prevents alert
+      // Simulate handleDelete logic - canDelete prevents deletion
       // In the actual component, canDelete is false when hasAlternativesOrSupersets is true
       // So the check `canDelete && onDelete && 'day' in workout` will be false
-      // Since canDelete is false, the alert won't be shown
+      // Since canDelete is false, onDelete won't be called
       if (canDelete) {
         // This won't execute because canDelete is false
-        mockAlert(
-          'Delete Workout',
-          'Are you sure you want to delete this workout?',
-          [],
-        )
+        mockOnDelete(mainWorkout)
       }
 
-      expect(mockAlert).not.toHaveBeenCalled()
+      expect(mockOnDelete).not.toHaveBeenCalled()
       expect(canDelete).toBe(false)
     })
 
-    it('should not show alert when workout does not have day property', () => {
+    it('should not call onDelete when workout does not have day property', () => {
       const workoutWithoutDay: Workout = {
         id: 'workout-no-day',
         name: 'Workout without day',
@@ -384,30 +355,28 @@ describe('WorkoutCard', () => {
 
       // Simulate handleDelete logic - early return when workout doesn't have 'day'
       if (!allowDelete || !onDelete || !('day' in workoutWithoutDay)) {
-        expect(mockAlert).not.toHaveBeenCalled()
+        expect(mockOnDelete).not.toHaveBeenCalled()
         return
       }
 
-      mockAlert(
-        'Delete Workout',
-        'Are you sure you want to delete this workout?',
-        [],
-      )
+      // This won't execute because the condition above is true
+      if (onDelete) {
+        onDelete(workoutWithoutDay as any)
+      }
     })
 
-    it('should not show alert when onDelete callback is not provided', () => {
+    it('should not call onDelete when onDelete callback is not provided', () => {
       const allowDelete = true
       const onDelete = undefined
 
-      if (allowDelete && onDelete && 'day' in mainWorkout) {
-        mockAlert(
-          'Delete Workout',
-          'Are you sure you want to delete this workout?',
-          [],
-        )
+      // Simulate handleDelete logic - early return when onDelete is undefined
+      if (!allowDelete || !onDelete || !('day' in mainWorkout)) {
+        expect(mockOnDelete).not.toHaveBeenCalled()
+        return
       }
 
-      expect(mockAlert).not.toHaveBeenCalled()
+      // This won't execute because onDelete is undefined
+      expect(mockOnDelete).not.toHaveBeenCalled()
     })
   })
 

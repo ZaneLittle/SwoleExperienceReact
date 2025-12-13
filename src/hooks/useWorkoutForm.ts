@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { WorkoutDay } from '../lib/models/WorkoutDay'
 import { workoutService } from '../lib/services/WorkoutService'
-import { confirmAlert } from '../utils/confirm'
+import { confirmAlert, confirmDelete } from '../utils/confirm'
 
 export const useWorkoutForm = () => {
   const [showForm, setShowForm] = useState(false)
@@ -18,17 +18,26 @@ export const useWorkoutForm = () => {
   }
 
   const handleDeleteWorkout = async (workout: WorkoutDay, onRefresh: () => void) => {
-    try {
-      const success = await workoutService.removeWorkout(workout.id)
-      if (success) {
-        onRefresh()
-      } else {
-        confirmAlert('Error', 'Failed to delete workout')
-      }
-    } catch (error) {
-      console.error('Error deleting workout:', error)
-      confirmAlert('Error', 'Failed to delete workout')
-    }
+    confirmDelete(
+      'Delete Workout',
+      'Are you sure you want to delete this workout?',
+      async () => {
+        try {
+          const success = await workoutService.removeWorkout(workout.id)
+          if (success) {
+            onRefresh()
+          } else {
+            confirmAlert('Error', 'Failed to delete workout')
+          }
+        } catch (error) {
+          console.error('Error deleting workout:', error)
+          confirmAlert('Error', 'Failed to delete workout')
+        }
+      },
+      () => {
+        // Cancel callback - just close the modal, do nothing
+      },
+    )
   }
 
   const handleSaveWorkout = (onRefresh: () => void) => {

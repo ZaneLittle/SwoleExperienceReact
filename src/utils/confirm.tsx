@@ -90,6 +90,10 @@ export const confirmDelete = (
     },
   })
 
+  if (!globalShowConfirmation) {
+    console.error('Confirmation handler not set. Please ensure ConfirmationProvider is set up correctly.')
+  }
+
   confirm(title, message, buttons)
 }
 

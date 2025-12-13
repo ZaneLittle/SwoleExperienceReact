@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { WorkoutDay } from '../lib/models/WorkoutDay'
 import { workoutService } from '../lib/services/WorkoutService'
 import { workoutHistoryService, WorkoutHistoryService } from '../lib/services/WorkoutHistoryService'
-import { confirmAlert } from '../utils/confirm'
 
 export const useWorkoutCompletion = () => {
   const [isCompletingDay, setIsCompletingDay] = useState(false)
@@ -39,19 +38,11 @@ export const useWorkoutCompletion = () => {
       
       setIsCompletingDay(false)
       
-      // Show different messages based on whether there were workouts
-      if (workouts.length > 0) {
-        confirmAlert('Success', `Workout day completed! Moved to day ${nextDay}.`)
-      } else {
-        confirmAlert('Success', `Day ${currentDay} completed (no workouts). Moved to day ${nextDay}.`)
-      }
-      
       // Call the completion callback
       onComplete(nextDay)
     } catch (error) {
       console.error('Error completing day:', error)
       setIsCompletingDay(false)
-      confirmAlert('Error', 'Failed to complete workout day')
     }
   }
 

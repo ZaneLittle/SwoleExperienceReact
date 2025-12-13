@@ -43,25 +43,25 @@ export const WorkoutList: React.FC<WorkoutListProps> = ({
     return workouts.length === 0 && history.length === 0
   }
 
-  const getAlternatives = (workout: Workout, _workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
+  const getAlternatives = (workout: Workout, workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
     const id = 'workoutId' in workout ? workout.workoutId : workout.id
     return workoutList
       .filter(w => ('workoutId' in w ? w.workoutId : w.id) !== id)
       .filter(w => w.altParentId === id) as Workout[]
   }
 
-  const getSupersets = (workout: Workout, _workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
+  const getSupersets = (workout: Workout, workoutList: (WorkoutDay | WorkoutHistory)[]): Workout[] => {
     const id = 'workoutId' in workout ? workout.workoutId : workout.id
     return workoutList
       .filter(w => ('workoutId' in w ? w.workoutId : w.id) !== id)
       .filter(w => w.supersetParentId === id) as Workout[]
   }
 
-  const altExists = (workout: WorkoutDay | WorkoutHistory, _workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
+  const altExists = (workout: WorkoutDay | WorkoutHistory, _workoutList?: (WorkoutDay | WorkoutHistory)[]): boolean => {
     return !!workout.altParentId
   }
 
-  const supersetExists = (workout: WorkoutDay | WorkoutHistory, _workoutList: (WorkoutDay | WorkoutHistory)[]): boolean => {
+  const supersetExists = (workout: WorkoutDay | WorkoutHistory, _workoutList?: (WorkoutDay | WorkoutHistory)[]): boolean => {
     return !!workout.supersetParentId
   }
 

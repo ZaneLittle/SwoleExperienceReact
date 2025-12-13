@@ -11,7 +11,7 @@ import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
 import { useThemeColors } from '../../hooks/useThemeColors'
-import { confirm, confirmAlert } from '../../utils/confirm'
+import { confirm, confirmAlert, confirmDelete } from '../../utils/confirm'
 
 interface WorkoutsConfigureProps {
   onBack: () => void;
@@ -60,61 +60,70 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
 
   const handleDeleteWorkout = async (workout: WorkoutDay) => {
     console.log('handleDeleteWorkout called for:', workout.name, 'day:', workout.day)
-    try {
-      // Delete the workout immediately
-      const success = await workoutService.removeWorkout(workout.id)
-      if (!success) {
-        confirmAlert('Error', 'Failed to delete workout')
-        return
-      }
+    confirmDelete(
+      'Delete Workout',
+      'Are you sure you want to delete this workout?',
+      async () => {
+        try {
+          // Delete the workout
+          const success = await workoutService.removeWorkout(workout.id)
+          if (!success) {
+            confirmAlert('Error', 'Failed to delete workout')
+            return
+          }
 
-      // Reload workouts to get updated state
-      await loadWorkouts()
+          // Reload workouts to get updated state
+          await loadWorkouts()
 
-      // Check if this was the last workout in the day
-      const updatedWorkouts = await workoutService.getWorkouts()
-      const dayWorkouts = updatedWorkouts.filter(w => w.day === workout.day)
-      const isLastWorkoutInDay = dayWorkouts.length === 0
+          // Check if this was the last workout in the day
+          const updatedWorkouts = await workoutService.getWorkouts()
+          const dayWorkouts = updatedWorkouts.filter(w => w.day === workout.day)
+          const isLastWorkoutInDay = dayWorkouts.length === 0
 
-      if (isLastWorkoutInDay) {
-        // Check if this is the last day
-        const uniqueDays = Array.from(new Set(updatedWorkouts.map(w => w.day))).sort((a, b) => a - b)
-        const isLastDay = uniqueDays.length > 0 && workout.day === uniqueDays[uniqueDays.length - 1]
+          if (isLastWorkoutInDay) {
+            // Check if this is the last day
+            const uniqueDays = Array.from(new Set(updatedWorkouts.map(w => w.day))).sort((a, b) => a - b)
+            const isLastDay = uniqueDays.length > 0 && workout.day === uniqueDays[uniqueDays.length - 1]
 
-        if (!isLastDay) {
-          console.log('Showing delete day alert after workout deletion')
-          confirm(
-            'Delete Day?',
-            `This was the last workout in Day ${workout.day}. Do you want to delete the entire day?`,
-            [
-              {
-                text: 'Keep Day',
-                style: 'cancel',
-                onPress: () => {
-                  console.log('Keep Day pressed - day already empty')
-                  // Day is already empty, just reload
-                  loadWorkouts()
-                },
-              },
-              {
-                text: 'Delete Day',
-                style: 'destructive',
-                onPress: () => {
-                  console.log('Delete Day pressed')
-                  handleDeleteDay(workout.day).catch(error => {
-                    console.error('Error deleting day:', error)
-                    confirmAlert('Error', 'Failed to delete day')
-                  })
-                },
-              },
-            ],
-          )
+            if (!isLastDay) {
+              console.log('Showing delete day alert after workout deletion')
+              confirm(
+                'Delete Day?',
+                `This was the last workout in Day ${workout.day}. Do you want to delete the entire day?`,
+                [
+                  {
+                    text: 'Keep Day',
+                    style: 'cancel',
+                    onPress: () => {
+                      console.log('Keep Day pressed - day already empty')
+                      // Day is already empty, just reload
+                      loadWorkouts()
+                    },
+                  },
+                  {
+                    text: 'Delete Day',
+                    style: 'destructive',
+                    onPress: () => {
+                      console.log('Delete Day pressed')
+                      handleDeleteDay(workout.day).catch(error => {
+                        console.error('Error deleting day:', error)
+                        confirmAlert('Error', 'Failed to delete day')
+                      })
+                    },
+                  },
+                ],
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Error in handleDeleteWorkout:', error)
+          confirmAlert('Error', 'Failed to delete workout')
         }
-      }
-    } catch (error) {
-      console.error('Error in handleDeleteWorkout:', error)
-      confirmAlert('Error', 'Failed to delete workout')
-    }
+      },
+      () => {
+        // Cancel callback - just close the modal, do nothing
+      },
+    )
   }
 
   const handleDeleteDay = async (_day: number) => {

@@ -2,18 +2,13 @@ import { renderHook, act } from '@testing-library/react-native'
 import { useWorkoutCompletion } from '../../hooks/useWorkoutCompletion'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { workoutHistoryService } from '../../lib/services/WorkoutHistoryService'
-import { confirmAlert } from '../../utils/confirm'
 
 // Mock dependencies
 jest.mock('../../lib/services/WorkoutService')
 jest.mock('../../lib/services/WorkoutHistoryService')
-jest.mock('../../utils/confirm', () => ({
-  confirmAlert: jest.fn(),
-}))
 
 const mockWorkoutService = workoutService as jest.Mocked<typeof workoutService>
 const mockWorkoutHistoryService = workoutHistoryService as jest.Mocked<typeof workoutHistoryService>
-const mockConfirmAlert = confirmAlert as jest.MockedFunction<typeof confirmAlert>
 
 // Mock WorkoutHistoryService static method
 jest.mock('../../lib/services/WorkoutHistoryService', () => ({
@@ -68,7 +63,6 @@ describe('useWorkoutCompletion', () => {
       expect.objectContaining({ id: 'history-id', workoutId: '2', name: 'Exercise 2' }),
     ])
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2)
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.')
     expect(mockOnComplete).toHaveBeenCalledWith(2)
   })
 
@@ -86,7 +80,6 @@ describe('useWorkoutCompletion', () => {
     })
 
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(1)
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 1.')
     expect(mockOnComplete).toHaveBeenCalledWith(1)
   })
 
@@ -101,7 +94,6 @@ describe('useWorkoutCompletion', () => {
 
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2)
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).not.toHaveBeenCalled()
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Day 1 completed (no workouts). Moved to day 2.')
     expect(mockOnComplete).toHaveBeenCalledWith(2)
   })
 
@@ -116,7 +108,6 @@ describe('useWorkoutCompletion', () => {
 
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(1)
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).not.toHaveBeenCalled()
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Day 3 completed (no workouts). Moved to day 1.')
     expect(mockOnComplete).toHaveBeenCalledWith(1)
   })
 
@@ -134,7 +125,6 @@ describe('useWorkoutCompletion', () => {
 
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2)
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1)
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.')
     expect(mockOnComplete).toHaveBeenCalledWith(2)
   })
 
@@ -155,7 +145,6 @@ describe('useWorkoutCompletion', () => {
     expect(result.current.isCompletingDay).toBe(false)
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1)
     expect(mockWorkoutService.setCurrentDay).toHaveBeenCalledWith(2)
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Success', 'Workout day completed! Moved to day 2.')
     expect(mockOnComplete).toHaveBeenCalledWith(2)
   })
 
@@ -174,7 +163,6 @@ describe('useWorkoutCompletion', () => {
     })
 
     expect(result.current.isCompletingDay).toBe(false)
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to complete workout day')
     expect(mockOnComplete).not.toHaveBeenCalled()
   })
 
@@ -214,7 +202,6 @@ describe('useWorkoutCompletion', () => {
     expect(result.current.isCompletingDay).toBe(false)
     expect(mockWorkoutHistoryService.createBulkWorkoutHistories).toHaveBeenCalledTimes(1)
     expect(mockWorkoutService.setCurrentDay).not.toHaveBeenCalled()
-    expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to complete workout day')
     expect(mockOnComplete).not.toHaveBeenCalled()
   })
 
