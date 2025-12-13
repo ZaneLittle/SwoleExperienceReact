@@ -280,6 +280,260 @@ describe('useDailyStats', () => {
       expect(result.current.stats.currentWeight).toBe(180.0)
     })
 
+    describe('Rolling Trend Calculations', () => {
+      it('calculates 3-day rolling trend correctly - comparing current to 3 days ago', () => {
+        const weights = createMockWeights(10)
+        // Day 10: 3-day avg = 181.0, Day 7 (3 days ago): 3-day avg = 180.0
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-07T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-08T00:00:00Z'), 
+            average: 180.2, 
+            threeDayAverage: 180.1, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-09T00:00:00Z'), 
+            average: 180.4, 
+            threeDayAverage: 180.2, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Latest 3-day avg (Day 10) = 181.0, 3 days ago (Day 7) = 180.0
+        // Change = 181.0 - 180.0 = 1.0
+        expect(result.current.stats.threeDayChange).toBe(1.0)
+      })
+
+      it('calculates 7-day rolling trend correctly - comparing current to 7 days ago', () => {
+        const weights = createMockWeights(15)
+        // Day 14: 7-day avg = 181.5, Day 7 (7 days ago): 7-day avg = 180.0
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-07T00:00:00Z'), 
+            average: 180.0, 
+            sevenDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-08T00:00:00Z'), 
+            average: 180.2, 
+            sevenDayAverage: 180.1, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-09T00:00:00Z'), 
+            average: 180.4, 
+            sevenDayAverage: 180.2, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 180.6, 
+            sevenDayAverage: 180.3, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-11T00:00:00Z'), 
+            average: 180.8, 
+            sevenDayAverage: 180.4, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-12T00:00:00Z'), 
+            average: 181.0, 
+            sevenDayAverage: 180.5, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-13T00:00:00Z'), 
+            average: 181.2, 
+            sevenDayAverage: 180.6, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-14T00:00:00Z'), 
+            average: 181.5, 
+            sevenDayAverage: 181.5, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Latest 7-day avg (Day 14) = 181.5, 7 days ago (Day 7) = 180.0
+        // Change = 181.5 - 180.0 = 1.5
+        expect(result.current.stats.sevenDayChange).toBe(1.5)
+      })
+
+      it('handles 1-day tolerance when exact date is not available', () => {
+        const weights = createMockWeights(10)
+        // Day 10: 3-day avg = 181.0, Day 6 (4 days ago, but within 1 day tolerance of Day 7): 3-day avg = 180.0
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-06T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Should find Day 6 as closest match (within 1 day of Day 7)
+        // Change = 181.0 - 180.0 = 1.0
+        expect(result.current.stats.threeDayChange).toBe(1.0)
+      })
+
+      it('returns zero change when no data found within tolerance', () => {
+        const weights = createMockWeights(10)
+        // Only have data 5+ days ago, which is outside the 1-day tolerance
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-05T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Day 5 is 5 days ago, which is > 1 day tolerance from Day 7
+        // Should return 0 change
+        expect(result.current.stats.threeDayChange).toBe(0)
+      })
+
+      it('handles negative trends correctly (weight loss)', () => {
+        const weights = createMockWeights(10)
+        // Day 10: 3-day avg = 180.0, Day 7: 3-day avg = 181.0 (weight loss)
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-07T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Change = 180.0 - 181.0 = -1.0 (negative = weight loss)
+        expect(result.current.stats.threeDayChange).toBe(-1.0)
+      })
+
+      it('correctly identifies latest average when averages are sorted oldest-first', () => {
+        const weights = createMockWeights(10)
+        // Averages sorted oldest-first, but latest is at the end
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-07T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-08T00:00:00Z'), 
+            average: 180.5, 
+            threeDayAverage: null, // No 3-day avg
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-09T00:00:00Z'), 
+            average: 180.8, 
+            threeDayAverage: null, // No 3-day avg
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, // Latest with 3-day avg
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Should use Day 10 (latest) and compare to Day 7
+        // Change = 181.0 - 180.0 = 1.0
+        expect(result.current.stats.threeDayChange).toBe(1.0)
+      })
+
+      it('handles case where only one average has 3-day value', () => {
+        const weights = createMockWeights(5)
+        // Only one entry with 3-day average, so no comparison possible
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // No comparison point available, should return 0
+        expect(result.current.stats.threeDayChange).toBe(0)
+      })
+
+      it('handles case where only one average has 7-day value', () => {
+        const weights = createMockWeights(10)
+        // Only one entry with 7-day average, so no comparison possible
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-14T00:00:00Z'), 
+            average: 181.5, 
+            sevenDayAverage: 181.5, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // No comparison point available, should return 0
+        expect(result.current.stats.sevenDayChange).toBe(0)
+      })
+
+      it('finds closest match when multiple candidates exist within tolerance', () => {
+        const weights = createMockWeights(10)
+        // Day 10: 3-day avg = 181.0
+        // Day 6 (4 days ago, 1 day off): 3-day avg = 180.0
+        // Day 7 (3 days ago, exact): 3-day avg = 180.2
+        // Should pick Day 7 as it's closer
+        const averages = [
+          createMockAverage({ 
+            date: new Date('2024-01-06T00:00:00Z'), 
+            average: 180.0, 
+            threeDayAverage: 180.0, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-07T00:00:00Z'), 
+            average: 180.2, 
+            threeDayAverage: 180.2, 
+          }),
+          createMockAverage({ 
+            date: new Date('2024-01-10T00:00:00Z'), 
+            average: 181.0, 
+            threeDayAverage: 181.0, 
+          }),
+        ]
+
+        const { result } = renderHook(() => useDailyStats(weights, averages))
+
+        // Should use Day 7 (closest to target Day 7)
+        // Change = 181.0 - 180.2 = 0.8
+        expect(result.current.stats.threeDayChange).toBeCloseTo(0.8, 10)
+      })
+    })
+
     it('calculates three-day change correctly', () => {
       const weights = createMockWeights(10)
       const averages = [
