@@ -101,9 +101,11 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     if (!validateForm()) return
 
     try {
+      const workoutDay = workout?.day ?? day
+      
       const workoutData: WorkoutDay = {
         id: workout?.id || Date.now().toString(),
-        day,
+        day: workoutDay,
         dayOrder: workout?.dayOrder ?? defaultOrder,
         name: name.trim(),
         weight: Number(weight),

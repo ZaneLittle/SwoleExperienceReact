@@ -79,6 +79,18 @@ export const WorkoutsScreen: React.FC = () => {
     handleSaveWorkout(handleRefresh)
   }
 
+  const getEffectiveDay = (): number => {
+    if (dayOffset <= 0) {
+      return currentDay
+    }
+    let effectiveDay = currentDay + dayOffset
+    // Handle wrapping
+    if (totalDays > 0 && effectiveDay > totalDays) {
+      effectiveDay = effectiveDay - totalDays
+    }
+    return effectiveDay
+  }
+
   // Load current day from storage and initialize workouts on component mount
   useEffect(() => {
     const initializeApp = async () => {
@@ -166,7 +178,7 @@ export const WorkoutsScreen: React.FC = () => {
       <WorkoutFormModal
         visible={showForm}
         editingWorkout={editingWorkout}
-        currentDay={currentDay}
+        currentDay={getEffectiveDay()}
         workoutsCount={workouts.length}
         workoutsInDay={workouts}
         onSave={handleSave}
