@@ -94,6 +94,7 @@ describe('useWorkoutForm', () => {
       'Delete Workout',
       'Are you sure you want to delete this workout?',
       expect.any(Function),
+      expect.any(Function), // onCancel callback
     )
 
     // Simulate user confirming the deletion
