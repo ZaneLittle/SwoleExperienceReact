@@ -1,14 +1,20 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
-  TextInput,
-  Alert,
+  Platform,
 } from 'react-native'
+import Calendar from 'react-calendar'
 import { useThemeColors } from '../hooks/useThemeColors'
+import { SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../lib/constants/ui'
+
+// Only import CSS on web platform
+if (Platform.OS === 'web') {
+  require('react-calendar/dist/Calendar.css')
+}
 
 interface DatePickerModalProps {
   visible: boolean;
@@ -24,44 +30,132 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   onDateSelected,
 }) => {
   const colors = useThemeColors()
-  const [tempDate, setTempDate] = useState(currentDate)
-  const [customDateInput, setCustomDateInput] = useState('')
-  const [showCustomDateInput, setShowCustomDateInput] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date>(currentDate)
 
-  const formatDateOnly = (date: Date) => {
-    return date.toLocaleDateString()
+  // Update selected date when currentDate changes
+  useEffect(() => {
+    setSelectedDate(currentDate)
+  }, [currentDate, visible])
+
+  const handleDateChange = (value: Date | Date[]) => {
+    const date = Array.isArray(value) ? value[0] : value
+    setSelectedDate(date)
   }
 
-  const addDays = (date: Date, days: number) => {
-    const result = new Date(date)
-    result.setDate(result.getDate() + days)
-    return result
-  }
-
-  const handleCustomDateSubmit = () => {
-    if (customDateInput.trim()) {
-      try {
-        const parsedDate = new Date(customDateInput)
-        if (!isNaN(parsedDate.getTime())) {
-          const newDate = new Date(currentDate)
-          newDate.setFullYear(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate())
-          onDateSelected(newDate)
-          setShowCustomDateInput(false)
-          setCustomDateInput('')
-          onClose()
-        } else {
-          Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
-        }
-      } catch (error) {
-        Alert.alert('Invalid Date', 'Please enter a valid date in YYYY-MM-DD format')
-      }
-    }
-  }
-
-  const handleDateSelect = () => {
-    onDateSelected(tempDate)
+  const handleConfirm = () => {
+    // Preserve the time from currentDate, only update the date part
+    const newDate = new Date(currentDate)
+    newDate.setFullYear(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+    )
+    onDateSelected(newDate)
     onClose()
   }
+
+  // Generate CSS styles for the calendar based on theme
+  const calendarStyles = `
+    .react-calendar {
+      background-color: ${colors.surface};
+      color: ${colors.text.primary};
+      border: 1px solid ${colors.border};
+      border-radius: ${BORDER_RADIUS.md}px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      width: 100%;
+      max-width: 100%;
+    }
+    .react-calendar__navigation {
+      display: flex;
+      height: 44px;
+      margin-bottom: 1em;
+      border-bottom: 1px solid ${colors.border};
+    }
+    .react-calendar__navigation button {
+      min-width: 44px;
+      background: none;
+      font-size: ${TYPOGRAPHY.sizes.md}px;
+      font-weight: ${TYPOGRAPHY.weights.semibold};
+      color: ${colors.text.primary};
+      border: none;
+      cursor: pointer;
+    }
+    .react-calendar__navigation button:hover {
+      background-color: ${colors.background};
+    }
+    .react-calendar__navigation button:enabled:hover,
+    .react-calendar__navigation button:enabled:focus {
+      background-color: ${colors.background};
+    }
+    .react-calendar__navigation button[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .react-calendar__month-view__weekdays {
+      text-align: center;
+      text-transform: uppercase;
+      font-weight: ${TYPOGRAPHY.weights.semibold};
+      font-size: ${TYPOGRAPHY.sizes.xs}px;
+      color: ${colors.text.secondary};
+      padding-bottom: ${SPACING.xs}px;
+    }
+    .react-calendar__month-view__weekdays__weekday {
+      padding: ${SPACING.xs}px;
+    }
+    .react-calendar__month-view__weekdays__weekday abbr {
+      text-decoration: none;
+    }
+    .react-calendar__month-view__days {
+      display: grid !important;
+      grid-template-columns: repeat(7, 1fr);
+    }
+    .react-calendar__tile {
+      max-width: 100%;
+      text-align: center;
+      padding: ${SPACING.sm}px;
+      background: none;
+      font-size: ${TYPOGRAPHY.sizes.sm}px;
+      color: ${colors.text.primary};
+      border: none;
+      cursor: pointer;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .react-calendar__tile:enabled:hover,
+    .react-calendar__tile:enabled:focus {
+      background-color: ${colors.background};
+      border-radius: ${BORDER_RADIUS.sm}px;
+    }
+    .react-calendar__tile--now {
+      background-color: ${colors.background};
+      border-radius: ${BORDER_RADIUS.sm}px;
+      font-weight: ${TYPOGRAPHY.weights.semibold};
+    }
+    .react-calendar__tile--now:enabled:hover,
+    .react-calendar__tile--now:enabled:focus {
+      background-color: ${colors.background};
+    }
+    .react-calendar__tile--active {
+      background-color: ${colors.primary};
+      color: ${colors.surface};
+      border-radius: ${BORDER_RADIUS.sm}px;
+      font-weight: ${TYPOGRAPHY.weights.semibold};
+    }
+    .react-calendar__tile--active:enabled:hover,
+    .react-calendar__tile--active:enabled:focus {
+      background-color: ${colors.primary};
+      opacity: 0.9;
+    }
+    .react-calendar__tile--neighboringMonth {
+      color: ${colors.text.tertiary};
+    }
+    .react-calendar__tile--disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  `
 
   return (
     <Modal
@@ -72,100 +166,34 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          {Platform.OS === 'web' && <style>{calendarStyles}</style>}
           <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Select Date</Text>
           
-          {!showCustomDateInput ? (
-            <>
-              <View style={styles.datePickerContainer}>
-                <View style={styles.dateNavigation}>
-                  <TouchableOpacity 
-                    style={styles.navButton}
-                    onPress={() => setTempDate(addDays(tempDate, -1))}
-                  >
-                    <Text style={[styles.navButtonText, { color: colors.primary }]}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={[styles.currentDateText, { color: colors.text.primary }]}>
-                    {formatDateOnly(tempDate)}
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.navButton}
-                    onPress={() => setTempDate(addDays(tempDate, 1))}
-                  >
-                    <Text style={[styles.navButtonText, { color: colors.primary }]}>+</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                <View style={styles.quickDateButtons}>
-                  <TouchableOpacity 
-                    style={styles.quickDateButton} 
-                    onPress={() => setTempDate(new Date())}
-                  >
-                    <Text style={styles.quickDateButtonText}>Today</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.quickDateButton} 
-                    onPress={() => setTempDate(addDays(new Date(), -1))}
-                  >
-                    <Text style={styles.quickDateButtonText}>Yesterday</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity 
-                    style={styles.quickDateButton} 
-                    onPress={() => setShowCustomDateInput(true)}
-                  >
-                    <Text style={styles.quickDateButtonText}>Custom</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={[styles.modalButton, styles.cancelButton]} 
-                  onPress={onClose}
-                >
-                  <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.modalButton} 
-                  onPress={handleDateSelect}
-                >
-                  <Text style={styles.modalButtonText}>Select Date</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.customDateContainer}>
-                <Text style={styles.customDateLabel}>Enter date (YYYY-MM-DD)</Text>
-                <TextInput
-                  style={styles.customDateInput}
-                  value={customDateInput}
-                  onChangeText={setCustomDateInput}
-                  placeholder="2024-01-15"
-                  autoFocus={true}
-                />
-              </View>
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={[styles.modalButton, styles.cancelButton]} 
-                  onPress={() => {
-                    setShowCustomDateInput(false)
-                    setCustomDateInput('')
-                  }}
-                >
-                  <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.modalButton} 
-                  onPress={handleCustomDateSubmit}
-                >
-                  <Text style={styles.modalButtonText}>Set Date</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+          <View style={styles.calendarContainer}>
+            <Calendar
+              onChange={handleDateChange}
+              value={selectedDate}
+              calendarType="gregory"
+              showNeighboringMonth={true}
+              next2Label={null}
+              prev2Label={null}
+            />
+          </View>
+          
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={[styles.modalButton, { backgroundColor: colors.background }]} 
+              onPress={onClose}
+            >
+              <Text style={[styles.modalButtonText, { color: colors.text.primary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.modalButton, { backgroundColor: colors.primary }]} 
+              onPress={handleConfirm}
+            >
+              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Select Date</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -180,105 +208,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: '5%',
-    margin: '5%',
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    margin: SPACING.lg,
     width: '90%',
     maxWidth: 400,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: TYPOGRAPHY.sizes.lg,
+    fontWeight: TYPOGRAPHY.weights.bold,
+    marginBottom: SPACING.md,
     textAlign: 'center',
-    color: '#333',
+  },
+  calendarContainer: {
+    marginBottom: SPACING.md,
+    width: '100%',
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.sm,
   },
   modalButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 6,
-    padding: '3%',
+    borderRadius: BORDER_RADIUS.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     flex: 1,
   },
   modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    backgroundColor: '#f0f0f0',
-  },
-  cancelButtonText: {
-    color: '#333',
-  },
-  // Date picker specific styles
-  datePickerContainer: {
-    marginBottom: 20,
-  },
-  dateNavigation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  navButton: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  navButtonText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  currentDateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    minWidth: 150,
-    textAlign: 'center',
-  },
-  quickDateButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  quickDateButton: {
-    backgroundColor: '#e8f4fd',
-    borderRadius: 6,
-    padding: '3%',
-    width: '30%',
-    minWidth: 80,
-  },
-  quickDateButtonText: {
-    color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  customDateContainer: {
-    marginBottom: 20,
-  },
-  customDateLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  customDateInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    fontSize: TYPOGRAPHY.sizes.md,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 })
