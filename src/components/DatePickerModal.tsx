@@ -37,9 +37,12 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     setSelectedDate(currentDate)
   }, [currentDate, visible])
 
-  const handleDateChange = (value: Date | Date[]) => {
+  const handleDateChange = (value: any) => {
+    if (!value) return
     const date = Array.isArray(value) ? value[0] : value
-    setSelectedDate(date)
+    if (date instanceof Date) {
+      setSelectedDate(date)
+    }
   }
 
   const handleConfirm = () => {
