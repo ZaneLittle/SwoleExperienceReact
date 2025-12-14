@@ -3,46 +3,19 @@ jest.mock('react-native', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react')
   
-  interface ViewProps {
-    children?: React.ReactNode
-    style?: unknown
-    testID?: string
-    [key: string]: unknown
-  }
-  
-  const View = ({ children, style, testID, ...props }: ViewProps) => 
+  const View = ({ children, style, testID, ...props }: { children?: React.ReactNode; style?: unknown; testID?: string; [key: string]: unknown }) => 
     React.createElement('div', { 'data-testid': testID, style, ...props }, children)
   View.displayName = 'View'
   
-  interface TextProps {
-    children?: React.ReactNode
-    style?: unknown
-    [key: string]: unknown
-  }
-  
-  const Text = ({ children, style, ...props }: TextProps) => 
+  const Text = ({ children, style, ...props }: { children?: React.ReactNode; style?: unknown; [key: string]: unknown }) => 
     React.createElement('span', { style, ...props }, children)
   Text.displayName = 'Text'
   
-  interface TouchableOpacityProps {
-    children?: React.ReactNode
-    onPress?: () => void
-    style?: unknown
-    testID?: string
-    [key: string]: unknown
-  }
-  
-  const TouchableOpacity = ({ children, onPress, style, testID, ...props }: TouchableOpacityProps) => 
+  const TouchableOpacity = ({ children, onPress, style, testID, ...props }: { children?: React.ReactNode; onPress?: () => void; style?: unknown; testID?: string; [key: string]: unknown }) => 
     React.createElement('button', { onClick: onPress, style, 'data-testid': testID, ...props }, children)
   TouchableOpacity.displayName = 'TouchableOpacity'
   
-  interface ModalProps {
-    visible?: boolean
-    children?: React.ReactNode
-    [key: string]: unknown
-  }
-  
-  const Modal = ({ visible, children, ...props }: ModalProps) => 
+  const Modal = ({ visible, children, ...props }: { visible?: boolean; children?: React.ReactNode; [key: string]: unknown }) => 
     visible ? React.createElement('div', { 'data-testid': 'modal', ...props }, children) : null
   Modal.displayName = 'Modal'
   
@@ -62,17 +35,8 @@ jest.mock('@mui/x-date-pickers/TimeClock', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react')
   
-  interface TimeClockProps {
-    onChange?: (value: Date | null) => void
-    value?: Date
-    views?: Array<'hours' | 'minutes'>
-    sx?: unknown
-    [key: string]: unknown
-  }
-  
-  const TimeClock = (props: TimeClockProps) => {
-    const { onChange, value, views, ...otherProps } = props
-    
+  const TimeClock = (props: { onChange?: (value: Date | null) => void; value?: Date; views?: Array<'hours' | 'minutes'>; sx?: unknown; [key: string]: unknown }) => {
+    const { onChange, value, views, ...otherProps } = props 
     const handleClick = () => {
       if (onChange && views && views[0]) {
         const testDate = new Date(value || new Date())
@@ -105,12 +69,7 @@ jest.mock('@mui/x-date-pickers/LocalizationProvider', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react')
   
-  interface LocalizationProviderProps {
-    children: React.ReactNode
-    dateAdapter?: unknown
-  }
-  
-  const LocalizationProvider = ({ children }: LocalizationProviderProps) => {
+  const LocalizationProvider = ({ children }: { children: React.ReactNode; dateAdapter?: unknown }) => {
     return React.createElement('div', { 'data-testid': 'localization-provider' }, children)
   }
   
@@ -760,5 +719,3 @@ describe('TimePickerModal', () => {
     })
   })
 })
-
-

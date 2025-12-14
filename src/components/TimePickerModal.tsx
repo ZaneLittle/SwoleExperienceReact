@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Platform,
 } from 'react-native'
 import { TimeClock } from '@mui/x-date-pickers/TimeClock'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -20,6 +19,21 @@ interface TimePickerModalProps {
   onTimeSelected: (date: Date) => void;
 }
 
+const HIGHLIGHT_OPACITY = '15'
+const VIEW_SWITCH_DELAY = 100
+const CLOCK_SCALE = 1.3
+const WHITE_COLOR = '#FFFFFF'
+
+const convertHoursForAMPM = (hours24: number, isAM: boolean): number => {
+  if (isAM && hours24 >= 12) {
+    return hours24 - 12
+  }
+  if (!isAM && hours24 < 12) {
+    return hours24 + 12
+  }
+  return hours24
+}
+
 export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   visible,
   currentDate,
@@ -31,11 +45,10 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   const [isAM, setIsAM] = useState(currentDate.getHours() < 12)
   const [view, setView] = useState<'hours' | 'minutes'>('hours')
 
-  // Update selected time when currentDate changes
   useEffect(() => {
     setSelectedTime(currentDate)
     setIsAM(currentDate.getHours() < 12)
-    setView('hours') // Reset to hours view when modal opens
+    setView('hours')
   }, [currentDate, visible])
 
   const handleTimeChange = (value: Date | null) => {
@@ -44,91 +57,39 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
     const newTime = new Date(selectedTime)
     
     if (view === 'hours') {
-      // Update only the hour, preserve minutes
-      let hours = value.getHours()
-      const minutes = newTime.getMinutes()
-      
-      // Adjust for AM/PM preference
-      if (isAM && hours >= 12) {
-        hours = hours - 12
-      } else if (!isAM && hours < 12) {
-        hours = hours + 12
-      }
-      
-      // Only update if the hour actually changed
-      if (newTime.getHours() !== hours) {
-        newTime.setHours(hours, minutes, 0, 0)
-        setSelectedTime(newTime)
-        // Automatically switch to minutes view after hour selection
-        setTimeout(() => setView('minutes'), 100)
-      }
+      const hours = convertHoursForAMPM(value.getHours(), isAM)
+      newTime.setHours(hours, newTime.getMinutes(), 0, 0)
+      setSelectedTime(newTime)
+      setTimeout(() => setView('minutes'), VIEW_SWITCH_DELAY)
     } else {
-      // Update only the minutes, preserve hours
-      const hours = newTime.getHours()
-      const minutes = value.getMinutes()
-      
-      // Only update if the minute actually changed
-      if (newTime.getMinutes() !== minutes) {
-        newTime.setHours(hours, minutes, 0, 0)
-        setSelectedTime(newTime)
-      }
+      newTime.setMinutes(value.getMinutes(), 0, 0)
+      setSelectedTime(newTime)
     }
   }
 
   const handleAMPMToggle = (newIsAM: boolean) => {
     setIsAM(newIsAM)
-    // Adjust the hours based on AM/PM change
     const newTime = new Date(selectedTime)
-    let hours = newTime.getHours()
-    
-    if (newIsAM && hours >= 12) {
-      hours = hours - 12
-    } else if (!newIsAM && hours < 12) {
-      hours = hours + 12
-    }
-    
-    newTime.setHours(hours)
+    const convertedHours = convertHoursForAMPM(newTime.getHours(), newIsAM)
+    newTime.setHours(convertedHours)
     setSelectedTime(newTime)
   }
 
   const handleConfirm = () => {
-    // Preserve the date from currentDate, only update the time part
     const newDate = new Date(currentDate)
     newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0)
     onTimeSelected(newDate)
     onClose()
   }
 
-  const getHourPart = (date: Date) => {
-    const hours = date.getHours() % 12 || 12
+  const hourDisplay = useMemo(() => {
+    const hours = selectedTime.getHours() % 12 || 12
     return hours.toString().padStart(2, '0')
-  }
+  }, [selectedTime])
 
-  const getMinutePart = (date: Date) => {
-    return date.getMinutes().toString().padStart(2, '0')
-  }
-
-  // Generate CSS styles for the clock - darker background with white text
-  // Based on actual MUI Clock HTML structure
-  const clockStyles = `
-    .MuiTimeClock-root {
-      transform: scale(1.3) !important;
-      transform-origin: center !important;
-    }
-    .MuiClock-clock {
-      background-color: ${colors.background} !important;
-    }
-    .MuiClockNumber-root {
-      color: #FFFFFF !important;
-      cursor: pointer !important;
-    }
-    .MuiClock-wrapper {
-      color: #FFFFFF !important;
-    }
-    .MuiClock-wrapper > span {
-      cursor: pointer !important;
-    }
-  `
+  const minuteDisplay = useMemo(() => {
+    return selectedTime.getMinutes().toString().padStart(2, '0')
+  }, [selectedTime])
 
   return (
     <Modal
@@ -139,21 +100,20 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          {Platform.OS === 'web' && <style>{clockStyles}</style>}
           <View style={styles.timeDisplayRow}>
             <View style={styles.timeDisplayContainer}>
               <TouchableOpacity
                 onPress={() => setView('hours')}
                 style={[
                   styles.timePartTouchable,
-                  view === 'hours' && { backgroundColor: colors.primary + '15' },
+                  view === 'hours' && { backgroundColor: colors.primary + HIGHLIGHT_OPACITY },
                 ]}
               >
                 <Text style={[
                   styles.timeDisplayText,
                   { color: view === 'hours' ? colors.primary : colors.text.primary },
                 ]}>
-                  {getHourPart(selectedTime)}
+                  {hourDisplay}
                 </Text>
               </TouchableOpacity>
               <Text style={[styles.timeDisplayText, { color: colors.text.primary }]}>:</Text>
@@ -161,14 +121,14 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                 onPress={() => setView('minutes')}
                 style={[
                   styles.timePartTouchable,
-                  view === 'minutes' && { backgroundColor: colors.primary + '15' },
+                  view === 'minutes' && { backgroundColor: colors.primary + HIGHLIGHT_OPACITY },
                 ]}
               >
                 <Text style={[
                   styles.timeDisplayText,
                   { color: view === 'minutes' ? colors.primary : colors.text.primary },
                 ]}>
-                  {getMinutePart(selectedTime)}
+                  {minuteDisplay}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -180,10 +140,10 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                 ]}
                 onPress={() => handleAMPMToggle(true)}
               >
-                <Text
+                  <Text
                   style={[
                     styles.amPmButtonText,
-                    { color: isAM ? '#FFFFFF' : colors.text.primary },
+                    { color: isAM ? WHITE_COLOR : colors.text.primary },
                   ]}
                 >
                   AM
@@ -199,7 +159,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
                 <Text
                   style={[
                     styles.amPmButtonText,
-                    { color: !isAM ? '#FFFFFF' : colors.text.primary },
+                    { color: !isAM ? WHITE_COLOR : colors.text.primary },
                   ]}
                 >
                   PM
@@ -208,13 +168,24 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
             </View>
           </View>
           
-          <View style={styles.clockContainer}>
+          <View style={[styles.clockContainer, { transform: [{ scale: CLOCK_SCALE }] }]}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <TimeClock
                 value={selectedTime}
                 onChange={handleTimeChange}
                 ampm={true}
                 views={[view]}
+                sx={{
+                  '& .MuiClock-clock': {
+                    backgroundColor: colors.background,
+                  },
+                  '& .MuiClockNumber-root': {
+                    color: WHITE_COLOR,
+                  },
+                  '& .MuiClock-wrapper': {
+                    color: WHITE_COLOR,
+                  },
+                }}
               />
             </LocalizationProvider>
           </View>
@@ -230,7 +201,7 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
               style={[styles.modalButton, { backgroundColor: colors.primary }]} 
               onPress={handleConfirm}
             >
-              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Select Time</Text>
+              <Text style={[styles.modalButtonText, { color: WHITE_COLOR }]}>Select Time</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -281,7 +252,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     includeFontPadding: false,
     marginTop: 2,
-    marginBottom: -6,
+    marginBottom: -6, // Compensate for baseline spacing
   },
   clockContainer: {
     marginBottom: SPACING.xxxl * 2,

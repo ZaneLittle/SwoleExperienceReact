@@ -75,28 +75,3 @@ jest.mock('react-native-gesture-handler', () => {})
 // Mock react-native-screens
 jest.mock('react-native-screens', () => {})
 
-// Mock react-calendar for all tests
-jest.mock('react-calendar', () => {
-  const React = require('react');
-  
-  function CalendarComponent(props) {
-    const { View } = require('react-native');
-    const { onChange, value, ...otherProps } = props;
-    
-    return React.createElement(View, {
-      testID: 'calendar',
-      'data-value': value?.toISOString(),
-      'data-calendar-type': otherProps.calendarType,
-      'data-show-neighboring-month': otherProps.showNeighboringMonth,
-      'data-next2-label': otherProps.next2Label,
-      'data-prev2-label': otherProps.prev2Label,
-      onPress: onChange ? () => {
-        const newDate = new Date('2024-01-15');
-        onChange(newDate);
-      } : undefined,
-    });
-  }
-  
-  CalendarComponent.displayName = 'Calendar';
-  return CalendarComponent;
-});

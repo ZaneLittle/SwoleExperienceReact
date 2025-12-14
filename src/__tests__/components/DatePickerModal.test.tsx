@@ -1,45 +1,83 @@
-// Mock CSS imports first
-jest.mock('react-calendar/dist/Calendar.css', () => ({}), { virtual: true })
-
-// Mock react-calendar for web testing
-jest.mock('react-calendar', () => {
+// Mock React Native components for web testing
+jest.mock('react-native', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const React = require('react')
   
-  interface CalendarProps {
-    onChange?: (date: Date) => void
-    value?: Date
-    calendarType?: string
-    showNeighboringMonth?: boolean
-    next2Label?: string | null
-    prev2Label?: string | null
+  const View = ({ children, style, testID, ...props }: { children?: React.ReactNode; style?: unknown; testID?: string; [key: string]: unknown }) => 
+    React.createElement('div', { 'data-testid': testID, style, ...props }, children)
+  View.displayName = 'View'
+  
+  const Text = ({ children, style, ...props }: { children?: React.ReactNode; style?: unknown; [key: string]: unknown }) => 
+    React.createElement('span', { style, ...props }, children)
+  Text.displayName = 'Text'
+  
+  const TouchableOpacity = ({ children, onPress, style, testID, ...props }: { children?: React.ReactNode; onPress?: () => void; style?: unknown; testID?: string; [key: string]: unknown }) => 
+    React.createElement('button', { onClick: onPress, style, 'data-testid': testID, ...props }, children)
+  TouchableOpacity.displayName = 'TouchableOpacity'
+  
+  const Modal = ({ visible, children, ...props }: { visible?: boolean; children?: React.ReactNode; [key: string]: unknown }) => 
+    visible ? React.createElement('div', { 'data-testid': 'modal', ...props }, children) : null
+  Modal.displayName = 'Modal'
+  
+  return {
+    View,
+    Text,
+    TouchableOpacity,
+    Modal,
+    StyleSheet: {
+      create: (styles: Record<string, unknown>) => styles,
+    },
+  }
+})
+
+// Mock MUI X date pickers
+jest.mock('@mui/x-date-pickers/DateCalendar', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react')
+  
+  const DateCalendar = (props: { onChange?: (value: Date | null) => void; value?: Date; sx?: unknown; [key: string]: unknown }) => {
+    const { onChange, value, ...otherProps } = props
+    
+    const handleClick = () => {
+      if (onChange) {
+        const newDate = new Date(2024, 0, 15, 12, 0, 0)
+        onChange(newDate)
+      }
+    }
+    
+    return React.createElement('div', {
+      'data-testid': 'calendar',
+      'data-value': value?.toISOString(),
+      onClick: handleClick,
+      ...otherProps,
+    })
   }
   
-  return function Calendar(props: CalendarProps) {
-    const { onChange, value, ...otherProps } = props
-    const dataAttributes: Record<string, string> = {
-      'data-testid': 'calendar',
-      'data-value': value?.toISOString() || '',
-      'data-calendar-type': otherProps.calendarType || '',
-      'data-show-neighboring-month': String(otherProps.showNeighboringMonth),
-    }
-    // Only set attributes if they're not null
-    if (otherProps.next2Label != null) {
-      dataAttributes['data-next2-label'] = String(otherProps.next2Label)
-    }
-    if (otherProps.prev2Label != null) {
-      dataAttributes['data-prev2-label'] = String(otherProps.prev2Label)
-    }
-    return React.createElement('div', {
-      ...dataAttributes,
-      onClick: () => {
-        if (onChange) {
-          // Create date at noon to avoid timezone/DST issues
-          const newDate = new Date(2024, 0, 15, 12, 0, 0)
-          onChange(newDate)
-        }
-      },
-    })
+  DateCalendar.displayName = 'DateCalendar'
+  
+  return {
+    DateCalendar,
+  }
+})
+
+jest.mock('@mui/x-date-pickers/LocalizationProvider', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const React = require('react')
+  
+  const LocalizationProvider = ({ children }: { children: React.ReactNode; dateAdapter?: unknown }) => {
+    return React.createElement('div', { 'data-testid': 'localization-provider' }, children)
+  }
+  
+  return {
+    LocalizationProvider,
+  }
+})
+
+jest.mock('@mui/x-date-pickers/AdapterDateFns', () => {
+  const MockAdapter = function MockAdapter() {}
+  MockAdapter.displayName = 'AdapterDateFns'
+  return {
+    AdapterDateFns: MockAdapter,
   }
 })
 
@@ -128,7 +166,7 @@ describe('DatePickerModal', () => {
 
   describe('Rendering', () => {
     it('should not render when visible is false', () => {
-      const { queryByText } = render(
+      const { container } = render(
         <DatePickerModal
           visible={false}
           currentDate={testDate}
@@ -137,7 +175,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      expect(queryByText('Select Date')).toBeNull()
+      expect(container.firstChild).toBeNull()
     })
 
     it('should render when visible is true', () => {
@@ -150,7 +188,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // There are two "Select Date" texts - title and button
       expect(getAllByText('Select Date').length).toBe(2)
       expect(getByText('Cancel')).toBeTruthy()
     })
@@ -197,8 +234,6 @@ describe('DatePickerModal', () => {
       const calendar = getByTestId('calendar')
       fireEvent.click(calendar)
 
-      // The calendar onChange should update the internal state
-      // We can't directly test the internal state, but we can test the behavior
       expect(calendar).toBeTruthy()
     })
 
@@ -212,25 +247,21 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Simulate selecting a new date
       const calendar = getByTestId('calendar')
       fireEvent.click(calendar)
 
-      // Click Select Date button (second occurrence is the button)
       const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1] // Button is the second one
+      const selectButton = selectButtons[1]
       fireEvent.click(selectButton.parentElement || selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalledTimes(1)
       const selectedDate = mockOnDateSelected.mock.calls[0][0]
       
-      // Check that time is preserved (hours and minutes)
       expect(selectedDate.getHours()).toBe(testDate.getHours())
       expect(selectedDate.getMinutes()).toBe(testDate.getMinutes())
       
-      // Check that date is updated
-      expect(selectedDate.getDate()).toBe(15) // The mocked calendar returns 2024-01-15
-      expect(selectedDate.getMonth()).toBe(0) // January
+      expect(selectedDate.getDate()).toBe(15)
+      expect(selectedDate.getMonth()).toBe(0)
       expect(selectedDate.getFullYear()).toBe(2024)
     })
 
@@ -271,7 +302,6 @@ describe('DatePickerModal', () => {
       )
 
       const cancelText = getByText('Cancel')
-      // Click on the parent TouchableOpacity element
       fireEvent.click(cancelText.parentElement || cancelText)
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
@@ -288,7 +318,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Button is the second "Select Date" text
       const selectButtons = getAllByText('Select Date')
       const selectButton = selectButtons[1]
       fireEvent.click(selectButton.parentElement || selectButton)
@@ -308,7 +337,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Button is the second "Select Date" text
       const selectButtons = getAllByText('Select Date')
       const selectButton = selectButtons[1]
       fireEvent.click(selectButton.parentElement || selectButton)
@@ -321,23 +349,6 @@ describe('DatePickerModal', () => {
   })
 
   describe('Edge Cases', () => {
-    it('should handle date selection when calendar returns array', () => {
-      // This tests the handleDateChange logic for array values
-      const { getByTestId } = render(
-        <DatePickerModal
-          visible={true}
-          currentDate={testDate}
-          onClose={mockOnClose}
-          onDateSelected={mockOnDateSelected}
-        />,
-      )
-
-      const calendar = getByTestId('calendar')
-      // The mock calendar already handles this, but we verify it works
-      fireEvent.click(calendar)
-      expect(calendar).toBeTruthy()
-    })
-
     it('should handle modal visibility changes', () => {
       const { rerender, queryByText, getAllByText } = render(
         <DatePickerModal
@@ -359,8 +370,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Should find at least one "Select Date" text (title)
-      // Use getAllByText to avoid the multiple elements error
       expect(getAllByText('Select Date').length).toBeGreaterThan(0)
     })
 
@@ -400,7 +409,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Button is the second "Select Date" text
       const selectButtons = getAllByText('Select Date')
       const selectButton = selectButtons[1]
       fireEvent.click(selectButton.parentElement || selectButton)
@@ -422,7 +430,6 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      // Button is the second "Select Date" text
       const selectButtons = getAllByText('Select Date')
       const selectButton = selectButtons[1]
       fireEvent.click(selectButton.parentElement || selectButton)
@@ -434,24 +441,4 @@ describe('DatePickerModal', () => {
       expect(selectedDate.getSeconds()).toBe(59)
     })
   })
-
-  describe('Calendar Props', () => {
-    it('should pass correct props to Calendar component', () => {
-      const { getByTestId } = render(
-        <DatePickerModal
-          visible={true}
-          currentDate={testDate}
-          onClose={mockOnClose}
-          onDateSelected={mockOnDateSelected}
-        />,
-      )
-
-      const calendar = getByTestId('calendar')
-      expect(calendar.getAttribute('data-calendar-type')).toBe('gregory')
-      expect(calendar.getAttribute('data-show-neighboring-month')).toBe('true')
-      expect(calendar.getAttribute('data-next2-label')).toBeNull()
-      expect(calendar.getAttribute('data-prev2-label')).toBeNull()
-    })
-  })
 })
-
