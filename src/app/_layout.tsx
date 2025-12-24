@@ -4,6 +4,7 @@ import { Platform, Text } from 'react-native'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { ConfirmationProvider } from '../components/ConfirmationProvider'
+import { ToastProvider } from '../contexts/ToastContext'
 import { useThemeColors } from '../hooks/useThemeColors'
 
 function AppContent() {
@@ -65,9 +66,11 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <ConfirmationProvider>
-          <AppContent />
-        </ConfirmationProvider>
+        <ToastProvider>
+          <ConfirmationProvider>
+            <AppContent />
+          </ConfirmationProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )

@@ -16,6 +16,7 @@ import { Weight } from '../../lib/models/Weight'
 import { weightService } from '../../lib/services/WeightService'
 import { averageService } from '../../lib/services/AverageService'
 import { useThemeColors } from '../../hooks/useThemeColors'
+import { useToast } from '../../contexts/ToastContext'
 
 interface WeightHistoryProps {
   onWeightDeleted: () => void;
@@ -30,6 +31,7 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
   const [editedDate, setEditedDate] = useState(new Date())
   const [showDateModal, setShowDateModal] = useState(false)
   const [showTimeModal, setShowTimeModal] = useState(false)
+  const { showToast } = useToast()
 
   const handleDelete = async (id: string) => {
     
@@ -80,7 +82,7 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
   const handleEditSubmit = async (weight: Weight) => {
     const weightValue = parseFloat(editedWeight)
     if (isNaN(weightValue) || weightValue <= 0) {
-      Alert.alert('Error', 'Please enter a valid weight')
+      showToast('Please enter a valid weight', 'error')
       return
     }
 
@@ -97,12 +99,13 @@ export const WeightHistory: React.FC<WeightHistoryProps> = ({ onWeightDeleted, w
         await averageService.calculateAverages(updatedWeights)
         onWeightDeleted() // Use the same callback to refresh the list
         setEditingId(null) // Exit edit mode
+        showToast('Weight updated successfully.', 'success')
       } else {
-        Alert.alert('Error', 'Failed to update weight')
+        showToast('Failed to update weight', 'error')
       }
     } catch (error) {
       console.error('Error updating weight:', error)
-      Alert.alert('Error', 'Failed to update weight')
+      showToast('Failed to update weight', 'error')
     }
   }
 

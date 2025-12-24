@@ -16,6 +16,7 @@ import { DateTimeButtons } from '../DateTimeButtons'
 import { handleError } from '../../lib/utils/errorHandler'
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
 import { useThemeColors } from '../../hooks/useThemeColors'
+import { useToast } from '../../contexts/ToastContext'
 
 interface WeightEntryFormProps {
   onWeightAdded: () => void;
@@ -27,12 +28,13 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
   const [showDateModal, setShowDateModal] = useState(false)
   const [showTimeModal, setShowTimeModal] = useState(false)
   const colors = useThemeColors()
+  const { showToast } = useToast()
 
   const handleSubmit = async () => {
     const weightValue = parseFloat(weight)
     
     if (isNaN(weightValue) || weightValue <= 0) {
-      Alert.alert('Error', 'Please enter a valid weight')
+      showToast('Please enter a valid weight', 'error')
       return
     }
 
@@ -50,9 +52,9 @@ export const WeightEntryForm: React.FC<WeightEntryFormProps> = ({ onWeightAdded 
         setWeight('')
         setDate(new Date())
         onWeightAdded()
-        Alert.alert('Success', 'Weight added successfully!')
+        showToast('Weight added successfully!', 'success')
       } else {
-        Alert.alert('Error', 'Failed to add weight')
+        showToast('Failed to add weight', 'error')
       }
     } catch (error) {
       handleError(error, { component: 'WeightEntryForm', action: 'handleSubmit' })
