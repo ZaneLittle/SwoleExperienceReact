@@ -64,6 +64,21 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
               <DateCalendar
                 value={selectedDate}
                 onChange={handleDateChange}
+                slotProps={{
+                  day: {
+                    sx: {
+                      color: colors.text.primary,
+                      fontSize: '1rem',
+                      '&.Mui-selected': {
+                        backgroundColor: colors.primary,
+                        color: '#FFFFFF',
+                      },
+                      '&.MuiPickersDay-today': {
+                        borderColor: colors.primary,
+                      },
+                    },
+                  },
+                }}
                 sx={{
                   '& .MuiPickersCalendarHeader-root': {
                     color: colors.text.primary,
@@ -71,7 +86,37 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   '& .MuiDayCalendar-weekContainer': {
                     color: colors.text.primary,
                   },
+                  // Week day labels header row - target all children
+                  '& .MuiDayCalendar-header': {
+                    '& span': {
+                      color: colors.primary,
+                      fontWeight: 600,
+                    },
+                    '& *': {
+                      color: colors.primary,
+                      fontWeight: 600,
+                    },
+                  },
+                  // Year selection styling - target buttons
+                  '& .MuiYearCalendar-button': {
+                    color: colors.text.primary,
+                    '&.Mui-selected': {
+                      backgroundColor: colors.primary,
+                      color: '#FFFFFF',
+                    },
+                  },
+                  '& button[class*="MuiYearCalendar"]': {
+                    color: colors.text.primary,
+                    '&.Mui-selected': {
+                      backgroundColor: colors.primary,
+                      color: '#FFFFFF',
+                    },
+                  },
                   '& .MuiPickersDay-root': {
+                  '& .MuiDayCalendar-weekDayLabel': {
+                    color: colors.primary,
+                    fontWeight: 600,
+                  },
                     color: colors.text.primary,
                     fontSize: '1rem',
                     '&.Mui-selected': {
