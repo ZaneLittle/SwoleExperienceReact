@@ -66,6 +66,7 @@ coverage.xml
 
 # Air (live reload tool)
 tmp/
+.air.toml
 
 # Build artifacts
 dist/
