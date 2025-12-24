@@ -1,15 +1,22 @@
-import React, { useState } from 'react'
-import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal, Alert } from 'react-native'
+import React, { useState, useRef } from 'react'
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, Platform, Modal } from 'react-native'
 import WorkoutsConfigure from '../components/workouts/WorkoutsConfigure'
 import { useTheme, ThemeMode } from '../contexts/ThemeContext'
 import { useThemeColors } from '../hooks/useThemeColors'
+import { useToast } from '../contexts/ToastContext'
 import { workoutHistoryService } from '../lib/services/WorkoutHistoryService'
+import { workoutExportService } from '../lib/services/WorkoutExportService'
+import { workoutImportService } from '../lib/services/WorkoutImportService'
 
 export default function SettingsScreen() {
   const [showWorkoutConfig, setShowWorkoutConfig] = useState(false)
   const [showClearHistoryModal, setShowClearHistoryModal] = useState(false)
+  const [showImportConfirmModal, setShowImportConfirmModal] = useState(false)
+  const [pendingImportCSV, setPendingImportCSV] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { themeMode, setThemeMode } = useTheme()
   const colors = useThemeColors()
+  const { showToast } = useToast()
 
   if (showWorkoutConfig) {
     return <WorkoutsConfigure onBack={() => setShowWorkoutConfig(false)} />
@@ -23,18 +30,86 @@ export default function SettingsScreen() {
     try {
       const success = await workoutHistoryService.removeAllHistory()
       if (success) {
-        Alert.alert('Success', 'All workout history has been cleared.')
+        showToast('All workout history has been cleared.', 'success')
       } else {
-        Alert.alert('Error', 'Failed to clear workout history. Please try again.')
+        showToast('Failed to clear workout history. Please try again.', 'error')
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred while clearing workout history.')
+      showToast('An unexpected error occurred while clearing workout history.', 'error')
     }
     setShowClearHistoryModal(false)
   }
 
+  const handleExportWorkouts = async () => {
+    try {
+      const csv = await workoutExportService.exportWorkouts()
+      const date = new Date().toISOString().split('T')[0]
+      workoutExportService.downloadCSV(csv, `workouts-${date}.csv`)
+      showToast('Workouts exported successfully.', 'success')
+    } catch (error) {
+      showToast('Failed to export workouts.', 'error')
+    }
+  }
+
+  const handleImportClick = () => {
+    if (Platform.OS === 'web' && fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const csv = e.target?.result as string
+      if (!csv) return
+
+      const hasExisting = await workoutImportService.hasExistingWorkouts()
+      if (hasExisting) {
+        setPendingImportCSV(csv)
+        setShowImportConfirmModal(true)
+      } else {
+        await executeImport(csv)
+      }
+    }
+    reader.readAsText(file)
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const executeImport = async (csv: string) => {
+    try {
+      const success = await workoutImportService.importWorkouts(csv)
+      if (success) {
+        showToast('Workouts imported successfully.', 'success')
+      } else {
+        showToast('Failed to import workouts. Please check the file format.', 'error')
+      }
+    } catch (error) {
+      showToast('An unexpected error occurred while importing workouts.', 'error')
+    }
+  }
+
+  const handleConfirmImport = async () => {
+    if (pendingImportCSV) {
+      await executeImport(pendingImportCSV)
+    }
+    setPendingImportCSV(null)
+    setShowImportConfirmModal(false)
+  }
+
+  const handleCancelImport = () => {
+    setPendingImportCSV(null)
+    setShowImportConfirmModal(false)
+  }
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView style={styles.scrollView}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text.primary }]}>Settings</Text>
       </View>
@@ -68,6 +143,46 @@ export default function SettingsScreen() {
             </View>
             <Text style={[styles.chevron, { color: colors.error || '#FF4444' }]}>›</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text.primary }]}>Import / Export</Text>
+          
+          <TouchableOpacity 
+            style={[styles.settingItem, { backgroundColor: colors.surface }]}
+            onPress={handleExportWorkouts}
+          >
+            <View style={styles.settingContent}>
+              <Text style={[styles.settingTitle, { color: colors.text.primary }]}>Export Workouts</Text>
+              <Text style={[styles.settingDescription, { color: colors.text.secondary }]}>
+                Download your workouts as a CSV file
+              </Text>
+            </View>
+            <Text style={[styles.chevron, { color: colors.text.tertiary }]}>↓</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.settingItem, { backgroundColor: colors.surface }]}
+            onPress={handleImportClick}
+          >
+            <View style={styles.settingContent}>
+              <Text style={[styles.settingTitle, { color: colors.text.primary }]}>Import Workouts</Text>
+              <Text style={[styles.settingDescription, { color: colors.text.secondary }]}>
+                Import workouts from a CSV file
+              </Text>
+            </View>
+            <Text style={[styles.chevron, { color: colors.text.tertiary }]}>↑</Text>
+          </TouchableOpacity>
+
+          {Platform.OS === 'web' && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelected}
+              style={{ display: 'none' }}
+            />
+          )}
         </View>
 
         <View style={styles.section}>
@@ -175,12 +290,50 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+
+      {/* Import Confirmation Modal */}
+      <Modal
+        visible={showImportConfirmModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancelImport}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
+              Import Workouts
+            </Text>
+            <Text style={[styles.modalMessage, { color: colors.text.secondary }]}>
+              This will replace all existing workouts with the imported data. Are you sure you want to continue?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={handleCancelImport}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text.primary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton, { backgroundColor: colors.primary }]}
+                onPress={handleConfirmImport}
+              >
+                <Text style={[styles.modalButtonText, { color: 'white' }]}>Import</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      </ScrollView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    position: 'relative',
+  },
+  scrollView: {
     flex: 1,
   },
   header: {
