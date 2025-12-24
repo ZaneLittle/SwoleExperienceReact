@@ -796,7 +796,7 @@ GET    /jobs/:id/result   # Get extracted nutrition data
 ```yaml
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -810,7 +810,7 @@ services:
       retries: 5
   
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
