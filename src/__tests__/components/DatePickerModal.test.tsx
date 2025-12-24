@@ -179,7 +179,7 @@ describe('DatePickerModal', () => {
     })
 
     it('should render when visible is true', () => {
-      const { getByText, getAllByText } = render(
+      const { getByText } = render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -188,7 +188,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      expect(getAllByText('Select Date').length).toBe(2)
+      expect(getByText('Select Date')).toBeTruthy()
       expect(getByText('Cancel')).toBeTruthy()
     })
 
@@ -238,7 +238,7 @@ describe('DatePickerModal', () => {
     })
 
     it('should preserve time when selecting a new date', () => {
-      const { getAllByText, getByTestId } = render(
+      const { getByText, getByTestId } = render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -250,8 +250,7 @@ describe('DatePickerModal', () => {
       const calendar = getByTestId('calendar')
       fireEvent.click(calendar)
 
-      const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1]
+      const selectButton = getByText('Select Date')
       fireEvent.click(selectButton.parentElement || selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalledTimes(1)
@@ -309,7 +308,7 @@ describe('DatePickerModal', () => {
     })
 
     it('should call onDateSelected and onClose when Select Date button is pressed', () => {
-      const { getAllByText } = render(
+      const { getByText } = render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -318,8 +317,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1]
+      const selectButton = getByText('Select Date')
       fireEvent.click(selectButton.parentElement || selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalledTimes(1)
@@ -328,7 +326,7 @@ describe('DatePickerModal', () => {
 
     it('should handle date selection with different time', () => {
       const dateWithTime = new Date('2024-01-10T18:45:30')
-      const { getAllByText } = render(
+      const { getByText } = render(
         <DatePickerModal
           visible={true}
           currentDate={dateWithTime}
@@ -337,8 +335,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1]
+      const selectButton = getByText('Select Date')
       fireEvent.click(selectButton.parentElement || selectButton)
 
       const selectedDate = mockOnDateSelected.mock.calls[0][0]
@@ -350,7 +347,7 @@ describe('DatePickerModal', () => {
 
   describe('Edge Cases', () => {
     it('should handle modal visibility changes', () => {
-      const { rerender, queryByText, getAllByText } = render(
+      const { rerender, queryByText, getByText } = render(
         <DatePickerModal
           visible={false}
           currentDate={testDate}
@@ -370,7 +367,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      expect(getAllByText('Select Date').length).toBeGreaterThan(0)
+      expect(getByText('Select Date')).toBeTruthy()
     })
 
     it('should reset selected date when modal becomes visible', () => {
@@ -400,7 +397,7 @@ describe('DatePickerModal', () => {
 
     it('should handle dates at month boundaries', () => {
       const monthEndDate = new Date('2024-01-31T12:00:00')
-      const { getAllByText } = render(
+      const { getByText } = render(
         <DatePickerModal
           visible={true}
           currentDate={monthEndDate}
@@ -409,8 +406,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1]
+      const selectButton = getByText('Select Date')
       fireEvent.click(selectButton.parentElement || selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalled()
@@ -421,7 +417,7 @@ describe('DatePickerModal', () => {
 
     it('should handle dates at year boundaries', () => {
       const yearEndDate = new Date('2023-12-31T23:59:59')
-      const { getAllByText } = render(
+      const { getByText } = render(
         <DatePickerModal
           visible={true}
           currentDate={yearEndDate}
@@ -430,8 +426,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButtons = getAllByText('Select Date')
-      const selectButton = selectButtons[1]
+      const selectButton = getByText('Select Date')
       fireEvent.click(selectButton.parentElement || selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalled()

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   Modal,
+  Text,
 } from 'react-native'
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
@@ -59,15 +59,12 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Select Date</Text>
-          
           <View style={styles.calendarContainer}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateCalendar
                 value={selectedDate}
                 onChange={handleDateChange}
                 sx={{
-                  width: '100%',
                   '& .MuiPickersCalendarHeader-root': {
                     color: colors.text.primary,
                   },
@@ -76,6 +73,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   },
                   '& .MuiPickersDay-root': {
                     color: colors.text.primary,
+                    fontSize: '1rem',
                     '&.Mui-selected': {
                       backgroundColor: colors.primary,
                       color: '#FFFFFF',
@@ -86,6 +84,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
                   },
                   '& .MuiPickersCalendarHeader-label': {
                     color: colors.text.primary,
+                    fontSize: '1.1rem',
                   },
                   '& .MuiPickersArrowSwitcher-button': {
                     color: colors.text.primary,
@@ -127,18 +126,13 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.lg,
     margin: SPACING.lg,
-    width: '90%',
-    maxWidth: 450,
-  },
-  modalTitle: {
-    fontSize: TYPOGRAPHY.sizes.lg,
-    fontWeight: TYPOGRAPHY.weights.bold,
-    marginBottom: SPACING.md,
-    textAlign: 'center',
+    width: 'auto',
+    maxWidth: 380,
+    alignSelf: 'center',
   },
   calendarContainer: {
     marginBottom: SPACING.md,
-    width: '100%',
+    width: 'auto',
     alignItems: 'center',
     justifyContent: 'center',
   },
