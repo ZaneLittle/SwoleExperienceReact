@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "SwoleExperienceReact",
-    "slug": "swole-experience-react",
+    "name": "Magni",
+    "slug": "magni",
     "version": "0.1.0",
-    "scheme": "swoleexperience",
+    "scheme": "magni",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

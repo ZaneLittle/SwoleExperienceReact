@@ -4,18 +4,18 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: swole-experience-react-config
+  name: magni-config
 data:
-  app_name: "SwoleExperience React"
+  app_name: "Magni"
   app_description: "A fitness tracking React application with workout and weight tracking features"
   app_version: "1.0.0"
   app_icon: "https://raw.githubusercontent.com/your-repo/assets/icon.png"
   app_category: "Fitness"
-  app_website: "https://github.com/your-repo/SwoleExperience"
+  app_website: "https://github.com/your-repo/Magni"
   app_license: "MIT"
   
   # Container configuration
-  container_image: "swole-experience-react:latest"
+  container_image: "magni:latest"
   container_port: "42069"
   container_protocol: "TCP"
   

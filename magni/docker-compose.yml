@@ -1,9 +1,9 @@
 services:
-  swole-experience-react:
+  magni:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: swole-experience-react
+    container_name: magni
     ports:
       - "42069:42069"
     restart: unless-stopped

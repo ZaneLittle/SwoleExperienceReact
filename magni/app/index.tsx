@@ -7,7 +7,7 @@ export default function HomeScreen() {
   
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text.primary }]}>SwoleExperience</Text>
+      <Text style={[styles.title, { color: colors.text.primary }]}>Magni</Text>
       <Text style={[styles.subtitle, { color: colors.text.secondary }]}>A simple weight tracker and workout planner</Text>
       <View style={styles.links}>
         <Link href="/weight" style={[styles.link, { color: colors.primary }]}>Go to Weight Tracker</Link>

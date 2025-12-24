@@ -1,8 +1,8 @@
 {
-  "name": "swole-experience-react",
+  "name": "magni",
   "version": "0.1.0",
   "private": true,
-  "description": "SwoleExperience React Native (Expo) app with web support",
+  "description": "Magni - React Native (Expo) app with web support",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
