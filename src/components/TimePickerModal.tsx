@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   View,
   Text,
@@ -6,13 +6,32 @@ import {
   StyleSheet,
   Modal,
 } from 'react-native'
+import { TimeClock } from '@mui/x-date-pickers/TimeClock'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'
 import { useThemeColors } from '../hooks/useThemeColors'
+import { SPACING, BORDER_RADIUS, TYPOGRAPHY } from '../lib/constants/ui'
 
 interface TimePickerModalProps {
   visible: boolean;
   currentDate: Date;
   onClose: () => void;
   onTimeSelected: (date: Date) => void;
+}
+
+const HIGHLIGHT_OPACITY = '15'
+const VIEW_SWITCH_DELAY = 100
+const CLOCK_SCALE = 1.3
+const WHITE_COLOR = '#FFFFFF'
+
+const convertHoursForAMPM = (hours24: number, isAM: boolean): number => {
+  if (isAM && hours24 >= 12) {
+    return hours24 - 12
+  }
+  if (!isAM && hours24 < 12) {
+    return hours24 + 12
+  }
+  return hours24
 }
 
 export const TimePickerModal: React.FC<TimePickerModalProps> = ({
@@ -22,24 +41,55 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
   onTimeSelected,
 }) => {
   const colors = useThemeColors()
-  const [tempTime, setTempTime] = useState(currentDate)
+  const [selectedTime, setSelectedTime] = useState<Date>(currentDate)
+  const [isAM, setIsAM] = useState(currentDate.getHours() < 12)
+  const [view, setView] = useState<'hours' | 'minutes'>('hours')
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  useEffect(() => {
+    setSelectedTime(currentDate)
+    setIsAM(currentDate.getHours() < 12)
+    setView('hours')
+  }, [currentDate, visible])
+
+  const handleTimeChange = (value: Date | null) => {
+    if (!value) return
+    
+    const newTime = new Date(selectedTime)
+    
+    if (view === 'hours') {
+      const hours = convertHoursForAMPM(value.getHours(), isAM)
+      newTime.setHours(hours, newTime.getMinutes(), 0, 0)
+      setSelectedTime(newTime)
+      setTimeout(() => setView('minutes'), VIEW_SWITCH_DELAY)
+    } else {
+      newTime.setMinutes(value.getMinutes(), 0, 0)
+      setSelectedTime(newTime)
+    }
   }
 
-  const setTime = (date: Date, hours: number, minutes: number) => {
-    const result = new Date(date)
-    result.setHours(hours, minutes, 0, 0)
-    return result
+  const handleAMPMToggle = (newIsAM: boolean) => {
+    setIsAM(newIsAM)
+    const newTime = new Date(selectedTime)
+    const convertedHours = convertHoursForAMPM(newTime.getHours(), newIsAM)
+    newTime.setHours(convertedHours)
+    setSelectedTime(newTime)
   }
 
-  const handleTimeSelect = () => {
+  const handleConfirm = () => {
     const newDate = new Date(currentDate)
-    newDate.setHours(tempTime.getHours(), tempTime.getMinutes())
+    newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0)
     onTimeSelected(newDate)
     onClose()
   }
+
+  const hourDisplay = useMemo(() => {
+    const hours = selectedTime.getHours() % 12 || 12
+    return hours.toString().padStart(2, '0')
+  }, [selectedTime])
+
+  const minuteDisplay = useMemo(() => {
+    return selectedTime.getMinutes().toString().padStart(2, '0')
+  }, [selectedTime])
 
   return (
     <Modal
@@ -50,104 +100,94 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.modalTitle, { color: colors.text.primary }]}>Select Time</Text>
+          <View style={styles.timeDisplayRow}>
+            <View style={styles.timeDisplayContainer}>
+              <TouchableOpacity
+                onPress={() => setView('hours')}
+                style={[
+                  styles.timePartTouchable,
+                  view === 'hours' && { backgroundColor: colors.primary + HIGHLIGHT_OPACITY },
+                ]}
+              >
+                <Text style={[
+                  styles.timeDisplayText,
+                  { color: view === 'hours' ? colors.primary : colors.text.primary },
+                ]}>
+                  {hourDisplay}
+                </Text>
+              </TouchableOpacity>
+              <Text style={[styles.timeDisplayText, { color: colors.text.primary }]}>:</Text>
+              <TouchableOpacity
+                onPress={() => setView('minutes')}
+                style={[
+                  styles.timePartTouchable,
+                  view === 'minutes' && { backgroundColor: colors.primary + HIGHLIGHT_OPACITY },
+                ]}
+              >
+                <Text style={[
+                  styles.timeDisplayText,
+                  { color: view === 'minutes' ? colors.primary : colors.text.primary },
+                ]}>
+                  {minuteDisplay}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.amPmContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.amPmButton,
+                  { backgroundColor: isAM ? colors.primary : colors.background },
+                ]}
+                onPress={() => handleAMPMToggle(true)}
+              >
+                  <Text
+                  style={[
+                    styles.amPmButtonText,
+                    { color: isAM ? WHITE_COLOR : colors.text.primary },
+                  ]}
+                >
+                  AM
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.amPmButton,
+                  { backgroundColor: !isAM ? colors.primary : colors.background },
+                ]}
+                onPress={() => handleAMPMToggle(false)}
+              >
+                <Text
+                  style={[
+                    styles.amPmButtonText,
+                    { color: !isAM ? WHITE_COLOR : colors.text.primary },
+                  ]}
+                >
+                  PM
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           
-          <View style={styles.timePickerContainer}>
-            <View style={styles.timeDisplay}>
-              <Text style={[styles.timeDisplayText, { color: colors.text.primary }]}>
-                {formatTime(tempTime)}
-              </Text>
-            </View>
-            
-            <View style={styles.timeControls}>
-              <View style={styles.timeControlGroup}>
-                <Text style={[styles.timeControlLabel, { color: colors.text.secondary }]}>Hour</Text>
-                <View style={styles.timeControlButtons}>
-                  <TouchableOpacity 
-                    style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => {
-                      const newTime = new Date(tempTime)
-                      newTime.setHours(tempTime.getHours() - 1)
-                      setTempTime(newTime)
-                    }}
-                  >
-                    <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={[styles.timeControlValue, { color: colors.text.primary }]}>
-                    {tempTime.getHours().toString().padStart(2, '0')}
-                  </Text>
-                  <TouchableOpacity 
-                    style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => {
-                      const newTime = new Date(tempTime)
-                      newTime.setHours(tempTime.getHours() + 1)
-                      setTempTime(newTime)
-                    }}
-                  >
-                    <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              
-              <View style={styles.timeControlGroup}>
-                <Text style={[styles.timeControlLabel, { color: colors.text.secondary }]}>Minute</Text>
-                <View style={styles.timeControlButtons}>
-                  <TouchableOpacity 
-                    style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => {
-                      const newTime = new Date(tempTime)
-                      newTime.setMinutes(tempTime.getMinutes() - 15)
-                      setTempTime(newTime)
-                    }}
-                  >
-                    <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={[styles.timeControlValue, { color: colors.text.primary }]}>
-                    {tempTime.getMinutes().toString().padStart(2, '0')}
-                  </Text>
-                  <TouchableOpacity 
-                    style={[styles.timeControlButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                    onPress={() => {
-                      const newTime = new Date(tempTime)
-                      newTime.setMinutes(tempTime.getMinutes() + 15)
-                      setTempTime(newTime)
-                    }}
-                  >
-                    <Text style={[styles.timeControlButtonText, { color: colors.text.primary }]}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-            
-            <View style={styles.quickTimeButtons}>
-              <TouchableOpacity 
-                style={[styles.quickTimeButton, { backgroundColor: colors.background }]} 
-                onPress={() => setTempTime(setTime(tempTime, 8, 0))}
-              >
-                <Text style={[styles.quickTimeButtonText, { color: colors.primary }]}>8:00 AM</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.quickTimeButton, { backgroundColor: colors.background }]} 
-                onPress={() => setTempTime(setTime(tempTime, 14, 0))}
-              >
-                <Text style={[styles.quickTimeButtonText, { color: colors.primary }]}>2:00 PM</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.quickTimeButton, { backgroundColor: colors.background }]} 
-                onPress={() => setTempTime(setTime(tempTime, 18, 0))}
-              >
-                <Text style={[styles.quickTimeButtonText, { color: colors.primary }]}>6:00 PM</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.quickTimeButton, { backgroundColor: colors.background }]} 
-                onPress={() => setTempTime(new Date())}
-              >
-                <Text style={[styles.quickTimeButtonText, { color: colors.primary }]}>Now</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.clockContainer, { transform: [{ scale: CLOCK_SCALE }] }]}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <TimeClock
+                value={selectedTime}
+                onChange={handleTimeChange}
+                ampm={true}
+                views={[view]}
+                sx={{
+                  '& .MuiClock-clock': {
+                    backgroundColor: colors.background,
+                  },
+                  '& .MuiClockNumber-root': {
+                    color: WHITE_COLOR,
+                  },
+                  '& .MuiClock-wrapper': {
+                    color: WHITE_COLOR,
+                  },
+                }}
+              />
+            </LocalizationProvider>
           </View>
           
           <View style={styles.modalButtons}>
@@ -159,9 +199,9 @@ export const TimePickerModal: React.FC<TimePickerModalProps> = ({
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.modalButton, { backgroundColor: colors.primary }]} 
-              onPress={handleTimeSelect}
+              onPress={handleConfirm}
             >
-              <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Select Time</Text>
+              <Text style={[styles.modalButtonText, { color: WHITE_COLOR }]}>Select Time</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -178,95 +218,78 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: '5%',
-    margin: '5%',
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.lg,
+    margin: SPACING.lg,
     width: '90%',
     maxWidth: 400,
+    alignItems: 'center',
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
+  timeDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xxxl,
+    gap: SPACING.md,
+  },
+  timeDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  timePartTouchable: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timeDisplayText: {
+    fontSize: 48,
+    lineHeight: 48,
+    fontWeight: TYPOGRAPHY.weights.bold,
     textAlign: 'center',
-    color: '#333',
+    includeFontPadding: false,
+    marginTop: 2,
+    marginBottom: -6, // Compensate for baseline spacing
+  },
+  clockContainer: {
+    marginBottom: SPACING.xxxl * 2,
+    marginTop: SPACING.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amPmContainer: {
+    flexDirection: 'column',
+    gap: SPACING.xs,
+    alignItems: 'center',
+  },
+  amPmButton: {
+    borderRadius: BORDER_RADIUS.sm,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  amPmButtonText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.sm,
+    width: '100%',
   },
   modalButton: {
-    borderRadius: 6,
-    padding: 12,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     alignItems: 'center',
     flex: 1,
   },
   modalButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // Time picker specific styles
-  timePickerContainer: {
-    marginBottom: 20,
-  },
-  timeDisplay: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  timeDisplayText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  timeControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: '5%',
-  },
-  timeControlGroup: {
-    alignItems: 'center',
-  },
-  timeControlLabel: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  timeControlButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  timeControlButton: {
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  timeControlButtonText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  timeControlValue: {
-    fontSize: 24,
-    fontWeight: '600',
-    minWidth: 50,
-    textAlign: 'center',
-  },
-  quickTimeButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  quickTimeButton: {
-    borderRadius: 6,
-    padding: 10,
-    flex: 1,
-    minWidth: 70,
-  },
-  quickTimeButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
+    fontSize: TYPOGRAPHY.sizes.md,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 })
