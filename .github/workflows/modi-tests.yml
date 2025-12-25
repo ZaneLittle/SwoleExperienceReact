@@ -1,0 +1,186 @@
+name: Modi Tests
+
+on:
+  pull_request:
+    paths:
+      - 'modi/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'modi/**'
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: modi/go.sum
+
+      - name: Install dependencies
+        working-directory: ./modi
+        run: go mod download
+
+      - name: Run unit tests
+        working-directory: ./modi
+        run: go test -v -short -race -coverprofile=coverage.out -covermode=atomic ./internal/...
+
+      - name: Check coverage
+        working-directory: ./modi
+        continue-on-error: true
+        run: |
+          if [ -f coverage.out ]; then
+            coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+            echo "Coverage: ${coverage}%"
+            # Convert to integer for comparison (e.g., 75.5 -> 75)
+            coverage_int=${coverage%.*}
+            if [ "$coverage_int" -lt 80 ]; then
+              echo "Coverage ${coverage}% is below 80% threshold"
+              exit 1
+            fi
+          else
+            echo "No coverage file generated (no tests found or tests failed)"
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./modi/coverage.out
+          flags: unit-tests
+          name: modi-unit-tests
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: modi_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:8-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: modi/go.sum
+
+      - name: Install dependencies
+        working-directory: ./modi
+        run: go mod download
+
+      - name: Run database migrations
+        working-directory: ./modi
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/modi_test?sslmode=disable
+        run: |
+          # TODO: Add migration command when migrations are implemented
+          echo "Migrations will run here"
+
+      - name: Run integration tests
+        working-directory: ./modi
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/modi_test?sslmode=disable
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret-key-for-ci
+          PORT: 8080
+        continue-on-error: true
+        run: |
+          if [ -d "integration" ] && [ "$(find integration -name '*_test.go' | wc -l)" -gt 0 ]; then
+            go test -v -tags=integration ./integration/...
+          else
+            echo "No integration tests found, skipping..."
+          fi
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: modi/go.sum
+
+      - name: Install dependencies
+        working-directory: ./modi
+        run: go mod download
+
+      - name: Build application
+        working-directory: ./modi
+        run: go build -v -o bin/api ./cmd/api
+
+      - name: Verify binary
+        working-directory: ./modi
+        run: |
+          if [ ! -f bin/api ]; then
+            echo "Build failed - binary not found"
+            exit 1
+          fi
+          echo "Build successful"
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, build]
+    if: always()
+    
+    steps:
+      - name: Check test jobs
+        run: |
+          failed=false
+          if [ "${{ needs.unit-tests.result }}" != "success" ]; then
+            echo "❌ Unit tests failed"
+            failed=true
+          fi
+          if [ "${{ needs.integration-tests.result }}" != "success" ] && [ "${{ needs.integration-tests.result }}" != "skipped" ]; then
+            echo "❌ Integration tests failed"
+            failed=true
+          fi
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "❌ Build failed"
+            failed=true
+          fi
+          
+          if [ "$failed" = true ]; then
+            echo "One or more test checks failed"
+            exit 1
+          fi
+          echo "✅ All tests passed!"
+

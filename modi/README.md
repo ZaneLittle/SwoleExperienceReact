@@ -64,6 +64,21 @@ For local development, you'll need:
    curl -sSfL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
    ```
 
+   **Install golangci-lint** (required for linting):
+   ```bash
+   curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+   ```
+   
+   **Important**: Make sure `$(go env GOPATH)/bin` is in your PATH. Add this to your `~/.bashrc` or `~/.zshrc`:
+   ```bash
+   export PATH="$PATH:$(go env GOPATH)/bin"
+   ```
+   
+   Then reload your shell:
+   ```bash
+   source ~/.bashrc  # or source ~/.zshrc
+   ```
+
 2. Copy `.env.example` to `.env` and configure:
    ```bash
    cp .env.example .env
@@ -141,42 +156,35 @@ For local development, you'll need:
 
 5. Start PostgreSQL and Redis:
    ```bash
-   # Start PostgreSQL container
-   # The database 'modi' will be created automatically
-   docker run --name postgres -e POSTGRES_PASSWORD=password -e POSTGRES_DB=modi -p 5432:5432 -d postgres:18-alpine
-   
-   # Start Redis container
-   docker run --name redis -p 6379:6379 -d redis:8-alpine
-   
-   # Verify they're running
-   docker ps
+   make services-start
    ```
+   This will create and start the PostgreSQL and Redis containers if they don't exist, or start existing containers.
    
-   **If containers already exist:**
+   **Other service commands:**
    ```bash
-   # Just start existing containers
-   docker start postgres redis
-   ```
+   # Stop services
+   make services-stop
    
-   **If you need to recreate the database:**
-   ```bash
-   # Connect to PostgreSQL and create the database (if not created automatically)
-   docker exec -it postgres psql -U postgres -c "CREATE DATABASE modi;"
+   # Restart services
+   make services-restart
+   
+   # Create database manually (if needed)
+   make db-create
    ```
 
 6. Run the application:
    
    **Option 1: With hot reload (recommended for development):**
    ```bash
-   air
+   make dev
    ```
    Air will automatically rebuild and restart the server when you make code changes.
    
    **Option 2: Standard run:**
    ```bash
-   go run cmd/api/main.go
+   make run
    ```
-
+   
    The API will be available at `http://localhost:8080`
    
    Test the health check:
@@ -184,4 +192,24 @@ For local development, you'll need:
    curl http://localhost:8080/health
    ```
 
+## Testing
 
+See [TEST_STRATEGY.md](TEST_STRATEGY.md) for detailed testing documentation.
+
+Quick commands:
+```bash
+# Run all tests
+make test
+
+# Run unit tests only
+make test-unit
+
+# Run integration tests
+make test-integration
+
+# Run tests with coverage
+make test-coverage
+
+# Run linter
+make lint
+```

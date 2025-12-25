@@ -1,0 +1,35 @@
+name: Modi Lint
+
+on:
+  pull_request:
+    paths:
+      - 'modi/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'modi/**'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: modi/go.sum
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          working-directory: ./modi
+          args: --timeout=5m
+
