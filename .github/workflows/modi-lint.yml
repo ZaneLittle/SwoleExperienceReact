@@ -30,10 +30,12 @@ jobs:
         working-directory: ./modi
         run: go mod download
 
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: latest
-          working-directory: ./modi
-          args: --timeout=5m
+        working-directory: ./modi
+        run: golangci-lint run --timeout=5m ./...
 
