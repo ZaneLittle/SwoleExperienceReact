@@ -22,7 +22,7 @@ The architecture is designed to support:
 bhw/
 ├── modi/              # Backend API (Go + Gin)
 │   ├── cmd/
-│   ├── internal/
+│   ├── src/
 │   ├── migrations/
 │   └── ...
 └── web/               # Frontend (Magni - React Native/Expo)
@@ -875,7 +875,7 @@ modi/
 ├── cmd/
 │   └── api/
 │       └── main.go              # Application entry point
-├── internal/
+├── src/
 │   ├── config/                  # Configuration management
 │   │   └── config.go
 │   ├── handlers/                # HTTP handlers (Gin routes)

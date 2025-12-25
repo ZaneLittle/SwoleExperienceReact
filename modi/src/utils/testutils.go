@@ -4,7 +4,7 @@ package testutils
 import (
 	"time"
 
-	"github.com/ZaneLittle/modi/internal/models"
+	"github.com/ZaneLittle/modi/src/models"
 	"github.com/google/uuid"
 )
 

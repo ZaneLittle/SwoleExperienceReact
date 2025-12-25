@@ -13,7 +13,7 @@ modi/
 ├── cmd/
 │   └── api/
 │       └── main.go          # Application entry point
-├── internal/
+├── src/
 │   ├── config/              # Configuration management
 │   ├── handlers/            # HTTP handlers (Gin routes)
 │   ├── middleware/          # Middleware (auth, logging, etc.)

@@ -13,7 +13,7 @@ Modi uses a comprehensive testing strategy to ensure code quality, reliability, 
 
 ```
 modi/
-├── internal/
+├── src/
 │   ├── config/
 │   │   └── config_test.go
 │   ├── handlers/
@@ -172,7 +172,7 @@ func TestHealthCheckSuite(t *testing.T) {
 ## Test Categories
 
 ### 1. Model Tests
-**Location**: `internal/models/*_test.go`
+**Location**: `src/models/*_test.go`
 
 Test data models:
 - Validation logic
@@ -183,7 +183,7 @@ Test data models:
 **Example**: Test `User` model validation, `Workout` sync version handling
 
 ### 2. Handler Tests
-**Location**: `internal/handlers/*_test.go`
+**Location**: `src/handlers/*_test.go`
 
 Test HTTP handlers:
 - Request parsing and validation
@@ -196,7 +196,7 @@ Test HTTP handlers:
 **Example**: Test `HealthHandler`, `AuthHandler` endpoints
 
 ### 3. Service Tests
-**Location**: `internal/services/*_test.go`
+**Location**: `src/services/*_test.go`
 
 Test business logic:
 - Service methods
@@ -209,7 +209,7 @@ Test business logic:
 **Example**: Test `WorkoutService.SyncWorkouts`, `AuthService.Login`
 
 ### 4. Repository Tests
-**Location**: `internal/repositories/*_test.go`
+**Location**: `src/repositories/*_test.go`
 
 Test data access:
 - SQL queries
@@ -222,7 +222,7 @@ Test data access:
 **Example**: Test `WorkoutRepository.GetByUserID`, `UserRepository.Create`
 
 ### 5. Middleware Tests
-**Location**: `internal/middleware/*_test.go`
+**Location**: `src/middleware/*_test.go`
 
 Test middleware:
 - Authentication checks
@@ -268,12 +268,12 @@ go test ./integration/... -tags=integration
 
 ### Run Specific Package
 ```bash
-go test ./internal/handlers/...
+go test ./src/handlers/...
 ```
 
 ### Run Specific Test
 ```bash
-go test -run TestHealthHandler ./internal/handlers/...
+go test -run TestHealthHandler ./src/handlers/...
 ```
 
 ### Run Tests in Watch Mode
