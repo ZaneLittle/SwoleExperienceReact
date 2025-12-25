@@ -174,7 +174,7 @@ func TestHealthHandler_Health_TimestampFormat(t *testing.T) {
 	parsedTime, err := time.Parse(time.RFC3339, response.Timestamp)
 	assert.NoError(t, err)
 	assert.False(t, parsedTime.IsZero())
-	
+
 	// Verify timestamp is recent (within last minute)
 	now := time.Now().UTC()
 	diff := now.Sub(parsedTime)
@@ -199,9 +199,8 @@ func TestHealthHandler_Health_StatusValues(t *testing.T) {
 
 	// Status should be "ok" when services are not configured
 	assert.Equal(t, "ok", response.Status)
-	
+
 	// Services map should contain database and redis
 	assert.Contains(t, response.Services, "database")
 	assert.Contains(t, response.Services, "redis")
 }
-

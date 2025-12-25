@@ -1,3 +1,4 @@
+// Package main is the entry point for the Modi API server.
 package main
 
 import (
@@ -8,18 +9,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ZaneLittle/modi/internal/config"
+	"github.com/ZaneLittle/modi/internal/handlers"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
-	"github.com/ZaneLittle/modi/internal/config"
-	"github.com/ZaneLittle/modi/internal/handlers"
 )
 
 func main() {
 	// Load configuration
 	cfg := config.Load()
-	
-	log.Printf("Config loaded - Database URL: %s, Redis URL: %s", 
+
+	log.Printf("Config loaded - Database URL: %s, Redis URL: %s",
 		maskURL(cfg.DatabaseURL), maskURL(cfg.RedisURL))
 
 	// Initialize database connection
@@ -109,7 +110,9 @@ func main() {
 		log.Println("Database connection closed")
 	}
 	if redisClient != nil {
-		redisClient.Close()
+		if err := redisClient.Close(); err != nil {
+			log.Printf("Error closing Redis connection: %v", err)
+		}
 		log.Println("Redis connection closed")
 	}
 
@@ -127,4 +130,3 @@ func maskURL(url string) string {
 	}
 	return url
 }
-

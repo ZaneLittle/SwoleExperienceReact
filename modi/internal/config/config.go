@@ -1,3 +1,4 @@
+// Package config provides configuration management for the Modi application.
 package config
 
 import (
@@ -6,6 +7,7 @@ import (
 	"strings"
 )
 
+// Config holds the application configuration.
 type Config struct {
 	Port        string
 	Env         string
@@ -15,6 +17,7 @@ type Config struct {
 	LogLevel    string
 }
 
+// Load loads configuration from environment variables and .env file.
 func Load() *Config {
 	// Load .env file if it exists
 	loadEnvFile(".env")
@@ -38,17 +41,22 @@ func getEnv(key, defaultValue string) string {
 
 // loadEnvFile loads environment variables from a .env file
 func loadEnvFile(filename string) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename) // #nosec G304 -- filename is from caller, safe for .env files
 	if err != nil {
 		// .env file doesn't exist, that's okay
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Ignore close errors for .env files
+			_ = err
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		
+
 		// Skip empty lines and comments
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -59,19 +67,20 @@ func loadEnvFile(filename string) {
 		if len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
-			
+
 			// Remove quotes if present
-			if len(value) >= 2 && ((value[0] == '"' && value[len(value)-1] == '"') || 
+			if len(value) >= 2 && ((value[0] == '"' && value[len(value)-1] == '"') ||
 				(value[0] == '\'' && value[len(value)-1] == '\'')) {
 				value = value[1 : len(value)-1]
 			}
-			
+
 			// Only set if not already in environment
 			if os.Getenv(key) == "" {
-				os.Setenv(key, value)
+				if err := os.Setenv(key, value); err != nil {
+					// Ignore Setenv errors (shouldn't happen with valid keys)
+					_ = err
+				}
 			}
 		}
 	}
 }
-
-

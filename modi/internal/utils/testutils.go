@@ -1,10 +1,11 @@
+// Package testutils provides utilities for testing in the Modi application.
 package testutils
 
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/ZaneLittle/modi/internal/models"
+	"github.com/google/uuid"
 )
 
 // NewUser creates a test user with default values
@@ -81,12 +82,3 @@ func floatPtr(f float64) *float64 {
 func intPtr(i int) *int {
 	return &i
 }
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func timePtr(t time.Time) *time.Time {
-	return &t
-}
-

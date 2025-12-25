@@ -1,3 +1,4 @@
+// Package handlers provides HTTP handlers for the Modi API.
 package handlers
 
 import (
@@ -10,11 +11,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// HealthHandler handles health check endpoints.
 type HealthHandler struct {
 	db    *pgxpool.Pool
 	redis *redis.Client
 }
 
+// NewHealthHandler creates a new health handler with the given database and Redis clients.
 func NewHealthHandler(db *pgxpool.Pool, redis *redis.Client) *HealthHandler {
 	return &HealthHandler{
 		db:    db,
@@ -22,12 +25,14 @@ func NewHealthHandler(db *pgxpool.Pool, redis *redis.Client) *HealthHandler {
 	}
 }
 
+// HealthResponse represents the health check response.
 type HealthResponse struct {
 	Status    string            `json:"status"`
 	Timestamp string            `json:"timestamp"`
 	Services  map[string]string `json:"services,omitempty"`
 }
 
+// Health handles the health check endpoint, checking the status of database and Redis connections.
 func (h *HealthHandler) Health(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
@@ -73,5 +78,3 @@ func (h *HealthHandler) Health(c *gin.Context) {
 
 	c.JSON(statusCode, response)
 }
-
-
