@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ZaneLittle/modi/src/config"
-	"github.com/ZaneLittle/modi/src/handlers"
+	"github.com/ZaneLittle/modi/internal/config"
+	"github.com/ZaneLittle/modi/internal/handlers"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"

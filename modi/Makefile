@@ -6,7 +6,7 @@ test:
 
 # Run unit tests only
 test-unit:
-	go test -v -short ./src/...
+	go test -v -short ./internal/...
 
 # Run integration tests only
 test-integration:
