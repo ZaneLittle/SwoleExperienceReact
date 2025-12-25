@@ -1,8 +1,42 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-cd src && npm run lint:fix
+cd magni && pnpm run lint:fix
 
-# Stage the fixed files
 git add -u
+
+STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^modi/.*\.go$')
+if [ -n "$STAGED_GO_FILES" ]; then
+    echo "Running golangci-lint on staged Go files in modi/..."
+    
+    # Add Go bin to PATH if it exists
+    if [ -d "$HOME/go/bin" ]; then
+        export PATH="$PATH:$HOME/go/bin"
+    fi
+    
+    # Try to find golangci-lint in common locations
+    GOLANGCI_LINT=""
+    if command -v golangci-lint >/dev/null 2>&1; then
+        GOLANGCI_LINT="golangci-lint"
+    elif [ -f "$HOME/go/bin/golangci-lint" ]; then
+        GOLANGCI_LINT="$HOME/go/bin/golangci-lint"
+    elif command -v go >/dev/null 2>&1 && [ -f "$(go env GOPATH)/bin/golangci-lint" ]; then
+        GOLANGCI_LINT="$(go env GOPATH)/bin/golangci-lint"
+    fi
+    
+    # Check if golangci-lint is available
+    if [ -z "$GOLANGCI_LINT" ]; then
+        echo "Warning: golangci-lint is not installed or not in PATH"
+        echo "Skipping Go lint check. Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin latest"
+    else
+        cd modi || exit 0
+        if ! "$GOLANGCI_LINT" run --timeout=5m ./...; then
+            echo ""
+            echo "❌ Go linting failed! Please fix the errors before committing."
+            echo "You can run 'make lint' in the modi/ directory to see the errors."
+            exit 1
+        fi
+        echo "✅ Go linting passed!"
+    fi
+fi
 

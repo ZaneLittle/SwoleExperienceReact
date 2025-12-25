@@ -1,0 +1,41 @@
+name: Modi Lint
+
+on:
+  pull_request:
+    paths:
+      - 'modi/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'modi/**'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: modi/go.sum
+
+      - name: Install dependencies
+        working-directory: ./modi
+        run: go mod download
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run golangci-lint
+        working-directory: ./modi
+        run: golangci-lint run --timeout=5m ./...
+

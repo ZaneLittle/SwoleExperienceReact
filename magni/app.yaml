@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: magni
+spec:
+  selector:
+    app: magni
+  ports:
+    - name: http
+      port: 42069
+      targetPort: 42069
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: magni
+  labels:
+    app: magni
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: magni
+  template:
+    metadata:
+      labels:
+        app: magni
+    spec:
+      containers:
+      - name: magni
+        image: magni:latest
+        ports:
+        - containerPort: 42069
+        env:
+        - name: NODE_ENV
+          value: "production"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 42069
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 42069
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+
