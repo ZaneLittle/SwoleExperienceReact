@@ -1,5 +1,5 @@
-// Package testutils provides utilities for testing in the Modi application.
-package testutils
+// Package utils provides utilities for the Modi application.
+package utils
 
 import (
 	"time"

@@ -11,6 +11,9 @@ import (
 
 	"github.com/ZaneLittle/modi/internal/config"
 	"github.com/ZaneLittle/modi/internal/handlers"
+	"github.com/ZaneLittle/modi/internal/middleware"
+	"github.com/ZaneLittle/modi/internal/repositories"
+	"github.com/ZaneLittle/modi/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -75,17 +78,39 @@ func main() {
 	// Setup router
 	r := gin.Default()
 
-	// Health check endpoint
+	// Health check endpoint (public)
 	healthHandler := handlers.NewHealthHandler(db, redisClient)
 	r.GET("/health", healthHandler.Health)
 
-	// TODO: Setup API routes
-	// api := r.Group("/api/v1")
-	// {
-	//   api.POST("/auth/register", handlers.Register)
-	//   api.POST("/auth/login", handlers.Login)
-	//   ...
-	// }
+	// API v1 routes
+	api := r.Group("/api/v1")
+	{
+		// Auth routes (public)
+		if db != nil && redisClient != nil && cfg.JWTSecret != "" {
+			userRepo := repositories.NewUserRepository(db)
+			authService := services.NewAuthService(userRepo, redisClient, cfg.JWTSecret)
+			authHandler := handlers.NewAuthHandler(authService)
+
+			auth := api.Group("/auth")
+			{
+				auth.POST("/register", authHandler.Register)
+				auth.POST("/login", authHandler.Login)
+				auth.POST("/refresh", authHandler.Refresh)
+				auth.POST("/logout", authHandler.Logout)
+			}
+
+			// Protected routes (require authentication)
+			_ = api.Group("").Use(middleware.AuthMiddleware(cfg))
+			// TODO: Add protected routes here
+			// Example:
+			// protected := api.Group("")
+			// protected.Use(middleware.AuthMiddleware(cfg))
+			// protected.GET("/users/me", userHandler.GetMe)
+			// protected.PUT("/users/me", userHandler.UpdateMe)
+		} else {
+			log.Println("Warning: Database, Redis, or JWT_SECRET not configured. Auth endpoints disabled.")
+		}
+	}
 
 	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
