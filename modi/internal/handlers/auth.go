@@ -49,7 +49,7 @@ func extractValidationError(err error) string {
 			fieldError := validationErrors[0]
 			fieldName := fieldError.Field()
 			tag := fieldError.Tag()
-			
+
 			switch tag {
 			case "required":
 				return fmt.Sprintf("%s is required", fieldName)
@@ -78,7 +78,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		if errorMsg == "" {
 			errorMsg = "Invalid request. Please check your input and try again."
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
@@ -139,7 +139,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		if errorMsg == "" {
 			errorMsg = "Invalid request. Please check your input and try again."
 		}
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
@@ -250,4 +250,3 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		},
 	})
 }
-
