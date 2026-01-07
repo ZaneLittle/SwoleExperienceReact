@@ -1,13 +1,14 @@
+# Air configuration for hot reload
 root = "."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ./cmd/api"
+  bin = "./tmp/api"
+  cmd = "go build -o ./tmp/api ./cmd/api"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "bin"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "bin", "coverage"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
@@ -42,4 +43,3 @@ tmp_dir = "tmp"
 [screen]
   clear_on_rebuild = false
   keep_scroll = true
-

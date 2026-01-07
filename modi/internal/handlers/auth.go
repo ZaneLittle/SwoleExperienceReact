@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -41,22 +42,55 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// extractValidationError extracts a user-friendly error message from validation errors
+func extractValidationError(err error) string {
+	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+		if len(validationErrors) > 0 {
+			fieldError := validationErrors[0]
+			fieldName := fieldError.Field()
+			tag := fieldError.Tag()
+			
+			switch tag {
+			case "required":
+				return fmt.Sprintf("%s is required", fieldName)
+			case "email":
+				return "Please enter a valid email address"
+			case "min":
+				if fieldName == "Password" {
+					return "Password must be at least 8 characters"
+				}
+				return fmt.Sprintf("%s is too short", fieldName)
+			default:
+				return fmt.Sprintf("Invalid %s", fieldName)
+			}
+		}
+	}
+	return ""
+}
+
 // Register handles user registration.
 // POST /api/v1/auth/register
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		// Extract validation error details for better user feedback
+		errorMsg := extractValidationError(err)
+		if errorMsg == "" {
+			errorMsg = "Invalid request. Please check your input and try again."
+		}
+		
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
-				"message": "Invalid request",
+				"message": errorMsg,
 				"details": err.Error(),
 			},
 		})
 		return
 	}
 
-	user, err := h.authService.Register(c.Request.Context(), req.Email, req.Password)
+	// First create the user account
+	_, err := h.authService.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		if err == services.ErrInvalidCredentials {
 			// Don't reveal that email exists
@@ -77,9 +111,21 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// After successful registration, log the user in to issue tokens
+	loginResponse, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to login after registration",
+			},
+		})
+		return
+	}
+
 	c.Header("X-Timestamp", time.Now().UTC().Format(time.RFC3339))
 	c.JSON(http.StatusCreated, gin.H{
-		"data": user,
+		"data": loginResponse,
 	})
 }
 
@@ -88,10 +134,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		// Extract validation error details for better user feedback
+		errorMsg := extractValidationError(err)
+		if errorMsg == "" {
+			errorMsg = "Invalid request. Please check your input and try again."
+		}
+		
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
-				"message": "Invalid request",
+				"message": errorMsg,
 				"details": err.Error(),
 			},
 		})
