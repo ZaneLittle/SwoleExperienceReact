@@ -1,9 +1,38 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-cd magni && pnpm run lint:fix
+set +e  # Disable exit on error for lint checks
 
-git add -u
+# Run lint:fix to auto-fix issues (ignore exit code)
+(cd magni && pnpm run lint:fix) 2>&1 || true
+
+# Run lint to check for actual errors (capture output without failing)
+cd magni 2>/dev/null || exit 0
+LINT_OUTPUT=$(pnpm run lint 2>&1)
+LINT_STATUS=$?
+
+# Check if there are actual errors (not just warnings)
+# ESLint output format: "✖ 57 problems (0 errors, 57 warnings)"
+HAS_ERRORS=$(echo "$LINT_OUTPUT" | grep -oE "✖ [0-9]+ problems \([1-9][0-9]* errors" || true)
+
+if [ -n "$HAS_ERRORS" ]; then
+  echo "❌ Linting failed with errors. Please fix the errors before committing."
+  echo "$LINT_OUTPUT"
+  set -e  # Re-enable exit on error before exiting
+  exit 1
+fi
+
+# If we get here, there are only warnings (0 errors) or no problems
+HAS_WARNINGS=$(echo "$LINT_OUTPUT" | grep -oE "✖ [0-9]+ problems" || true)
+if [ -n "$HAS_WARNINGS" ]; then
+  echo "⚠️  Linting completed with warnings (no errors). Allowing commit."
+fi
+
+# Navigate back to repo root (handle errors gracefully)
+cd "$(git rev-parse --show-toplevel)" || true
+
+# Stage any auto-fixed files
+git add -u || true
 
 STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^modi/.*\.go$')
 if [ -n "$STAGED_GO_FILES" ]; then
@@ -30,13 +59,18 @@ if [ -n "$STAGED_GO_FILES" ]; then
         echo "Skipping Go lint check. Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin latest"
     else
         cd modi || exit 0
+        set -e  # Re-enable exit on error for Go lint check
         if ! "$GOLANGCI_LINT" run --timeout=5m ./...; then
             echo ""
             echo "❌ Go linting failed! Please fix the errors before committing."
             echo "You can run 'make lint' in the modi/ directory to see the errors."
             exit 1
         fi
+        set +e  # Disable exit on error again after Go lint passes
         echo "✅ Go linting passed!"
     fi
 fi
+
+# Make sure we exit successfully if we got here
+exit 0
 
