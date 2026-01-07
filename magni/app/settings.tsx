@@ -10,6 +10,7 @@ import { workoutImportService } from '../lib/services/WorkoutImportService'
 import WorkoutManagementSection from '../components/settings/WorkoutManagementSection'
 import AppearanceSection from '../components/settings/AppearanceSection'
 import SupportSection from '../components/settings/SupportSection'
+import AuthSection from '../components/settings/AuthSection'
 import ClearHistoryModal from '../components/settings/ClearHistoryModal'
 import ImportConfirmModal from '../components/settings/ImportConfirmModal'
 
@@ -109,6 +110,8 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.content}>
+        <AuthSection />
+
         <WorkoutManagementSection
           onConfigureWorkouts={() => setShowWorkoutConfig(true)}
           onClearHistory={() => setShowClearHistoryModal(true)}

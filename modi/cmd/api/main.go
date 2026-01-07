@@ -14,6 +14,7 @@ import (
 	"github.com/ZaneLittle/modi/internal/middleware"
 	"github.com/ZaneLittle/modi/internal/repositories"
 	"github.com/ZaneLittle/modi/internal/services"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -77,6 +78,16 @@ func main() {
 
 	// Setup router
 	r := gin.Default()
+
+	// Configure CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // In production, specify exact origins
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "X-Request-ID"},
+		ExposeHeaders:    []string{"Content-Length", "X-Request-ID", "X-Timestamp", "X-Server-Timestamp", "X-Rate-Limit-Limit", "X-Rate-Limit-Remaining", "X-Rate-Limit-Reset"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Health check endpoint (public)
 	healthHandler := handlers.NewHealthHandler(db, redisClient)
