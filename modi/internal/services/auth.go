@@ -26,6 +26,7 @@ type AuthService interface {
 	Login(ctx context.Context, email, password string) (*LoginResponse, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*RefreshResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
+	DeleteAccount(ctx context.Context, userID uuid.UUID) error
 }
 
 type authService struct {
@@ -170,5 +171,34 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// DeleteAccount deletes a user account and all associated data.
+func (s *authService) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
+	// Delete all refresh tokens for this user from Redis
+	// We scan for all session keys and check if their value matches the userID
+	iter := s.redis.Scan(ctx, 0, "session:*", 0).Iterator()
+	for iter.Next(ctx) {
+		key := iter.Val()
+		val, err := s.redis.Get(ctx, key).Result()
+		if err != nil {
+			continue
+		}
+
+		if val == userID.String() {
+			_ = s.redis.Del(ctx, key).Err() // Best effort deletion
+		}
+	}
+
+	// Continue with user deletion even if Redis scan/delete had errors
+	_ = iter.Err() // Best effort - log if needed but don't fail account deletion
+
+	// Delete the user from database (this will cascade if foreign keys are set up)
+	err := s.userRepo.Delete(ctx, userID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

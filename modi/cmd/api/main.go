@@ -111,13 +111,11 @@ func main() {
 			}
 
 			// Protected routes (require authentication)
-			_ = api.Group("").Use(middleware.AuthMiddleware(cfg))
-			// TODO: Add protected routes here
-			// Example:
-			// protected := api.Group("")
-			// protected.Use(auth.Middleware(cfg))
-			// protected.GET("/users/me", userHandler.GetMe)
-			// protected.PUT("/users/me", userHandler.UpdateMe)
+			protected := api.Group("")
+			protected.Use(middleware.AuthMiddleware(cfg))
+			{
+				protected.DELETE("/auth/account", authHandler.DeleteAccount)
+			}
 		} else {
 			log.Println("Warning: Database, Redis, or JWT_SECRET not configured. Auth endpoints disabled.")
 		}

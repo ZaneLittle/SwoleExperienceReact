@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ZaneLittle/modi/internal/middleware"
 	"github.com/ZaneLittle/modi/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -236,6 +237,38 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"message": "Logged out successfully",
+		},
+	})
+}
+
+// DeleteAccount handles account deletion.
+func (h *AuthHandler) DeleteAccount(c *gin.Context) {
+	userID, err := middleware.GetUserIDFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": gin.H{
+				"code":    "UNAUTHORIZED",
+				"message": "User ID not found in context",
+			},
+		})
+		return
+	}
+
+	err = h.authService.DeleteAccount(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    "INTERNAL_ERROR",
+				"message": "Failed to delete account",
+			},
+		})
+		return
+	}
+
+	c.Header("X-Timestamp", time.Now().UTC().Format(time.RFC3339))
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"message": "Account deleted successfully",
 		},
 	})
 }

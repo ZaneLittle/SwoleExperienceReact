@@ -18,10 +18,11 @@ import (
 )
 
 type mockAuthService struct {
-	registerFn     func(ctx context.Context, email, password string) (*models.User, error)
-	loginFn        func(ctx context.Context, email, password string) (*services.LoginResponse, error)
-	refreshTokenFn func(ctx context.Context, refreshToken string) (*services.RefreshResponse, error)
-	logoutFn       func(ctx context.Context, refreshToken string) error
+	registerFn      func(ctx context.Context, email, password string) (*models.User, error)
+	loginFn         func(ctx context.Context, email, password string) (*services.LoginResponse, error)
+	refreshTokenFn  func(ctx context.Context, refreshToken string) (*services.RefreshResponse, error)
+	logoutFn        func(ctx context.Context, refreshToken string) error
+	deleteAccountFn func(ctx context.Context, userID uuid.UUID) error
 }
 
 func (m *mockAuthService) Register(ctx context.Context, email, password string) (*models.User, error) {
@@ -52,6 +53,13 @@ func (m *mockAuthService) Logout(ctx context.Context, refreshToken string) error
 	return nil
 }
 
+func (m *mockAuthService) DeleteAccount(ctx context.Context, userID uuid.UUID) error {
+	if m.deleteAccountFn != nil {
+		return m.deleteAccountFn(ctx, userID)
+	}
+	return nil
+}
+
 func setupAuthTestRouter(handler *handlers.AuthHandler) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -61,6 +69,24 @@ func setupAuthTestRouter(handler *handlers.AuthHandler) *gin.Engine {
 		auth.POST("/login", handler.Login)
 		auth.POST("/refresh", handler.Refresh)
 		auth.POST("/logout", handler.Logout)
+		auth.DELETE("/account", handler.DeleteAccount)
+	}
+	return r
+}
+
+func setupAuthTestRouterWithMiddleware(handler *handlers.AuthHandler, userID uuid.UUID) *gin.Engine {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+
+	// Mock authentication middleware
+	r.Use(func(c *gin.Context) {
+		c.Set("user_id", userID)
+		c.Next()
+	})
+
+	protected := r.Group("/api/v1/auth")
+	{
+		protected.DELETE("/account", handler.DeleteAccount)
 	}
 	return r
 }
@@ -297,4 +323,85 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 	require.True(t, ok, "response should contain data object")
 	assert.Equal(t, "test-access-token", data["access_token"])
 	assert.Equal(t, "test-refresh-token", data["refresh_token"])
+}
+
+func TestAuthHandler_DeleteAccount_Unauthorized(t *testing.T) {
+	mockService := &mockAuthService{}
+	handler := handlers.NewAuthHandler(mockService)
+	router := setupAuthTestRouter(handler)
+
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/auth/account", nil)
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	errorObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "response should contain error object")
+	assert.Equal(t, "UNAUTHORIZED", errorObj["code"])
+	assert.Contains(t, errorObj["message"], "User ID not found")
+}
+
+func TestAuthHandler_DeleteAccount_Success(t *testing.T) {
+	userID := uuid.New()
+	mockService := &mockAuthService{
+		deleteAccountFn: func(_ context.Context, uid uuid.UUID) error {
+			if uid != userID {
+				t.Errorf("expected userID %v, got %v", userID, uid)
+			}
+			return nil
+		},
+	}
+	handler := handlers.NewAuthHandler(mockService)
+	router := setupAuthTestRouterWithMiddleware(handler, userID)
+
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/auth/account", nil)
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	data, ok := response["data"].(map[string]interface{})
+	require.True(t, ok, "response should contain data object")
+	assert.Equal(t, "Account deleted successfully", data["message"])
+}
+
+func TestAuthHandler_DeleteAccount_ServiceError(t *testing.T) {
+	userID := uuid.New()
+	mockService := &mockAuthService{
+		deleteAccountFn: func(_ context.Context, _ uuid.UUID) error {
+			return assert.AnError
+		},
+	}
+	handler := handlers.NewAuthHandler(mockService)
+	router := setupAuthTestRouterWithMiddleware(handler, userID)
+
+	req, err := http.NewRequest(http.MethodDelete, "/api/v1/auth/account", nil)
+	require.NoError(t, err)
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+
+	var response map[string]interface{}
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, err)
+
+	errorObj, ok := response["error"].(map[string]interface{})
+	require.True(t, ok, "response should contain error object")
+	assert.Equal(t, "INTERNAL_ERROR", errorObj["code"])
+	assert.Equal(t, "Failed to delete account", errorObj["message"])
 }
