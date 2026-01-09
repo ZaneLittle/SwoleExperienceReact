@@ -35,6 +35,8 @@ jest.mock('react-native', () => {
       return React.createElement('View', { testID: 'modal', ...props }, props?.children);
     },
     ActivityIndicator: createComponent('ActivityIndicator'),
+    FlatList: (props) => React.createElement('FlatList', props, props?.children),
+    SectionList: (props) => React.createElement('SectionList', props, props?.children),
     Alert: {
       alert: jest.fn(),
     },
