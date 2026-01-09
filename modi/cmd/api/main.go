@@ -115,6 +115,24 @@ func main() {
 			protected.Use(middleware.AuthMiddleware(cfg))
 			{
 				protected.DELETE("/auth/account", authHandler.DeleteAccount)
+
+				// Workout routes
+				if db != nil {
+					workoutRepo := repositories.NewWorkoutRepository(db)
+					workoutService := services.NewWorkoutService(workoutRepo)
+					workoutHandler := handlers.NewWorkoutHandler(workoutService)
+
+					workoutsGroup := protected.Group("/workouts")
+					{
+						workoutsGroup.GET("", workoutHandler.GetWorkouts)
+						workoutsGroup.POST("", workoutHandler.CreateWorkout)
+						workoutsGroup.GET("/:id", workoutHandler.GetWorkout)
+						workoutsGroup.PUT("/:id", workoutHandler.UpdateWorkout)
+						workoutsGroup.DELETE("/:id", workoutHandler.DeleteWorkout)
+					}
+				} else {
+					log.Println("Warning: Database not configured. Workout endpoints disabled.")
+				}
 			}
 		} else {
 			log.Println("Warning: Database, Redis, or JWT_SECRET not configured. Auth endpoints disabled.")
