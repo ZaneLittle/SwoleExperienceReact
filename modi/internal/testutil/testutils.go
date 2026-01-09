@@ -30,17 +30,16 @@ func NewUserWithEmail(email string) *models.User {
 func NewWorkout(userID uuid.UUID) *models.Workout {
 	now := time.Now()
 	return &models.Workout{
-		ID:          uuid.New(),
-		UserID:      userID,
-		Name:        "Test Workout",
-		Weight:      floatPtr(100.0),
-		Sets:        intPtr(3),
-		Reps:        intPtr(10),
-		Day:         1,
-		DayOrder:    0,
-		SyncVersion: 1,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:        uuid.New(),
+		UserID:    userID,
+		Name:      "Test Workout",
+		Weight:    floatPtr(100.0),
+		Sets:      intPtr(3),
+		Reps:      intPtr(10),
+		Day:       1,
+		DayOrder:  0,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 }
 

@@ -251,19 +251,25 @@ Client → Nginx → API Server → Validate → PostgreSQL → Invalidate Cache
 4. API Server invalidates related cache entries
 5. Return success response
 
-#### Sync Operations:
+#### Sync Operations (Workouts):
 ```
-Client → Nginx → API Server → Query PostgreSQL (changes since timestamp) → Return delta
-Client → Nginx → API Server → Apply changes to PostgreSQL (with conflict resolution) → Return result
+Write: Client → Update Local Storage → Update Server → Compare timestamps
+Read: Client → Retrieve from Local + Server → Compare timestamps → User resolves conflicts if needed
 ```
 
-**Example Flow:**
-1. Client requests sync with `last_sync_timestamp`
-2. API Server queries PostgreSQL for changes since timestamp
-3. API Server returns modified/deleted records
-4. Client sends local changes
-5. API Server applies to PostgreSQL with conflict detection
-6. API Server returns sync result
+**Example Write Flow:**
+1. Client creates/updates workout locally, sets local `updated_at`
+2. Client attempts to create/update on server, sets `updated_at`
+3. If server succeeds: Timestamps match, data is synced
+4. If server fails: Local update remains, user notified of unsynced data
+
+**Example Read Flow:**
+1. Client retrieves workout from both local storage and server
+2. Compare `local_updated_at` vs `updated_at`
+3. If timestamps match: Use record as-is
+4. If timestamps differ: Present both versions to user
+5. User selects which version to keep
+6. Update both local and server to match user's choice
 
 ---
 
@@ -338,34 +344,39 @@ func (s *WorkoutService) SyncWorkouts(userID string, clientChanges []Workout, la
 }
 ```
 
-### 4. Sync Strategy
+### 4. Sync Strategy 
+#### 4.1 Workouts
+**Timestamp-Based Sync:**
 
-**Optimistic Concurrency Control:**
-
-Each record includes:
-- `sync_version` (incrementing integer)
-- `updated_at` (timestamp)
+Each workout record includes:
+- `updated_at` (timestamp - maintained by both client and server)
 - `deleted_at` (soft delete timestamp)
 
-**Sync Flow:**
-1. Client sends `last_sync_timestamp`
-2. Server queries: `SELECT * FROM workouts WHERE user_id = ? AND updated_at > ?`
-3. Server returns:
-   - Modified records
-   - Deleted record IDs (where `deleted_at IS NOT NULL`)
-   - Current server timestamp
-4. Client merges changes locally
-5. Client sends local changes
-6. Server applies with conflict detection:
-   - If `client.sync_version < server.sync_version` → Conflict
-   - Conflict resolution: Last-write-wins (or manual merge for critical data)
+**Write Operations (Create/Update/Delete):**
+1. Client updates local storage, setting `updated_at` to current timestamp
+2. Client attempts to update server with same data, server sets `updated_at` timestamp
+3. If server update succeeds: Client updates local `updated_at` to match server's `updated_at`
+4. If server update fails: Local storage retains its `updated_at`, user is notified that item may not be synced
+
+**Read Operations:**
+1. Client retrieves record from both local storage and server
+2. Compare local `updated_at` vs server `updated_at` timestamps
+3. If timestamps match: Use the record as-is
+4. If timestamps differ: Present both versions to user with timestamps
+5. User chooses which version to keep (local or server)
+6. Update both local storage and server based on user's choice, synchronizing `updated_at`
 
 **Conflict Resolution:**
-- Simple: Last-write-wins (timestamp-based)
-- Advanced: Field-level merging for complex objects
-- User choice: Present conflicts to user for resolution
+- User-driven: When timestamps differ, user manually selects which version to keep
+- Both local and server are updated to match user's choice
+- Ensures data consistency after conflict resolution
 
-### 6. Error Handling Strategy
+**Note:** This is a farily basic strategy; we certainly could go with something more extensive. However, we will go with this simplicity to preserve the maintainability of the application. In my eyes, the trade offs regarding user experience are worth it.
+
+#### 4.2 Weights
+TBD
+
+### 5. Error Handling Strategy
 
 **Structured Error Responses:**
 ```go
@@ -421,15 +432,15 @@ CREATE TABLE workouts (
     notes TEXT,
     day INTEGER NOT NULL,
     day_order INTEGER NOT NULL,
-    sync_version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    deleted_at TIMESTAMP,
-    last_synced_at TIMESTAMP
+    deleted_at TIMESTAMP
 );
 
 CREATE INDEX idx_workouts_user_sync ON workouts(user_id, updated_at) WHERE deleted_at IS NULL;
 ```
+
+**Note:** `updated_at` is maintained by both client (in local storage) and server. Timestamp comparison between local and server versions enables conflict detection.
 
 #### 3. **weights**
 ```sql
@@ -515,9 +526,9 @@ CREATE INDEX idx_audit_logs_user_time ON audit_logs(user_id, timestamp DESC);
    - Enables sync of deletions
 
 3. **Sync Fields:**
-   - `sync_version` for conflict detection
-   - `updated_at` for incremental sync
-   - `last_synced_at` for tracking
+   - `updated_at` for server-side timestamp tracking
+   - Client maintains `local_updated_at` in local storage for comparison
+   - Timestamp comparison enables conflict detection and user-driven resolution
 
 4. **Indexes:**
    - User + timestamp indexes for sync queries
@@ -550,12 +561,11 @@ CREATE INDEX idx_audit_logs_user_time ON audit_logs(user_id, timestamp DESC);
     GET    /me/export        # GDPR data export
   
   /workouts
-    GET    /                  # List workouts (with sync params)
-    POST   /                  # Create workout
-    GET    /:id               # Get workout
-    PUT    /:id               # Update workout
-    DELETE /:id               # Delete workout (soft delete)
-    POST   /sync              # Bulk sync endpoint
+    GET    /                  # List workouts
+    POST   /                  # Create workout (updates both local and server)
+    GET    /:id               # Get workout (retrieves from both local and server, compares timestamps)
+    PUT    /:id               # Update workout (updates both local and server)
+    DELETE /:id               # Delete workout (soft delete, updates both local and server)
   
   /weights
     GET    /                  # List weights (with sync params)

@@ -7,6 +7,7 @@ export interface Workout {
   notes?: string;
   supersetParentId?: string;
   altParentId?: string;
+  updatedAt?: string;
 }
 
 export const WorkoutConverter = {
