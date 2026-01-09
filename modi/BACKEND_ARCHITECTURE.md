@@ -344,8 +344,58 @@ func (s *WorkoutService) SyncWorkouts(userID string, clientChanges []Workout, la
 }
 ```
 
-### 4. Sync Strategy 
-#### 4.1 Workouts
+### 4. Reusability and Code Organization
+
+**Principles:**
+- **DRY (Don't Repeat Yourself):** Common functionality is extracted into reusable packages
+- **Single Responsibility:** Each function/package has one clear purpose
+- **Composition over Duplication:** Build complex validations from simple, reusable components
+
+**Code Readability Principles:**
+
+**Naming Conventions:**
+- **Clear, descriptive names:** `ValidateWorkoutName()` not `ValidateName()`
+- **Consistent patterns:** All validators follow `Validate{Model}{Field}()` pattern
+- **Self-documenting code:** Function names explain what they do
+- **Package organization:** Related functionality grouped together
+
+**Function Design:**
+- **Small, focused functions:** Each function does one thing well
+- **Clear parameters:** Constraints passed explicitly, not hidden in globals
+- **Return early:** Reduce nesting, improve readability
+- **Error messages:** Clear, user-friendly error messages
+
+**Example of Readable Code:**
+```go
+// Good: Clear, reusable, self-documenting
+func ValidateString(value string, fieldName string, constraints StringConstraints) error {
+    trimmed := strings.TrimSpace(value)
+    if trimmed == "" && !constraints.AllowEmpty {
+        return fmt.Errorf("%s: cannot be empty", fieldName)
+    }
+    // ... validation logic
+}
+
+// Usage is clear and readable
+if err := validation.ValidateString(req.Name, "name", constraints); err != nil {
+    return err
+}
+```
+
+**Documentation:**
+- **Package-level docs:** Explain package purpose and usage patterns
+- **Function docs:** Explain what, why, and when to use
+- **Example code:** Show common usage patterns
+- **Comments for complex logic:** Explain "why", not "what"
+
+**Code Structure:**
+- **Logical grouping:** Related functions grouped together
+- **Dependency order:** Common utilities before specific implementations
+- **Consistent patterns:** Similar code structured similarly
+- **Clear separation:** Validation, business logic, and data access clearly separated
+
+### 5. Sync Strategy 
+#### 5.1 Workouts
 **Timestamp-Based Sync:**
 
 Each workout record includes:
@@ -373,10 +423,10 @@ Each workout record includes:
 
 **Note:** This is a farily basic strategy; we certainly could go with something more extensive. However, we will go with this simplicity to preserve the maintainability of the application. In my eyes, the trade offs regarding user experience are worth it.
 
-#### 4.2 Weights
+#### 5.2 Weights
 TBD
 
-### 5. Error Handling Strategy
+### 6. Error Handling Strategy
 
 **Structured Error Responses:**
 ```go
@@ -958,6 +1008,149 @@ modi/
    - Data export encryption
    - Secure deletion procedures
    - Access logging
+
+---
+
+## Security-First Development Mindset
+
+Security is not an afterthought in this codebase. Every feature, endpoint, and data operation is designed with security as a foundational principle. This section outlines the security-first approach that guides all development.
+
+### Core Principles
+
+1. **Defense in Depth:**
+   - Multiple layers of security controls
+   - Repository-level authorization checks (database WHERE clauses include user_id)
+   - Service-level authorization verification
+   - Handler-level input validation
+   - Middleware-level rate limiting and request validation
+
+2. **Least Privilege:**
+   - Users can only access their own data
+   - Database queries always filter by user_id
+   - No administrative endpoints without proper authorization
+   - Principle of least privilege applied to all operations
+
+3. **Fail Secure:**
+   - Default deny on authorization failures
+   - Generic error messages to prevent information leakage
+   - Security logging for all unauthorized access attempts
+   - Graceful degradation when security services (Redis) are unavailable
+
+4. **Input Validation at Every Layer:**
+   - Request validation (gin binding)
+   - Custom validation layer (length, range, format checks)
+   - XSS prevention (dangerous character detection)
+   - SQL injection prevention (parameterized queries only)
+   - Request size limits to prevent DoS
+
+### Security Controls Implementation
+
+#### 1. Authorization (OWASP A01: Broken Access Control)
+- **Repository Level:** All UPDATE/DELETE queries include `user_id` in WHERE clause
+- **Service Level:** Every operation verifies user ownership before proceeding
+- **Handler Level:** User ID extracted from authenticated context, never from request body
+- **Security Logging:** All unauthorized access attempts logged with full context
+
+#### 2. Input Validation (OWASP A03: Injection)
+- **Parameterized Queries:** All database queries use parameterized statements ($1, $2, etc.)
+- **Field Validation:** Length limits, range checks, format validation
+- **XSS Prevention:** Dangerous character detection in text fields
+- **Request Size Limits:** 1MB max body size to prevent DoS
+
+#### 3. DoS Protection (OWASP A05: Security Misconfiguration)
+- **Rate Limiting:** 60 requests/minute per user (Redis-based, configurable)
+- **Request Timeouts:** 30-second timeout on all requests
+- **Request Size Limits:** Prevents large payload attacks
+- **Slow Request Detection:** Logs requests exceeding 5 seconds
+
+#### 4. Security Logging (OWASP A09: Security Logging Failures)
+- **Unauthorized Access:** Logged with user ID, resource ID, IP, path, method
+- **Suspicious Activity:** Slow requests, oversized requests logged
+- **Structured Logging:** All security events prefixed with `[SECURITY]`
+- **Context Preservation:** Full request context captured for forensics
+
+#### 5. Error Handling
+- **Generic Messages:** Client-facing errors don't expose internal details
+- **Detailed Logging:** Server-side logs contain full error details
+- **No Information Leakage:** Error messages don't reveal system internals
+- **Consistent Format:** All errors follow standard API error structure
+
+### Development Guidelines
+
+When implementing new features, developers must:
+
+1. **Always verify authorization:**
+   - Check user ownership in repository queries
+   - Verify in service layer before operations
+   - Log unauthorized access attempts
+
+2. **Validate all input:**
+   - Use validation layer for all user-provided data
+   - Check length limits, ranges, and formats
+   - Sanitize text fields for XSS prevention
+
+3. **Use parameterized queries:**
+   - Never concatenate user input into SQL
+   - Always use database parameter placeholders
+   - Validate UUIDs before database operations
+
+4. **Implement security logging:**
+   - Log all unauthorized access attempts
+   - Log suspicious activities (slow requests, large payloads)
+   - Include full context (user ID, IP, path, method)
+
+5. **Apply rate limiting:**
+   - All authenticated endpoints have rate limits
+   - Consider endpoint-specific limits for expensive operations
+   - Use Redis for distributed rate limiting
+
+6. **Sanitize error messages:**
+   - Never expose internal error details to clients
+   - Use generic error messages
+   - Log detailed errors server-side only
+
+7. **Test security controls:**
+   - Test authorization boundaries
+   - Test input validation edge cases
+   - Test rate limiting behavior
+   - Test error message sanitization
+
+### Security Review Checklist
+
+Before merging any code that touches data access or user operations:
+
+- [ ] Repository queries include user_id in WHERE clauses
+- [ ] Service layer verifies user ownership
+- [ ] Input validation implemented for all fields
+- [ ] Parameterized queries used (no string concatenation)
+- [ ] Security logging added for unauthorized access
+- [ ] Error messages are generic (no information leakage)
+- [ ] Rate limiting applied to new endpoints
+- [ ] Request size limits respected
+- [ ] XSS prevention in text fields
+- [ ] Authorization tested with different user contexts
+
+### Security Middleware Stack
+
+The following middleware is applied globally to ensure consistent security:
+
+1. **Security Logging Middleware** - Logs all requests, detects slow requests
+2. **Request Timeout Middleware** - 30-second timeout prevents resource exhaustion
+3. **Request Size Limit Middleware** - 1MB max body size prevents DoS
+4. **Rate Limiting Middleware** - Per-user rate limits on authenticated routes
+5. **Authentication Middleware** - JWT validation and user context extraction
+
+### Continuous Security Improvement
+
+Security is an ongoing process. Regular activities include:
+
+- Review security logs for patterns
+- Update validation rules based on new threats
+- Adjust rate limits based on usage patterns
+- Review and update error messages
+- Audit authorization checks
+- Test security controls in integration tests
+- Monitor for suspicious activity patterns
 
 ---
 

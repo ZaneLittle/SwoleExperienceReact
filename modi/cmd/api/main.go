@@ -79,6 +79,14 @@ func main() {
 	// Setup router
 	r := gin.Default()
 
+	// Global middleware - applied to all routes
+	// Security logging (must be first to capture all requests)
+	r.Use(middleware.SecurityLoggingMiddleware())
+	// Request timeout (30 seconds for all requests)
+	r.Use(middleware.TimeoutMiddleware(30 * time.Second))
+	// Request size limit (1MB max body size)
+	r.Use(middleware.RequestSizeLimitMiddleware(1 << 20)) // 1MB
+
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"*"}, // In production, specify exact origins
@@ -113,6 +121,8 @@ func main() {
 			// Protected routes (require authentication)
 			protected := api.Group("")
 			protected.Use(middleware.AuthMiddleware(cfg))
+			// Rate limiting for authenticated routes (60 requests per minute per user)
+			protected.Use(middleware.RateLimitMiddleware(redisClient, middleware.DefaultRateLimitConfig()))
 			{
 				protected.DELETE("/auth/account", authHandler.DeleteAccount)
 

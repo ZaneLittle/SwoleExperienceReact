@@ -7,6 +7,7 @@ import (
 	"github.com/ZaneLittle/modi/internal/middleware"
 	"github.com/ZaneLittle/modi/internal/models"
 	"github.com/ZaneLittle/modi/internal/services"
+	"github.com/ZaneLittle/modi/internal/validation"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -73,7 +74,17 @@ func (h *WorkoutHandler) CreateWorkout(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": errorMsg,
-				"details": err.Error(),
+			},
+		})
+		return
+	}
+
+	// Validate input using custom validation
+	if err := validation.ValidateWorkoutRequest(req.Name, req.Weight, req.Sets, req.Reps, req.Notes, req.Day, req.DayOrder); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
 			},
 		})
 		return
@@ -235,7 +246,6 @@ func (h *WorkoutHandler) UpdateWorkout(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": errorMsg,
-				"details": err.Error(),
 			},
 		})
 		return
@@ -247,6 +257,17 @@ func (h *WorkoutHandler) UpdateWorkout(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": "Workout ID in body must match URL parameter",
+			},
+		})
+		return
+	}
+
+	// Validate input using custom validation
+	if err := validation.ValidateWorkoutRequest(req.Name, req.Weight, req.Sets, req.Reps, req.Notes, req.Day, req.DayOrder); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    "VALIDATION_ERROR",
+				"message": err.Error(),
 			},
 		})
 		return
@@ -275,6 +296,8 @@ func (h *WorkoutHandler) UpdateWorkout(c *gin.Context) {
 			return
 		}
 		if err == services.ErrUnauthorizedWorkoutAccess {
+			// Log unauthorized access attempt
+			middleware.LogUnauthorizedAccess(c, userID, workoutIDStr, "workout update")
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": gin.H{
 					"code":    "FORBIDDEN",
@@ -336,6 +359,8 @@ func (h *WorkoutHandler) DeleteWorkout(c *gin.Context) {
 			return
 		}
 		if err == services.ErrUnauthorizedWorkoutAccess {
+			// Log unauthorized access attempt
+			middleware.LogUnauthorizedAccess(c, userID, workoutIDStr, "workout delete")
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": gin.H{
 					"code":    "FORBIDDEN",

@@ -161,7 +161,7 @@ func (r *workoutRepository) Update(ctx context.Context, workout *models.Workout)
 	query := `
 		UPDATE workouts
 		SET name = $2, weight = $3, sets = $4, reps = $5, notes = $6, day = $7, day_order = $8, updated_at = $9
-		WHERE id = $1 AND deleted_at IS NULL
+		WHERE id = $1 AND user_id = $10 AND deleted_at IS NULL
 		RETURNING id, user_id, name, weight, sets, reps, notes, day, day_order, created_at, updated_at, deleted_at
 	`
 
@@ -176,6 +176,7 @@ func (r *workoutRepository) Update(ctx context.Context, workout *models.Workout)
 		workout.Day,
 		workout.DayOrder,
 		workout.UpdatedAt,
+		workout.UserID,
 	).Scan(
 		&workout.ID,
 		&workout.UserID,
