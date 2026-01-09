@@ -1,4 +1,4 @@
-// Package middleware provides HTTP middleware for the Modi API.
+// Package middleware provides HTTP middleware functions for authentication and request handling.
 package middleware
 
 import (
@@ -6,14 +6,12 @@ import (
 	"strings"
 
 	"github.com/ZaneLittle/modi/internal/config"
-	"github.com/ZaneLittle/modi/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware validates JWT tokens and sets user context.
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get token from Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -26,7 +24,6 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Extract token from "Bearer <token>"
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -41,11 +38,10 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 
 		token := parts[1]
 
-		// Validate token
-		claims, err := utils.ValidateAccessToken(token, cfg.JWTSecret)
+		claims, err := ValidateAccessToken(token, cfg.JWTSecret)
 		if err != nil {
 			statusCode := http.StatusUnauthorized
-			if err == utils.ErrExpiredToken {
+			if err == ErrExpiredToken {
 				c.JSON(statusCode, gin.H{
 					"error": gin.H{
 						"code":    "TOKEN_EXPIRED",
@@ -64,11 +60,9 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Set user context
 		c.Set("user_id", claims.UserID)
 		c.Set("user_email", claims.Email)
 
 		c.Next()
 	}
 }
-

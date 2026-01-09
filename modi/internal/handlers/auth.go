@@ -1,4 +1,3 @@
-// Package handlers provides HTTP handlers for the Modi API.
 package handlers
 
 import (
@@ -11,7 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-// AuthHandler handles authentication-related HTTP requests.
+// AuthHandler handles HTTP requests for authentication operations.
 type AuthHandler struct {
 	authService services.AuthService
 	validator   *validator.Validate
@@ -42,7 +41,6 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-// extractValidationError extracts a user-friendly error message from validation errors
 func extractValidationError(err error) string {
 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
 		if len(validationErrors) > 0 {
@@ -69,11 +67,9 @@ func extractValidationError(err error) string {
 }
 
 // Register handles user registration.
-// POST /api/v1/auth/register
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Extract validation error details for better user feedback
 		errorMsg := extractValidationError(err)
 		if errorMsg == "" {
 			errorMsg = "Invalid request. Please check your input and try again."
@@ -89,11 +85,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// First create the user account
 	_, err := h.authService.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		if err == services.ErrInvalidCredentials {
-			// Don't reveal that email exists
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": gin.H{
 					"code":    "VALIDATION_ERROR",
@@ -111,7 +105,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// After successful registration, log the user in to issue tokens
 	loginResponse, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -130,11 +123,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login handles user login.
-// POST /api/v1/auth/login
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// Extract validation error details for better user feedback
 		errorMsg := extractValidationError(err)
 		if errorMsg == "" {
 			errorMsg = "Invalid request. Please check your input and try again."
@@ -177,7 +168,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Refresh handles token refresh.
-// POST /api/v1/auth/refresh
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -218,7 +208,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 }
 
 // Logout handles user logout.
-// POST /api/v1/auth/logout
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req RefreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
