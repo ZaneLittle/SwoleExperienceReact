@@ -11,21 +11,20 @@ See [BACKEND_ARCHITECTURE.md](BACKEND_ARCHITECTURE.md) for detailed architecture
 ```
 modi/
 ├── cmd/
-│   └── api/
-│       └── main.go          # Application entry point
+│   └── api/                 # Application entry point
 ├── internal/
 │   ├── config/              # Configuration management
 │   ├── handlers/            # HTTP handlers (Gin routes)
-│   ├── middleware/          # Middleware (auth, logging, etc.)
+│   │   └── test/            # Handler tests
+│   ├── middleware/          # Middleware (auth, JWT, password, logging, rate limiting)
 │   ├── models/              # Domain models
 │   ├── repositories/        # Data access layer
-│   ├── services/            # Business logic
-│   └── utils/               # Utilities
+│   └── services/            # Business logic
 ├── migrations/              # SQL migrations
 ├── pkg/                     # Public packages (if any)
-├── go.mod
-├── go.sum
-└── .env.example
+├── go.mod                   # Go module definition
+├── go.sum                   # Go module checksums
+└── .env.example             # Environment variable template
 ```
 
 ## Prerequisites

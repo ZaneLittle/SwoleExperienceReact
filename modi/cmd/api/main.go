@@ -102,12 +102,12 @@ func main() {
 			authService := services.NewAuthService(userRepo, redisClient, cfg.JWTSecret)
 			authHandler := handlers.NewAuthHandler(authService)
 
-			auth := api.Group("/auth")
+			authGroup := api.Group("/auth")
 			{
-				auth.POST("/register", authHandler.Register)
-				auth.POST("/login", authHandler.Login)
-				auth.POST("/refresh", authHandler.Refresh)
-				auth.POST("/logout", authHandler.Logout)
+				authGroup.POST("/register", authHandler.Register)
+				authGroup.POST("/login", authHandler.Login)
+				authGroup.POST("/refresh", authHandler.Refresh)
+				authGroup.POST("/logout", authHandler.Logout)
 			}
 
 			// Protected routes (require authentication)
@@ -115,7 +115,7 @@ func main() {
 			// TODO: Add protected routes here
 			// Example:
 			// protected := api.Group("")
-			// protected.Use(middleware.AuthMiddleware(cfg))
+			// protected.Use(auth.Middleware(cfg))
 			// protected.GET("/users/me", userHandler.GetMe)
 			// protected.PUT("/users/me", userHandler.UpdateMe)
 		} else {
