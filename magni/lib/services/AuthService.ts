@@ -113,6 +113,15 @@ class AuthService {
       body: JSON.stringify({ refresh_token: refreshToken }),
     })
   }
+
+  async deleteAccount(accessToken: string): Promise<void> {
+    await this.request<{ data: { message: string } }>('/auth/account', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+  }
 }
 
 export const authService = new AuthService()

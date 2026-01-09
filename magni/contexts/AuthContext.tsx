@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  deleteAccount: () => Promise<void>
   refreshAccessToken: () => Promise<boolean>
 }
 
@@ -95,6 +96,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [showToast])
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      const accessToken = await tokenStorage.getAccessToken()
+      if (!accessToken) {
+        throw new Error('Not authenticated')
+      }
+
+      await authService.deleteAccount(accessToken)
+      
+      await tokenStorage.clearTokens()
+      setUser(null)
+      showToast('Account deleted successfully', 'success')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete account'
+      showToast(message, 'error')
+      throw error
+    }
+  }, [showToast])
+
   const refreshAccessToken = useCallback(async (): Promise<boolean> => {
     try {
       const refreshToken = await tokenStorage.getRefreshToken()
@@ -128,6 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    deleteAccount,
     refreshAccessToken,
   }
 
