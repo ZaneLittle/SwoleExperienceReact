@@ -1,0 +1,6 @@
+# Revive configuration for Modi
+
+[rule.var-naming]
+arguments = ["checkPackageName=false"]
+
+

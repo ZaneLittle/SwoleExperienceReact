@@ -11,6 +11,10 @@ import (
 
 	"github.com/ZaneLittle/modi/internal/config"
 	"github.com/ZaneLittle/modi/internal/handlers"
+	"github.com/ZaneLittle/modi/internal/middleware"
+	"github.com/ZaneLittle/modi/internal/repositories"
+	"github.com/ZaneLittle/modi/internal/services"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -75,17 +79,47 @@ func main() {
 	// Setup router
 	r := gin.Default()
 
-	// Health check endpoint
+	// Configure CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // In production, specify exact origins
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "X-Request-ID"},
+		ExposeHeaders:    []string{"Content-Length", "X-Request-ID", "X-Timestamp", "X-Server-Timestamp", "X-Rate-Limit-Limit", "X-Rate-Limit-Remaining", "X-Rate-Limit-Reset"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	// Health check endpoint (public)
 	healthHandler := handlers.NewHealthHandler(db, redisClient)
 	r.GET("/health", healthHandler.Health)
 
-	// TODO: Setup API routes
-	// api := r.Group("/api/v1")
-	// {
-	//   api.POST("/auth/register", handlers.Register)
-	//   api.POST("/auth/login", handlers.Login)
-	//   ...
-	// }
+	// API v1 routes
+	api := r.Group("/api/v1")
+	{
+		// Auth routes (public)
+		if db != nil && redisClient != nil && cfg.JWTSecret != "" {
+			userRepo := repositories.NewUserRepository(db)
+			authService := services.NewAuthService(userRepo, redisClient, cfg.JWTSecret)
+			authHandler := handlers.NewAuthHandler(authService)
+
+			authGroup := api.Group("/auth")
+			{
+				authGroup.POST("/register", authHandler.Register)
+				authGroup.POST("/login", authHandler.Login)
+				authGroup.POST("/refresh", authHandler.Refresh)
+				authGroup.POST("/logout", authHandler.Logout)
+			}
+
+			// Protected routes (require authentication)
+			protected := api.Group("")
+			protected.Use(middleware.AuthMiddleware(cfg))
+			{
+				protected.DELETE("/auth/account", authHandler.DeleteAccount)
+			}
+		} else {
+			log.Println("Warning: Database, Redis, or JWT_SECRET not configured. Auth endpoints disabled.")
+		}
+	}
 
 	// Graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

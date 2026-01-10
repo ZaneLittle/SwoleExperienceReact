@@ -5,6 +5,7 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { ConfirmationProvider } from '../components/ConfirmationProvider'
 import { ToastProvider } from '../contexts/ToastContext'
+import { AuthProvider } from '../contexts/AuthContext'
 import { useThemeColors } from '../hooks/useThemeColors'
 
 function AppContent() {
@@ -67,9 +68,11 @@ export default function RootLayout() {
     <ErrorBoundary>
       <ThemeProvider>
         <ToastProvider>
-          <ConfirmationProvider>
-            <AppContent />
-          </ConfirmationProvider>
+          <AuthProvider>
+            <ConfirmationProvider>
+              <AppContent />
+            </ConfirmationProvider>
+          </AuthProvider>
         </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>

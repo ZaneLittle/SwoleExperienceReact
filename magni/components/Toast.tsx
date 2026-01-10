@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native'
+import { createPortal } from 'react-dom'
 import { useThemeColors } from '../hooks/useThemeColors'
 
 export type ToastType = 'success' | 'error' | 'info'
@@ -93,7 +94,12 @@ function Toast({ message, visible, onHide, type = 'info', duration = 4000 }: Toa
   }
 
   if (Platform.OS === 'web') {
-    return (
+    // Render the toast into a portal attached to document.body so it appears above any overlays.
+    if (typeof document === 'undefined') {
+      return null
+    }
+
+    return createPortal(
       <div
         style={{
           position: 'fixed',
@@ -146,7 +152,8 @@ function Toast({ message, visible, onHide, type = 'info', duration = 4000 }: Toa
             ×
           </button>
         </div>
-      </div>
+      </div>,
+      document.body,
     )
   }
 
