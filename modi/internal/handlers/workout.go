@@ -34,8 +34,8 @@ type CreateWorkoutRequest struct {
 	Sets     *int     `json:"sets,omitempty"`
 	Reps     *int     `json:"reps,omitempty"`
 	Notes    *string  `json:"notes,omitempty"`
-	Day      int      `json:"day" binding:"required,min=1"`
-	DayOrder int      `json:"day_order" binding:"required,min=0"`
+	Day      int      `json:"day" binding:"min=1"`
+	DayOrder int      `json:"day_order" binding:"min=0"`
 }
 
 // UpdateWorkoutRequest represents a workout update request.
@@ -46,8 +46,8 @@ type UpdateWorkoutRequest struct {
 	Sets     *int      `json:"sets,omitempty"`
 	Reps     *int      `json:"reps,omitempty"`
 	Notes    *string   `json:"notes,omitempty"`
-	Day      int       `json:"day" binding:"required,min=1"`
-	DayOrder int       `json:"day_order" binding:"required,min=0"`
+	Day      int       `json:"day" binding:"min=1"`
+	DayOrder int       `json:"day_order" binding:"min=0"`
 }
 
 // CreateWorkout handles workout creation.
