@@ -239,7 +239,8 @@ describe('useDailyStats', () => {
 
       const { result } = renderHook(() => useDailyStats(weights, averages))
 
-      expect(result.current.stats.currentWeight).toBe(180.5)
+      // Current weight is average of 1-day (181.0) and 7-day (180.5) = 180.75
+      expect(result.current.stats.currentWeight).toBe(180.75)
     })
 
     it('calculates current weight from three-day average when seven-day is null', () => {
@@ -261,7 +262,8 @@ describe('useDailyStats', () => {
 
       const { result } = renderHook(() => useDailyStats(weights, averages))
 
-      expect(result.current.stats.currentWeight).toBe(180.5)
+      // Current weight is average of 1-day (181.0) and 3-day (180.5) = 180.75
+      expect(result.current.stats.currentWeight).toBe(180.75)
     })
 
     it('calculates current weight from daily average when others are null', () => {
@@ -278,6 +280,23 @@ describe('useDailyStats', () => {
       const { result } = renderHook(() => useDailyStats(weights, averages))
 
       expect(result.current.stats.currentWeight).toBe(180.0)
+    })
+
+    it('calculates current weight as average of all three averages when all are available', () => {
+      const weights = createMockWeights(10)
+      const averages = [
+        createMockAverage({ 
+          date: new Date('2024-01-15T00:00:00Z'), 
+          average: 180.0, 
+          threeDayAverage: 180.2, 
+          sevenDayAverage: 180.1, 
+        }),
+      ]
+
+      const { result } = renderHook(() => useDailyStats(weights, averages))
+
+      // Current weight is average of 1-day (180.0), 3-day (180.2), and 7-day (180.1) = 180.1
+      expect(result.current.stats.currentWeight).toBeCloseTo(180.1, 1)
     })
 
     describe('Rolling Trend Calculations', () => {

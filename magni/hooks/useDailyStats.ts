@@ -126,60 +126,99 @@ export function useDailyStats(weights: Weight[], averages: Average[]): DailyStat
 
     // Calculate stats for the component
     const calculateStats = (): WeightStats => {
-      if (!averages.length) return { currentWeight: 0, threeDayChange: 0, sevenDayChange: 0 }
+      if (!sortedAverages.length) return { currentWeight: 0, threeDayChange: 0, sevenDayChange: 0 }
       
-      // Find the most recent averages that have values
-      // Averages are sorted oldest-first, so get the last one
-      const latestWithSevenDay = [...averages].reverse().find(a => a.sevenDayAverage !== null)
-      const latestWithThreeDay = [...averages].reverse().find(a => a.threeDayAverage !== null)
+      // Get the most recent average entry (last in sorted array)
+      const latestAverage = sortedAverages[sortedAverages.length - 1]
       
-      const currentWeight = latestWithSevenDay?.sevenDayAverage || 
-                           latestWithThreeDay?.threeDayAverage || 
-                           averages[averages.length - 1]?.average || 0
+      // Calculate current weight as average of 1-day, 3-day, and 7-day averages where available
+      const availableAverages: number[] = []
+      if (latestAverage.average !== null && latestAverage.average !== undefined) {
+        availableAverages.push(latestAverage.average)
+      }
+      if (latestAverage.threeDayAverage !== null && latestAverage.threeDayAverage !== undefined) {
+        availableAverages.push(latestAverage.threeDayAverage)
+      }
+      if (latestAverage.sevenDayAverage !== null && latestAverage.sevenDayAverage !== undefined) {
+        availableAverages.push(latestAverage.sevenDayAverage)
+      }
+      
+      const currentWeight = availableAverages.length > 0
+        ? availableAverages.reduce((sum, avg) => sum + avg, 0) / availableAverages.length
+        : 0
+
+      // Helper function to normalize date to midnight for comparison
+      const normalizeDate = (date: Date): Date => {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      }
 
       // Calculate rolling trends: compare current average with average from N days ago
       let threeDayChange = 0
       let sevenDayChange = 0
 
-      if (latestWithThreeDay) {
+      // Calculate 3-day change: compare current day's 3-day average to 3 days ago's 3-day average
+      if (latestAverage.threeDayAverage !== null && latestAverage.threeDayAverage !== undefined) {
         // Find the 3-day average from 3 days ago
-        const threeDaysAgo = new Date(latestWithThreeDay.date)
+        const latestDate = normalizeDate(latestAverage.date)
+        const threeDaysAgo = new Date(latestDate)
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
+        const threeDaysAgoNormalized = normalizeDate(threeDaysAgo)
         
         // Find average entry closest to 3 days ago (within 1 day tolerance)
-        const candidatesWithThreeDay = averages
-          .filter(a => a.threeDayAverage !== null && a !== latestWithThreeDay)
-          .map(a => ({
-            average: a,
-            daysDiff: Math.abs(a.date.getTime() - threeDaysAgo.getTime()) / (24 * 60 * 60 * 1000),
-          }))
+        // Only consider entries that are before the latest date
+        const candidatesWithThreeDay = sortedAverages
+          .filter(a => {
+            const aDateNormalized = normalizeDate(a.date)
+            return a.threeDayAverage !== null && 
+                   aDateNormalized.getTime() < latestDate.getTime()
+          })
+          .map(a => {
+            const aDateNormalized = normalizeDate(a.date)
+            const daysDiff = Math.abs(aDateNormalized.getTime() - threeDaysAgoNormalized.getTime()) / (24 * 60 * 60 * 1000)
+            return {
+              average: a,
+              daysDiff,
+            }
+          })
           .filter(c => c.daysDiff <= 1)
           .sort((a, b) => a.daysDiff - b.daysDiff)
         
         if (candidatesWithThreeDay.length > 0) {
           const threeDayStart = candidatesWithThreeDay[0].average
-          threeDayChange = latestWithThreeDay.threeDayAverage! - threeDayStart.threeDayAverage!
+          threeDayChange = latestAverage.threeDayAverage - threeDayStart.threeDayAverage!
         }
       }
 
-      if (latestWithSevenDay) {
+      // Calculate 7-day change: compare current day's 7-day average to 7 days ago's 7-day average
+      if (latestAverage.sevenDayAverage !== null && latestAverage.sevenDayAverage !== undefined) {
         // Find the 7-day average from 7 days ago
-        const sevenDaysAgo = new Date(latestWithSevenDay.date)
+        const latestDate = normalizeDate(latestAverage.date)
+        const sevenDaysAgo = new Date(latestDate)
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        const sevenDaysAgoNormalized = normalizeDate(sevenDaysAgo)
         
         // Find average entry closest to 7 days ago (within 1 day tolerance)
-        const candidatesWithSevenDay = averages
-          .filter(a => a.sevenDayAverage !== null && a !== latestWithSevenDay)
-          .map(a => ({
-            average: a,
-            daysDiff: Math.abs(a.date.getTime() - sevenDaysAgo.getTime()) / (24 * 60 * 60 * 1000),
-          }))
+        // Only consider entries that are before the latest date
+        const candidatesWithSevenDay = sortedAverages
+          .filter(a => {
+            const aDateNormalized = normalizeDate(a.date)
+            return a.sevenDayAverage !== null && 
+                   aDateNormalized.getTime() < latestDate.getTime()
+          })
+          .map(a => {
+            const aDateNormalized = normalizeDate(a.date)
+            const daysDiff = Math.abs(aDateNormalized.getTime() - sevenDaysAgoNormalized.getTime()) / (24 * 60 * 60 * 1000)
+            return {
+              average: a,
+              daysDiff,
+            }
+          })
           .filter(c => c.daysDiff <= 1)
           .sort((a, b) => a.daysDiff - b.daysDiff)
         
         if (candidatesWithSevenDay.length > 0) {
           const sevenDayStart = candidatesWithSevenDay[0].average
-          sevenDayChange = latestWithSevenDay.sevenDayAverage! - sevenDayStart.sevenDayAverage!
+          sevenDayChange = latestAverage.sevenDayAverage - sevenDayStart.sevenDayAverage!
         }
       }
 
