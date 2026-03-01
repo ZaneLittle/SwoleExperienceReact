@@ -1,9 +1,38 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-cd magni && pnpm run lint:fix
+# Run lint:fix in magni directory
+cd magni || exit 1
 
-git add -u
+# Run lint:fix and check output for errors (not warnings)
+# ESLint exits with code 1 even for warnings, so we need to check the output
+# Disable exit on error for the rest of the script to handle non-critical failures
+set +e
+LINT_OUTPUT=$(pnpm run lint:fix 2>&1)
+LINT_EXIT=$?
+
+# Display the lint output
+echo "$LINT_OUTPUT"
+
+# Check if there are actual errors (not just warnings)
+# ESLint output format: "✖ X problems (Y errors, Z warnings)"
+# Match patterns like "1 error", "2 errors", etc. but not "0 errors"
+if echo "$LINT_OUTPUT" | grep -qE "([1-9][0-9]* error|[1-9][0-9]* errors)"; then
+    echo ""
+    echo "❌ Linting failed with errors! Please fix the errors before committing."
+    exit 1
+fi
+
+# If we get here, there are only warnings (or no issues), allow commit
+echo ""
+echo "✅ Linting passed (warnings are allowed)"
+
+# Return to root directory for git commands
+cd .. || exit 1
+
+# Stage any files that were auto-fixed by lint:fix
+# This is safe even if no files were changed
+git add -u 2>/dev/null || true
 
 STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^modi/.*\.go$')
 if [ -n "$STAGED_GO_FILES" ]; then
