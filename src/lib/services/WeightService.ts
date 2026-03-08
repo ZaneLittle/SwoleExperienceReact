@@ -16,7 +16,7 @@ class WeightService {
     return WeightService.instance
   }
 
-  async getWeights(startDate?: Date): Promise<Weight[]> {
+  async getWeights(days?: number): Promise<Weight[]> {
     try {
       const weightsJson = await AsyncStorage.getItem(WEIGHT_STORAGE_KEY)
       if (!weightsJson) return []
@@ -24,14 +24,16 @@ class WeightService {
       const weightsData: WeightData[] = JSON.parse(weightsJson)
       const weights = weightsData.map(WeightConverter.fromData)
 
-      // Filter to last 60 days
-      const cutoffDate = startDate 
-        ? new Date(startDate.getTime() - 60 * 24 * 60 * 60 * 1000)
-        : new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+      // If days is provided, filter to that many days from now
+      if (days !== undefined) {
+        const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+        return weights
+          .filter(weight => weight.dateTime >= cutoffDate)
+          .sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime())
+      }
 
-      return weights
-        .filter(weight => weight.dateTime >= cutoffDate)
-        .sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime())
+      // If no days specified, return all weights (for internal use)
+      return weights.sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime())
     } catch (error) {
       console.error('Error getting weights:', error)
       return []

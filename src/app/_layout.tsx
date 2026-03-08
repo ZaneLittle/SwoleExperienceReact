@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar'
 import { Platform, Text } from 'react-native'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ThemeProvider } from '../contexts/ThemeContext'
+import { WeightPeriodProvider } from '../contexts/WeightPeriodContext'
 import { ConfirmationProvider } from '../components/ConfirmationProvider'
 import { ToastProvider } from '../contexts/ToastContext'
 import { useThemeColors } from '../hooks/useThemeColors'
@@ -66,11 +67,13 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <ToastProvider>
-          <ConfirmationProvider>
-            <AppContent />
-          </ConfirmationProvider>
-        </ToastProvider>
+        <WeightPeriodProvider>
+          <ToastProvider>
+            <ConfirmationProvider>
+              <AppContent />
+            </ConfirmationProvider>
+          </ToastProvider>
+        </WeightPeriodProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )
