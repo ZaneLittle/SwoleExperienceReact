@@ -79,7 +79,7 @@ describe('AverageService', () => {
       expect(result[2].average).toBe(180.0)
     })
 
-    it('filters averages to last 60 days', async () => {
+    it('filters averages to last 60 days when days parameter is provided', async () => {
       const now = new Date()
       const sixtyOneDaysAgo = new Date(now.getTime() - 61 * 24 * 60 * 60 * 1000)
       const fiftyNineDaysAgo = new Date(now.getTime() - 59 * 24 * 60 * 60 * 1000)
@@ -101,26 +101,62 @@ describe('AverageService', () => {
 
       mockGetItem.mockResolvedValueOnce(JSON.stringify(mockAveragesData))
 
-      const result = await averageService.getAverages()
+      const result = await averageService.getAverages(60)
 
       expect(result).toHaveLength(1)
       expect(result[0].average).toBe(181.0)
     })
 
-    it('filters averages with custom start date', async () => {
-      const startDate = new Date('2024-01-01')
-      const beforeStart = new Date('2023-12-01')
-      const afterStart = new Date('2024-01-15')
+    it('filters averages to last 7 days when days=7', async () => {
+      const now = new Date()
+      const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)
+      const sixDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
       const mockAveragesData: AverageData[] = [
         {
-          dateTime: beforeStart.toISOString(),
+          dateTime: eightDaysAgo.toISOString(),
           average: 180.0,
           threeDayAverage: 180.1,
           sevenDayAverage: 180.2,
         },
         {
-          dateTime: afterStart.toISOString(),
+          dateTime: sixDaysAgo.toISOString(),
+          average: 181.0,
+          threeDayAverage: 181.1,
+          sevenDayAverage: 181.2,
+        },
+        {
+          dateTime: threeDaysAgo.toISOString(),
+          average: 182.0,
+          threeDayAverage: 182.1,
+          sevenDayAverage: 182.2,
+        },
+      ]
+
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(mockAveragesData))
+
+      const result = await averageService.getAverages(7)
+
+      expect(result).toHaveLength(2)
+      expect(result[0].average).toBe(182.0) // Most recent first
+      expect(result[1].average).toBe(181.0)
+    })
+
+    it('returns all averages when days parameter is not provided', async () => {
+      const now = new Date()
+      const oldDate = new Date(now.getTime() - 100 * 24 * 60 * 60 * 1000) // 100 days ago
+      const recentDate = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+
+      const mockAveragesData: AverageData[] = [
+        {
+          dateTime: oldDate.toISOString(),
+          average: 180.0,
+          threeDayAverage: 180.1,
+          sevenDayAverage: 180.2,
+        },
+        {
+          dateTime: recentDate.toISOString(),
           average: 181.0,
           threeDayAverage: 181.1,
           sevenDayAverage: 181.2,
@@ -129,9 +165,8 @@ describe('AverageService', () => {
 
       mockGetItem.mockResolvedValueOnce(JSON.stringify(mockAveragesData))
 
-      const result = await averageService.getAverages(startDate)
+      const result = await averageService.getAverages()
 
-      // Both averages should be included since they're within 60 days of startDate
       expect(result).toHaveLength(2)
       expect(result[0].average).toBe(181.0) // Most recent first
       expect(result[1].average).toBe(180.0)

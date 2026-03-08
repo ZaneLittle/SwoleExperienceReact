@@ -9,9 +9,11 @@ import { workoutExportService } from '../lib/services/WorkoutExportService'
 import { workoutImportService } from '../lib/services/WorkoutImportService'
 import WorkoutManagementSection from '../components/settings/WorkoutManagementSection'
 import AppearanceSection from '../components/settings/AppearanceSection'
+import WeightPeriodSection from '../components/settings/WeightPeriodSection'
 import SupportSection from '../components/settings/SupportSection'
 import ClearHistoryModal from '../components/settings/ClearHistoryModal'
 import ImportConfirmModal from '../components/settings/ImportConfirmModal'
+import { useWeightPeriod } from '../contexts/WeightPeriodContext'
 
 export default function SettingsScreen() {
   const [showWorkoutConfig, setShowWorkoutConfig] = useState(false)
@@ -19,6 +21,7 @@ export default function SettingsScreen() {
   const [showImportConfirmModal, setShowImportConfirmModal] = useState(false)
   const [pendingImportCSV, setPendingImportCSV] = useState<string | null>(null)
   const { themeMode, setThemeMode } = useTheme()
+  const { periodWindow, setPeriodWindow } = useWeightPeriod()
   const colors = useThemeColors()
   const { showToast } = useToast()
 
@@ -119,6 +122,11 @@ export default function SettingsScreen() {
         <AppearanceSection
           themeMode={themeMode}
           onThemeModeChange={handleThemeModeChange}
+        />
+
+        <WeightPeriodSection
+          periodWindow={periodWindow}
+          onPeriodWindowChange={setPeriodWindow}
         />
 
         <SupportSection />

@@ -9,19 +9,22 @@ import { Average } from '../lib/models/Average'
 import { weightService } from '../lib/services/WeightService'
 import { averageService } from '../lib/services/AverageService'
 import { useThemeColors } from '../hooks/useThemeColors'
+import { useWeightPeriod } from '../contexts/WeightPeriodContext'
 
 export default function WeightScreen() {
   const [weights, setWeights] = useState<Weight[]>([])
   const [averages, setAverages] = useState<Average[]>([])
   const [loading, setLoading] = useState(true)
   const colors = useThemeColors()
+  const { periodWindow, getDaysFromWindow } = useWeightPeriod()
 
   const loadData = async () => {
     try {
       setLoading(true)
+      const days = getDaysFromWindow(periodWindow)
       const [weightsData, averagesData] = await Promise.all([
-        weightService.getWeights(),
-        averageService.getAverages(),
+        weightService.getWeights(days),
+        averageService.getAverages(days),
       ])
       setWeights(weightsData)
       setAverages(averagesData)
@@ -34,13 +37,13 @@ export default function WeightScreen() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [periodWindow])
 
   // Refresh data when the screen comes into focus (e.g., when switching tabs)
   useFocusEffect(
     React.useCallback(() => {
       loadData()
-    }, []),
+    }, [periodWindow]),
   )
 
   const handleWeightAdded = () => {
