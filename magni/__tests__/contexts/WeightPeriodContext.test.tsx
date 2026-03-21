@@ -1,7 +1,7 @@
 import React from 'react'
 import { renderHook, act, waitFor } from '@testing-library/react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { WeightPeriodProvider, useWeightPeriod, WeightPeriodWindow } from '../../contexts/WeightPeriodContext'
+import { WeightPeriodProvider, useWeightPeriod } from '../../contexts/WeightPeriodContext'
 
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>
 const mockGetItem = mockAsyncStorage.getItem as jest.MockedFunction<typeof mockAsyncStorage.getItem>
