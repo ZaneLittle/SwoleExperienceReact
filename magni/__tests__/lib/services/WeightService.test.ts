@@ -41,7 +41,7 @@ describe('WeightService', () => {
       expect(mockGetItem).toHaveBeenCalledWith('weights')
     })
 
-    it('returns weights sorted by date (newest first)', async () => {
+    it('returns weights sorted by date (newest first) when no days specified', async () => {
       const now = new Date()
       const recentDate1 = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
       const recentDate2 = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
@@ -76,7 +76,7 @@ describe('WeightService', () => {
       expect(result[2].weight).toBe(180.0)
     })
 
-    it('filters weights to last 60 days', async () => {
+    it('filters weights to last 60 days when days parameter is provided', async () => {
       const now = new Date()
       const sixtyOneDaysAgo = new Date(now.getTime() - 61 * 24 * 60 * 60 * 1000)
       const fiftyNineDaysAgo = new Date(now.getTime() - 59 * 24 * 60 * 60 * 1000)
@@ -96,35 +96,67 @@ describe('WeightService', () => {
 
       mockGetItem.mockResolvedValueOnce(JSON.stringify(mockWeightsData))
 
-      const result = await weightService.getWeights()
+      const result = await weightService.getWeights(60)
 
       expect(result).toHaveLength(1)
       expect(result[0].weight).toBe(181.0)
     })
 
-    it('filters weights with custom start date', async () => {
-      const startDate = new Date('2024-01-01')
-      const beforeStart = new Date('2023-12-01')
-      const afterStart = new Date('2024-01-15')
+    it('filters weights to last 7 days when days=7', async () => {
+      const now = new Date()
+      const eightDaysAgo = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)
+      const sixDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
 
       const mockWeightsData: WeightData[] = [
         {
           id: '1',
-          dateTime: beforeStart.toISOString(),
+          dateTime: eightDaysAgo.toISOString(),
           weight: 180.0,
         },
         {
           id: '2',
-          dateTime: afterStart.toISOString(),
+          dateTime: sixDaysAgo.toISOString(),
+          weight: 181.0,
+        },
+        {
+          id: '3',
+          dateTime: threeDaysAgo.toISOString(),
+          weight: 182.0,
+        },
+      ]
+
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(mockWeightsData))
+
+      const result = await weightService.getWeights(7)
+
+      expect(result).toHaveLength(2)
+      expect(result[0].weight).toBe(182.0) // Most recent first
+      expect(result[1].weight).toBe(181.0)
+    })
+
+    it('returns all weights when days parameter is not provided', async () => {
+      const now = new Date()
+      const oldDate = new Date(now.getTime() - 100 * 24 * 60 * 60 * 1000) // 100 days ago
+      const recentDate = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+
+      const mockWeightsData: WeightData[] = [
+        {
+          id: '1',
+          dateTime: oldDate.toISOString(),
+          weight: 180.0,
+        },
+        {
+          id: '2',
+          dateTime: recentDate.toISOString(),
           weight: 181.0,
         },
       ]
 
       mockGetItem.mockResolvedValueOnce(JSON.stringify(mockWeightsData))
 
-      const result = await weightService.getWeights(startDate)
+      const result = await weightService.getWeights()
 
-      // Both weights should be included since they're within 60 days of startDate
       expect(result).toHaveLength(2)
       expect(result[0].weight).toBe(181.0) // Most recent first
       expect(result[1].weight).toBe(180.0)

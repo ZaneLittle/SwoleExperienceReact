@@ -16,7 +16,7 @@ class AverageService {
     return AverageService.instance
   }
 
-  async getAverages(startDate?: Date): Promise<Average[]> {
+  async getAverages(days?: number): Promise<Average[]> {
     try {
       const averagesJson = await AsyncStorage.getItem(AVERAGE_STORAGE_KEY)
       if (!averagesJson) return []
@@ -24,14 +24,16 @@ class AverageService {
       const averagesData: AverageData[] = JSON.parse(averagesJson)
       const averages = averagesData.map(AverageConverter.fromData)
 
-      // Filter to last 60 days
-      const cutoffDate = startDate 
-        ? new Date(startDate.getTime() - 60 * 24 * 60 * 60 * 1000)
-        : new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
-
+      // If days is provided, filter to that many days from now
+      if (days !== undefined) {
+        const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
       return averages
         .filter(average => average.date >= cutoffDate)
         .sort((a, b) => b.date.getTime() - a.date.getTime())
+      }
+
+      // If no days specified, return all averages
+      return averages.sort((a, b) => b.date.getTime() - a.date.getTime())
     } catch (error) {
       console.error('Error getting averages:', error)
       return []
