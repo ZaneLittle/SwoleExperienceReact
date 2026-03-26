@@ -35,13 +35,6 @@ linters-settings:
   
   revive:
     min-confidence: 0.8
-    rules:
-      - name: exported
-        severity: warning
-      - name: var-naming
-        severity: warning
-      - name: var-declaration
-        severity: warning
 
 issues:
   exclude-use-default: false

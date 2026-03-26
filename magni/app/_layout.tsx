@@ -6,6 +6,7 @@ import { ThemeProvider } from '../contexts/ThemeContext'
 import { WeightPeriodProvider } from '../contexts/WeightPeriodContext'
 import { ConfirmationProvider } from '../components/ConfirmationProvider'
 import { ToastProvider } from '../contexts/ToastContext'
+import { AuthProvider } from '../contexts/AuthContext'
 import { useThemeColors } from '../hooks/useThemeColors'
 
 function AppContent() {
@@ -69,9 +70,11 @@ export default function RootLayout() {
       <ThemeProvider>
         <WeightPeriodProvider>
         <ToastProvider>
-          <ConfirmationProvider>
-            <AppContent />
-          </ConfirmationProvider>
+          <AuthProvider>
+            <ConfirmationProvider>
+              <AppContent />
+            </ConfirmationProvider>
+          </AuthProvider>
         </ToastProvider>
         </WeightPeriodProvider>
       </ThemeProvider>

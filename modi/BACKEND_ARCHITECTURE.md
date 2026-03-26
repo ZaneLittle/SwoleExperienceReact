@@ -873,43 +873,21 @@ volumes:
 ```
 modi/
 ├── cmd/
-│   └── api/
-│       └── main.go              # Application entry point
+│   └── api/                     # Application entry point
 ├── internal/
 │   ├── config/                  # Configuration management
-│   │   └── config.go
 │   ├── handlers/                # HTTP handlers (Gin routes)
-│   │   ├── auth.go
-│   │   ├── workouts.go
-│   │   ├── weights.go
-│   │   └── foods.go
-│   ├── middleware/              # Middleware
-│   │   ├── auth.go
-│   │   ├── logging.go
-│   │   └── rate_limit.go
+│   │   └── test/                # Handler tests
+│   ├── middleware/              # Middleware (auth, JWT, password, logging, rate limiting)
 │   ├── models/                  # Domain models
-│   │   ├── user.go
-│   │   ├── workout.go
-│   │   └── food.go
 │   ├── repositories/            # Data access layer
-│   │   ├── user_repository.go
-│   │   ├── workout_repository.go
-│   │   └── food_repository.go
-│   ├── services/                # Business logic
-│   │   ├── auth_service.go
-│   │   ├── workout_service.go
-│   │   ├── sync_service.go
-│   │   └── food_service.go
-│   └── utils/                   # Utilities
-│       ├── jwt.go
-│       └── validator.go
+│   └── services/                # Business logic
 ├── migrations/                  # SQL migrations
-│   └── 001_initial_schema.sql
 ├── pkg/                        # Public packages (if any)
-├── Dockerfile
-├── go.mod
-├── go.sum
-└── .env.example
+├── Dockerfile                  # Docker container definition
+├── go.mod                      # Go module definition
+├── go.sum                      # Go module checksums
+└── .env.example                # Environment variable template
 ```
 
 ### TrueNAS Scale Deployment

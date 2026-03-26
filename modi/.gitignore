@@ -66,7 +66,7 @@ coverage.xml
 
 # Air (live reload tool)
 tmp/
-.air.toml
+# Note: .air.toml should be committed to the repo for consistent dev environment
 
 # Build artifacts
 dist/

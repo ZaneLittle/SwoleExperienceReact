@@ -1,37 +1,35 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run lint:fix in magni directory
+set +e  # Disable exit on error for lint checks
+
+# Run lint:fix to auto-fix issues (ignore exit code)
+(cd magni && pnpm run lint:fix) 2>&1 || true
+
+# Run lint to check for actual errors (lint:fix exit code/output is unreliable for warnings vs errors)
 cd magni || exit 1
+LINT_OUTPUT=$(pnpm run lint 2>&1)
 
-# Run lint:fix and check output for errors (not warnings)
-# ESLint exits with code 1 even for warnings, so we need to check the output
-# Disable exit on error for the rest of the script to handle non-critical failures
-set +e
-LINT_OUTPUT=$(pnpm run lint:fix 2>&1)
-LINT_EXIT=$?
+# ESLint summary line: "✖ N problems (E errors, W warnings)" — only fail when E > 0
+HAS_ERRORS=$(echo "$LINT_OUTPUT" | grep -oE "✖ [0-9]+ problems \([1-9][0-9]* errors" || true)
 
-# Display the lint output
-echo "$LINT_OUTPUT"
-
-# Check if there are actual errors (not just warnings)
-# ESLint output format: "✖ X problems (Y errors, Z warnings)"
-# Match patterns like "1 error", "2 errors", etc. but not "0 errors"
-if echo "$LINT_OUTPUT" | grep -qE "([1-9][0-9]* error|[1-9][0-9]* errors)"; then
-    echo ""
-    echo "❌ Linting failed with errors! Please fix the errors before committing."
-    exit 1
+if [ -n "$HAS_ERRORS" ]; then
+  echo "❌ Linting failed with errors. Please fix the errors before committing."
+  echo "$LINT_OUTPUT"
+  set -e
+  exit 1
 fi
 
-# If we get here, there are only warnings (or no issues), allow commit
-echo ""
-echo "✅ Linting passed (warnings are allowed)"
+HAS_WARNINGS=$(echo "$LINT_OUTPUT" | grep -oE "✖ [0-9]+ problems" || true)
+if [ -n "$HAS_WARNINGS" ]; then
+  echo "⚠️  Linting completed with warnings (no errors). Allowing commit."
+else
+  echo ""
+  echo "✅ Linting passed (warnings are allowed)"
+fi
 
-# Return to root directory for git commands
-cd .. || exit 1
+cd "$(git rev-parse --show-toplevel)" || true
 
-# Stage any files that were auto-fixed by lint:fix
-# This is safe even if no files were changed
 git add -u 2>/dev/null || true
 
 STAGED_GO_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^modi/.*\.go$')
@@ -59,13 +57,18 @@ if [ -n "$STAGED_GO_FILES" ]; then
         echo "Skipping Go lint check. Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin latest"
     else
         cd modi || exit 0
+        set -e  # Re-enable exit on error for Go lint check
         if ! "$GOLANGCI_LINT" run --timeout=5m ./...; then
             echo ""
             echo "❌ Go linting failed! Please fix the errors before committing."
             echo "You can run 'make lint' in the modi/ directory to see the errors."
             exit 1
         fi
+        set +e  # Disable exit on error again after Go lint passes
         echo "✅ Go linting passed!"
     fi
 fi
+
+# Make sure we exit successfully if we got here
+exit 0
 

@@ -11,26 +11,28 @@ Modi uses a comprehensive testing strategy to ensure code quality, reliability, 
 
 ## Test Structure
 
+Test files are organized in their own `test/` subdirectories within each package to keep source files and tests clearly separated.
+
 ```
 modi/
 ├── internal/
 │   ├── config/
-│   │   └── config_test.go
+│   │   └── test/                # Config tests
 │   ├── handlers/
-│   │   └── *_test.go
+│   │   └── test/                # Handler tests
 │   ├── middleware/
-│   │   └── *_test.go
+│   │   └── test/                # Middleware tests
 │   ├── models/
-│   │   └── *_test.go
+│   │   └── test/                # Model tests
 │   ├── repositories/
-│   │   └── *_test.go
-│   ├── services/
-│   │   └── *_test.go
-│   └── utils/
-│       └── *_test.go
+│   │   └── test/                # Repository tests
+│   └── services/
+│       └── test/                # Service tests
 └── integration/
     └── *_test.go
 ```
+
+**Note**: Test files in `test/` subdirectories use the `package_test` naming convention (e.g., `handlers_test`) to allow testing the parent package while maintaining clear separation.
 
 ## Testing Tools
 
@@ -55,18 +57,20 @@ Unit tests verify individual functions, methods, and components work correctly i
 ### Scope
 - **Models** - Data validation, conversions, business logic
 - **Config** - Configuration loading and validation
-- **Utils** - Helper functions and utilities
+- **Middleware** - Authentication, JWT, password utilities, and middleware functions
 - **Handlers** - Request/response handling (with mocked dependencies)
 - **Services** - Business logic (with mocked repositories)
 - **Repositories** - Data access layer (with mocked database)
 - **Middleware** - Authentication, logging, validation
 
 ### Best Practices
-1. **One test file per source file**: `source.go` → `source_test.go`
-2. **Table-driven tests**: Use for multiple input scenarios
-3. **Mock dependencies**: Don't use real database/Redis in unit tests
-4. **Fast execution**: Unit tests should run in < 1 second total
-5. **Isolated tests**: Each test should be independent
+1. **Test files in separate directory**: Tests are located in `test/` subdirectories within each package
+2. **Package naming**: Test packages use `package_test` convention (e.g., `handlers_test`) when in subdirectories
+3. **One test file per source file**: `source.go` → `test/source_test.go`
+4. **Table-driven tests**: Use for multiple input scenarios
+5. **Mock dependencies**: Don't use real database/Redis in unit tests
+6. **Fast execution**: Unit tests should run in < 1 second total
+7. **Isolated tests**: Each test should be independent
 
 ### Example Unit Test Structure
 ```go
@@ -82,7 +86,7 @@ import (
     "github.com/stretchr/testify/mock"
 )
 
-func TestHealthHandler_Health(t *testing.T) {
+func TestHandler_Method(t *testing.T) {
     tests := []struct {
         name           string
         setupMocks     func()
@@ -90,7 +94,7 @@ func TestHealthHandler_Health(t *testing.T) {
         expectedBody   map[string]interface{}
     }{
         {
-            name: "healthy services",
+            name: "success case",
             setupMocks: func() {
                 // Setup mocks
             },
@@ -144,23 +148,23 @@ import (
     "github.com/stretchr/testify/suite"
 )
 
-type HealthCheckTestSuite struct {
+type FeatureTestSuite struct {
     suite.Suite
     db    *pgxpool.Pool
     redis *redis.Client
     app   *gin.Engine
 }
 
-func (s *HealthCheckTestSuite) SetupSuite() {
+func (s *FeatureTestSuite) SetupSuite() {
     // Setup test database and Redis
     // Initialize application
 }
 
-func (s *HealthCheckTestSuite) TearDownSuite() {
+func (s *FeatureTestSuite) TearDownSuite() {
     // Cleanup test database and Redis
 }
 
-func (s *HealthCheckTestSuite) TestHealthCheck() {
+func (s *FeatureTestSuite) TestFeature() {
     // Integration test implementation
 }
 
@@ -180,10 +184,10 @@ Test data models:
 - Business rules
 - Type constraints
 
-**Example**: Test `User` model validation, `Workout` sync version handling
+**Example**: Test model validation, data conversions, and business rules
 
 ### 2. Handler Tests
-**Location**: `internal/handlers/*_test.go`
+**Location**: `internal/handlers/test/*_test.go`
 
 Test HTTP handlers:
 - Request parsing and validation
@@ -193,10 +197,10 @@ Test HTTP handlers:
 
 **Mocks**: Services, repositories
 
-**Example**: Test `HealthHandler`, `AuthHandler` endpoints
+**Example**: Test endpoint handlers for request/response handling and validation
 
 ### 3. Service Tests
-**Location**: `internal/services/*_test.go`
+**Location**: `internal/services/test/*_test.go`
 
 Test business logic:
 - Service methods
@@ -206,10 +210,10 @@ Test business logic:
 
 **Mocks**: Repositories
 
-**Example**: Test `WorkoutService.SyncWorkouts`, `AuthService.Login`
+**Example**: Test service methods, business logic, and data transformations
 
 ### 4. Repository Tests
-**Location**: `internal/repositories/*_test.go`
+**Location**: `internal/repositories/test/*_test.go`
 
 Test data access:
 - SQL queries
@@ -219,10 +223,10 @@ Test data access:
 
 **Mocks**: Database driver (pgxmock)
 
-**Example**: Test `WorkoutRepository.GetByUserID`, `UserRepository.Create`
+**Example**: Test repository methods for CRUD operations and database queries
 
 ### 5. Middleware Tests
-**Location**: `internal/middleware/*_test.go`
+**Location**: `internal/middleware/test/*_test.go`
 
 Test middleware:
 - Authentication checks
@@ -268,12 +272,12 @@ go test ./integration/... -tags=integration
 
 ### Run Specific Package
 ```bash
-go test ./internal/handlers/...
+go test ./internal/handlers/test/...
 ```
 
 ### Run Specific Test
 ```bash
-go test -run TestHealthHandler ./internal/handlers/...
+go test -run TestHandlerName ./internal/handlers/test/...
 ```
 
 ### Run Tests in Watch Mode
@@ -314,7 +318,7 @@ Tests are automatically run:
 ### Factories
 - Create test data factories for models
 - Make it easy to generate test objects
-- Example: `testutils.NewUser()`, `testutils.NewWorkout()`
+- Example: `testutil.NewModel()`, `testutil.NewEntity()`
 
 ## Mock Strategy
 
