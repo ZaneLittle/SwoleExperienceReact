@@ -30,10 +30,13 @@ jest.mock('react-native', () => {
     TouchableOpacity,
     ScrollView: (props) => React.createElement('ScrollView', props, props?.children),
     KeyboardAvoidingView: (props) => React.createElement('KeyboardAvoidingView', props, props?.children),
+    // visible === false only: RNTL host detection renders <Modal testID="modal" /> with no visible prop.
     Modal: (props) => {
-      if (!props?.visible) return null;
-      return React.createElement('View', { testID: 'modal', ...props }, props?.children);
+      if (props?.visible === false) return null;
+      return React.createElement('View', { testID: props.testID ?? 'modal', ...props }, props?.children);
     },
+    Image: createComponent('Image'),
+    Switch: createComponent('Switch'),
     ActivityIndicator: createComponent('ActivityIndicator'),
     FlatList: (props) => React.createElement('FlatList', props, props?.children),
     SectionList: (props) => React.createElement('SectionList', props, props?.children),
@@ -47,6 +50,13 @@ jest.mock('react-native', () => {
     },
     StyleSheet: {
       create: jest.fn((styles) => styles),
+      flatten: (style) => {
+        if (style == null) return {};
+        if (Array.isArray(style)) {
+          return Object.assign({}, ...style.filter(Boolean));
+        }
+        return typeof style === 'object' ? style : {};
+      },
     },
     Dimensions: {
       get: jest.fn(() => ({ width: 375, height: 812 })),

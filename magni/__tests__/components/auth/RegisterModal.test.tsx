@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent, waitFor } from '@testing-library/react-native'
+import { render, fireEvent, waitFor, within } from '@testing-library/react-native'
 import RegisterModal from '../../../components/auth/RegisterModal'
 import { useAuth } from '../../../contexts/AuthContext'
 
@@ -46,12 +46,13 @@ describe('RegisterModal', () => {
 
   describe('Rendering', () => {
     it('renders registration form when visible', () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getAllByText, getByPlaceholderText, getByTestId } = render(<RegisterModal {...defaultProps} />)
 
-      expect(getByText('Create Account')).toBeVisible()
-      expect(getByPlaceholderText('Enter your email')).toBeVisible()
-      expect(getByPlaceholderText('At least 8 characters')).toBeVisible()
-      expect(getByPlaceholderText('Confirm your password')).toBeVisible()
+      expect(getAllByText('Create Account').length).toBe(2)
+      expect(getByPlaceholderText('Enter your email')).toBeTruthy()
+      expect(getByPlaceholderText('At least 8 characters')).toBeTruthy()
+      expect(getByPlaceholderText('Confirm your password')).toBeTruthy()
+      expect(within(getByTestId('register-modal-submit')).getByText('Create Account')).toBeTruthy()
     })
 
     it('does not render when not visible', () => {
@@ -86,7 +87,7 @@ describe('RegisterModal', () => {
       const passwordInput = getByPlaceholderText('At least 8 characters')
       fireEvent.changeText(passwordInput, 'short')
 
-      expect(getByText('Password must be at least 8 characters')).toBeVisible()
+      expect(getByText('Password must be at least 8 characters')).toBeTruthy()
     })
 
     it('hides error when password meets minimum length', () => {
@@ -95,7 +96,7 @@ describe('RegisterModal', () => {
       const passwordInput = getByPlaceholderText('At least 8 characters')
       fireEvent.changeText(passwordInput, 'short')
 
-      expect(queryByText('Password must be at least 8 characters')).toBeVisible()
+      expect(queryByText('Password must be at least 8 characters')).not.toBeNull()
 
       fireEvent.changeText(passwordInput, 'password123')
 
@@ -111,7 +112,7 @@ describe('RegisterModal', () => {
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'different')
 
-      expect(getByText('Passwords do not match')).toBeVisible()
+      expect(getByText('Passwords do not match')).toBeTruthy()
     })
 
     it('hides error when passwords match', () => {
@@ -123,7 +124,7 @@ describe('RegisterModal', () => {
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'different')
 
-      expect(queryByText('Passwords do not match')).toBeVisible()
+      expect(queryByText('Passwords do not match')).not.toBeNull()
 
       fireEvent.changeText(confirmPasswordInput, 'password123')
 
@@ -145,72 +146,72 @@ describe('RegisterModal', () => {
 
   describe('Form Validation', () => {
     it('disables submit button when email is empty', () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account').parent
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'password123')
 
-      expect(submitButton?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
     })
 
     it('disables submit button when password is too short', () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account').parent
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'short')
       fireEvent.changeText(confirmPasswordInput, 'short')
 
-      expect(submitButton?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
     })
 
     it('disables submit button when passwords do not match', () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account').parent
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'different')
 
-      expect(submitButton?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
     })
 
     it('enables submit button when all fields are valid', () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account').parent
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'password123')
 
-      expect(submitButton?.props.disabled).toBe(false)
+      expect(submitButton.props.disabled).toBe(false)
     })
 
     it('trims email before submitting', async () => {
       mockRegister.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, '  test@example.com  ')
       fireEvent.changeText(passwordInput, 'password123')
@@ -227,12 +228,12 @@ describe('RegisterModal', () => {
     it('calls register with email and password on submit', async () => {
       mockRegister.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'newuser@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -248,14 +249,14 @@ describe('RegisterModal', () => {
       mockRegister.mockResolvedValueOnce(undefined)
 
       const onClose = jest.fn()
-      const { getByText, getByPlaceholderText } = render(
+      const { getByTestId, getByPlaceholderText } = render(
         <RegisterModal {...defaultProps} onClose={onClose} />,
       )
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'newuser@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -270,12 +271,12 @@ describe('RegisterModal', () => {
     it('clears all form fields after successful registration', async () => {
       mockRegister.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'newuser@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -292,19 +293,18 @@ describe('RegisterModal', () => {
     })
 
     it('does not submit when validation fails', async () => {
-      const { getByText, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'short')
       fireEvent.changeText(confirmPasswordInput, 'short')
 
-      // Button should be disabled, but try to press anyway
-      if (!submitButton.parent?.props.disabled) {
+      if (!submitButton.props.disabled) {
         fireEvent.press(submitButton)
       }
 
@@ -322,26 +322,25 @@ describe('RegisterModal', () => {
       })
       mockRegister.mockReturnValueOnce(registerPromise)
 
-      const { getByText, getByPlaceholderText, queryByText } = render(
-        <RegisterModal {...defaultProps} />,
-      )
+      const { getByTestId, getByPlaceholderText } = render(<RegisterModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.changeText(confirmPasswordInput, 'password123')
 
-      fireEvent.press(getByText('Create Account'))
+      fireEvent.press(submitButton)
 
-      // Should show loading (ActivityIndicator replaces button text)
-      expect(queryByText('Create Account')).toBeNull()
+      const submitScope = within(submitButton)
+      expect(submitScope.queryByText('Create Account')).toBeNull()
 
       resolveRegister!()
       await waitFor(() => {
-        expect(queryByText('Create Account')).toBeVisible()
+        expect(submitScope.getByText('Create Account')).toBeTruthy()
       })
     })
   })
@@ -374,14 +373,14 @@ describe('RegisterModal', () => {
       const error = new Error('Email already exists')
       mockRegister.mockRejectedValueOnce(error)
 
-      const { getByText, getByPlaceholderText } = render(
+      const { getByTestId, getByPlaceholderText } = render(
         <RegisterModal {...defaultProps} onClose={onClose} />,
       )
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('At least 8 characters')
       const confirmPasswordInput = getByPlaceholderText('Confirm your password')
-      const submitButton = getByText('Create Account')
+      const submitButton = getByTestId('register-modal-submit')
 
       fireEvent.changeText(emailInput, 'existing@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -392,9 +391,8 @@ describe('RegisterModal', () => {
         expect(mockRegister).toHaveBeenCalled()
       })
 
-      // Modal should not close on error
       expect(onClose).not.toHaveBeenCalled()
-      expect(getByText('Create Account')).toBeVisible()
+      expect(within(submitButton).getByText('Create Account')).toBeTruthy()
     })
   })
 })

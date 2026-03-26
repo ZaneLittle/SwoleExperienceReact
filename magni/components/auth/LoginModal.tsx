@@ -98,6 +98,7 @@ export default function LoginModal({ visible, onClose, onSwitchToRegister }: Log
             />
 
             <TouchableOpacity
+              testID="login-modal-submit"
               style={[
                 styles.button,
                 {

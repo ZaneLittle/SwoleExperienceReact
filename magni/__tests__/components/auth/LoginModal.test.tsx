@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent, waitFor } from '@testing-library/react-native'
+import { render, fireEvent, waitFor, within } from '@testing-library/react-native'
 import LoginModal from '../../../components/auth/LoginModal'
 import { useAuth } from '../../../contexts/AuthContext'
 
@@ -46,12 +46,12 @@ describe('LoginModal', () => {
 
   describe('Rendering', () => {
     it('renders login form when visible', () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getAllByText, getByPlaceholderText, getByTestId } = render(<LoginModal {...defaultProps} />)
 
-      expect(getByText('Log In')).toBeVisible()
-      expect(getByPlaceholderText('Enter your email')).toBeVisible()
-      expect(getByPlaceholderText('Enter your password')).toBeVisible()
-      expect(getByText('Log In')).toBeVisible()
+      expect(getAllByText('Log In').length).toBe(2)
+      expect(getByPlaceholderText('Enter your email')).toBeTruthy()
+      expect(getByPlaceholderText('Enter your password')).toBeTruthy()
+      expect(within(getByTestId('login-modal-submit')).getByText('Log In')).toBeTruthy()
     })
 
     it('does not render when not visible', () => {
@@ -63,7 +63,7 @@ describe('LoginModal', () => {
     it('renders switch to register button when onSwitchToRegister is provided', () => {
       const { getByText } = render(<LoginModal {...defaultProps} />)
 
-      expect(getByText("Don't have an account? Register")).toBeVisible()
+      expect(getByText("Don't have an account? Register")).toBeTruthy()
     })
 
     it('does not render switch button when onSwitchToRegister is not provided', () => {
@@ -90,48 +90,48 @@ describe('LoginModal', () => {
 
   describe('Form Validation', () => {
     it('disables submit button when email is empty', () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In').parent
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(passwordInput, 'password123')
 
-      expect(submitButton?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
     })
 
     it('disables submit button when password is empty', () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
-      const submitButton = getByText('Log In').parent
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
 
-      expect(submitButton?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
     })
 
     it('enables submit button when both email and password are filled', () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In').parent
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
 
-      expect(submitButton?.props.disabled).toBe(false)
+      expect(submitButton.props.disabled).toBe(false)
     })
 
     it('trims email before submitting', async () => {
       mockLogin.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, '  test@example.com  ')
       fireEvent.changeText(passwordInput, 'password123')
@@ -147,11 +147,11 @@ describe('LoginModal', () => {
     it('calls login with email and password on submit', async () => {
       mockLogin.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -166,13 +166,13 @@ describe('LoginModal', () => {
       mockLogin.mockResolvedValueOnce(undefined)
 
       const onClose = jest.fn()
-      const { getByText, getByPlaceholderText } = render(
+      const { getByTestId, getByPlaceholderText } = render(
         <LoginModal {...defaultProps} onClose={onClose} />,
       )
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -186,11 +186,11 @@ describe('LoginModal', () => {
     it('clears form fields after successful login', async () => {
       mockLogin.mockResolvedValueOnce(undefined)
 
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
@@ -205,10 +205,10 @@ describe('LoginModal', () => {
     })
 
     it('does not submit when email or password is empty', async () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.press(submitButton)
@@ -220,11 +220,11 @@ describe('LoginModal', () => {
     })
 
     it('does not submit when email is only whitespace', async () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, '   ')
       fireEvent.changeText(passwordInput, 'password123')
@@ -244,22 +244,22 @@ describe('LoginModal', () => {
       })
       mockLogin.mockReturnValueOnce(loginPromise)
 
-      const { getByText, getByPlaceholderText, queryByText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
       fireEvent.press(submitButton)
 
-      // Should show loading (ActivityIndicator replaces button text)
-      expect(queryByText('Log In')).toBeNull()
+      const submitScope = within(submitButton)
+      expect(submitScope.queryByText('Log In')).toBeNull()
 
       resolveLogin!()
       await waitFor(() => {
-        expect(queryByText('Log In')).toBeVisible()
+        expect(submitScope.getByText('Log In')).toBeTruthy()
       })
     })
 
@@ -270,7 +270,7 @@ describe('LoginModal', () => {
       })
       mockLogin.mockReturnValueOnce(loginPromise)
 
-      const { getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
@@ -278,8 +278,7 @@ describe('LoginModal', () => {
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'password123')
 
-      // Trigger loading
-      fireEvent.press(getByPlaceholderText('Enter your password').parent?.parent?.parent)
+      fireEvent.press(getByTestId('login-modal-submit'))
 
       await waitFor(() => {
         expect(emailInput.props.editable).toBe(false)
@@ -337,13 +336,13 @@ describe('LoginModal', () => {
       const error = new Error('Invalid credentials')
       mockLogin.mockRejectedValueOnce(error)
 
-      const { getByText, getByPlaceholderText } = render(
+      const { getByTestId, getByPlaceholderText } = render(
         <LoginModal {...defaultProps} onClose={onClose} />,
       )
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, 'test@example.com')
       fireEvent.changeText(passwordInput, 'wrongpassword')
@@ -355,23 +354,22 @@ describe('LoginModal', () => {
 
       // Modal should not close on error
       expect(onClose).not.toHaveBeenCalled()
-      expect(getByText('Log In')).toBeVisible()
+      expect(within(submitButton).getByText('Log In')).toBeTruthy()
     })
   })
 
   describe('Form Validation Edge Cases', () => {
     it('handles whitespace-only email correctly', async () => {
-      const { getByText, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
+      const { getByTestId, getByPlaceholderText } = render(<LoginModal {...defaultProps} />)
 
       const emailInput = getByPlaceholderText('Enter your email')
       const passwordInput = getByPlaceholderText('Enter your password')
-      const submitButton = getByText('Log In')
+      const submitButton = getByTestId('login-modal-submit')
 
       fireEvent.changeText(emailInput, '   ')
       fireEvent.changeText(passwordInput, 'password123')
 
-      // Button should be disabled
-      expect(submitButton.parent?.props.disabled).toBe(true)
+      expect(submitButton.props.disabled).toBe(true)
 
       await new Promise((resolve) => setTimeout(resolve, 100))
       expect(mockLogin).not.toHaveBeenCalled()

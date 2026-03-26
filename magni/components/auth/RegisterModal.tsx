@@ -139,6 +139,7 @@ export default function RegisterModal({ visible, onClose, onSwitchToLogin }: Reg
             )}
 
             <TouchableOpacity
+              testID="register-modal-submit"
               style={[
                 styles.button,
                 {
