@@ -122,6 +122,7 @@ export class WorkoutHistoryService {
       notes: workoutDay.notes,
       supersetParentId: workoutDay.supersetParentId,
       altParentId: workoutDay.altParentId,
+      setDetails: workoutDay.setDetails,
     }
   }
 }

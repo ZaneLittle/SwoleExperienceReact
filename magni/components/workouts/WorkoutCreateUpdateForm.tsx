@@ -11,10 +11,11 @@ import {
   Modal,
 } from 'react-native'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
-import { WorkoutValidator } from '../../lib/models/Workout'
+import { WorkoutValidator, SetDetail } from '../../lib/models/Workout'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { useThemeColors } from '../../hooks/useThemeColors'
 import { confirmAlert } from '../../utils/confirm'
+import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
 
 interface WorkoutCreateUpdateFormProps {
   workout?: WorkoutDay;
@@ -48,11 +49,18 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   const [supersetId, setSupersetId] = useState<string>('')
   const [showAlternativeDropdown, setShowAlternativeDropdown] = useState(false)
   const [showSupersetDropdown, setShowSupersetDropdown] = useState(false)
+  const [perSetMode, setPerSetMode] = useState<boolean>(
+    !!(workout?.setDetails && workout.setDetails.length > 0),
+  )
+  const [setDetails, setSetDetails] = useState<SetDetail[]>(
+    workout?.setDetails ?? [],
+  )
   const [errors, setErrors] = useState<{
     name?: string;
     weight?: string;
     sets?: string;
     reps?: string;
+    setDetails?: Record<number, { weight?: string; reps?: string }>;
   }>({})
 
   useEffect(() => {
@@ -70,27 +78,45 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   }, [workout])
 
   const validateForm = (): boolean => {
-    const newErrors: {
-      name?: string;
-      weight?: string;
-      sets?: string;
-      reps?: string;
-    } = {}
+    const newErrors: typeof errors = {}
 
     if (!name.trim()) {
       newErrors.name = 'Name is required'
     }
-    const weightNum = Number(weight)
-    if (weight === '' || weight.trim() === '' || isNaN(weightNum) || weightNum < 0) {
-      newErrors.weight = 'Please enter a valid weight'
-    }
-    const setsNum = Number(sets)
-    if (sets === '' || sets.trim() === '' || isNaN(setsNum) || setsNum < 0) {
-      newErrors.sets = 'Please enter a valid number of sets'
-    }
-    const repsNum = Number(reps)
-    if (reps === '' || reps.trim() === '' || isNaN(repsNum) || repsNum < 0) {
-      newErrors.reps = 'Please enter a valid number of reps'
+
+    if (perSetMode) {
+      if (setDetails.length === 0) {
+        newErrors.sets = 'Add at least one set'
+      }
+      const detailErrors: Record<number, { weight?: string; reps?: string }> = {}
+      setDetails.forEach((detail, index) => {
+        const rowErrors: { weight?: string; reps?: string } = {}
+        if (isNaN(detail.weight) || detail.weight < 0) {
+          rowErrors.weight = 'Invalid'
+        }
+        if (isNaN(detail.reps) || detail.reps < 0) {
+          rowErrors.reps = 'Invalid'
+        }
+        if (Object.keys(rowErrors).length > 0) {
+          detailErrors[index] = rowErrors
+        }
+      })
+      if (Object.keys(detailErrors).length > 0) {
+        newErrors.setDetails = detailErrors
+      }
+    } else {
+      const weightNum = Number(weight)
+      if (weight === '' || weight.trim() === '' || isNaN(weightNum) || weightNum < 0) {
+        newErrors.weight = 'Please enter a valid weight'
+      }
+      const setsNum = Number(sets)
+      if (sets === '' || sets.trim() === '' || isNaN(setsNum) || setsNum < 0) {
+        newErrors.sets = 'Please enter a valid number of sets'
+      }
+      const repsNum = Number(reps)
+      if (reps === '' || reps.trim() === '' || isNaN(repsNum) || repsNum < 0) {
+        newErrors.reps = 'Please enter a valid number of reps'
+      }
     }
 
     setErrors(newErrors)
@@ -102,18 +128,29 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
 
     try {
       const workoutDay = workout?.day ?? day
-      
+
+      const resolvedWeight = perSetMode && setDetails.length > 0
+        ? setDetails[0].weight
+        : Number(weight)
+      const resolvedSets = perSetMode
+        ? setDetails.length
+        : Number(sets)
+      const resolvedReps = perSetMode && setDetails.length > 0
+        ? setDetails[0].reps
+        : Number(reps)
+
       const workoutData: WorkoutDay = {
         id: workout?.id || Date.now().toString(),
         day: workoutDay,
         dayOrder: workout?.dayOrder ?? defaultOrder,
         name: name.trim(),
-        weight: Number(weight),
-        sets: Number(sets),
-        reps: Number(reps),
+        weight: resolvedWeight,
+        sets: resolvedSets,
+        reps: resolvedReps,
         notes: notes.trim() || undefined,
         altParentId: alternativeId || undefined,
         supersetParentId: supersetId || undefined,
+        setDetails: perSetMode ? setDetails : undefined,
       }
 
       WorkoutValidator.validate(workoutData)
@@ -354,6 +391,122 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     )
   }
 
+  const handleTogglePerSetMode = () => {
+    if (!perSetMode) {
+      const count = Math.max(Number(sets) || 1, 1)
+      const w = Number(weight) || 0
+      const r = Number(reps) || 0
+      setSetDetails(Array.from({ length: count }, () => ({ weight: w, reps: r })))
+    } else {
+      if (setDetails.length > 0) {
+        setWeight(String(setDetails[0].weight))
+        setReps(String(setDetails[0].reps))
+        setSets(String(setDetails.length))
+      }
+      setSetDetails([])
+    }
+    setPerSetMode(prev => !prev)
+    setErrors({})
+  }
+
+  const updateSetDetail = (index: number, field: keyof SetDetail, value: string) => {
+    setSetDetails(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: Number(value) || 0 }
+      return updated
+    })
+    if (errors.setDetails?.[index]?.[field]) {
+      setErrors(prev => {
+        const detailErrors = { ...prev.setDetails }
+        if (detailErrors[index]) {
+          const rowErrors = { ...detailErrors[index] }
+          delete rowErrors[field]
+          if (Object.keys(rowErrors).length === 0) {
+            delete detailErrors[index]
+          } else {
+            detailErrors[index] = rowErrors
+          }
+        }
+        return {
+          ...prev,
+          setDetails: Object.keys(detailErrors).length > 0 ? detailErrors : undefined,
+        }
+      })
+    }
+  }
+
+  const addSet = () => {
+    const lastSet = setDetails[setDetails.length - 1]
+    setSetDetails(prev => [...prev, lastSet ? { ...lastSet } : { weight: 0, reps: 0 }])
+  }
+
+  const removeSet = (index: number) => {
+    if (setDetails.length <= 1) return
+    setSetDetails(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const renderPerSetDetails = () => (
+    <View style={formStyles.setDetailsContainer}>
+      <View style={formStyles.setDetailsHeader}>
+        <Text style={[formStyles.setDetailsHeaderText, { color: colors.text.secondary }]}>Set</Text>
+        <Text style={[formStyles.setDetailsHeaderText, formStyles.setDetailsHeaderWeight, { color: colors.text.secondary }]}>Weight</Text>
+        <Text style={[formStyles.setDetailsHeaderText, formStyles.setDetailsHeaderReps, { color: colors.text.secondary }]}>Reps</Text>
+        <View style={formStyles.setDetailsRemoveColumn} />
+      </View>
+      {setDetails.map((detail, index) => (
+        <View key={index} style={formStyles.setDetailRow}>
+          <Text style={[formStyles.setDetailLabel, { color: colors.text.primary }]}>{index + 1}</Text>
+          <TextInput
+            style={[
+              formStyles.setDetailInput,
+              {
+                backgroundColor: colors.surface,
+                color: colors.text.primary,
+                borderColor: errors.setDetails?.[index]?.weight ? '#ff4444' : colors.border,
+              },
+            ]}
+            value={String(detail.weight)}
+            onChangeText={(text) => updateSetDetail(index, 'weight', text)}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={colors.text.tertiary}
+          />
+          <TextInput
+            style={[
+              formStyles.setDetailInput,
+              {
+                backgroundColor: colors.surface,
+                color: colors.text.primary,
+                borderColor: errors.setDetails?.[index]?.reps ? '#ff4444' : colors.border,
+              },
+            ]}
+            value={String(detail.reps)}
+            onChangeText={(text) => updateSetDetail(index, 'reps', text)}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={colors.text.tertiary}
+          />
+          <TouchableOpacity
+            onPress={() => removeSet(index)}
+            disabled={setDetails.length <= 1}
+            style={formStyles.setDetailRemoveButton}
+          >
+            <Text style={[
+              formStyles.setDetailRemoveText,
+              setDetails.length <= 1 && { opacity: 0.3 },
+            ]}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity
+        style={[formStyles.addSetButton, { borderColor: colors.border }]}
+        onPress={addSet}
+      >
+        <Text style={[formStyles.addSetButtonText, { color: colors.primary }]}>+ Add Set</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
   return (
     <KeyboardAvoidingView 
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -363,11 +516,28 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
         <View style={[styles.form, { backgroundColor: colors.background }]}>
           {renderInputField('Name', name, setName, 'Exercise name', 'default', false, errors.name, 'name')}
           
-          <View style={styles.row}>
-            {renderInputField('Weight', weight, setWeight, '0', 'numeric', false, errors.weight, 'weight')}
-            {renderInputField('Sets', sets, setSets, '0', 'numeric', false, errors.sets, 'sets')}
-            {renderInputField('Reps', reps, setReps, '0', 'numeric', false, errors.reps, 'reps')}
-          </View>
+          {!perSetMode && (
+            <View style={styles.row}>
+              {renderInputField('Weight', weight, setWeight, '0', 'numeric', false, errors.weight, 'weight')}
+              {renderInputField('Sets', sets, setSets, '0', 'numeric', false, errors.sets, 'sets')}
+              {renderInputField('Reps', reps, setReps, '0', 'numeric', false, errors.reps, 'reps')}
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[formStyles.toggleButton, { borderColor: colors.border }]}
+            onPress={handleTogglePerSetMode}
+          >
+            <Text style={[formStyles.toggleButtonText, { color: colors.primary }]}>
+              {perSetMode ? 'Use Standard Mode' : 'Per-Set Details'}
+            </Text>
+          </TouchableOpacity>
+
+          {perSetMode && renderPerSetDetails()}
+
+          {errors.sets && perSetMode && (
+            <Text style={[styles.errorText, { color: '#ff4444' }]}>{errors.sets}</Text>
+          )}
 
           <View style={styles.row}>
             {isAlternativesEnabled && renderAlternatives()}
@@ -544,5 +714,91 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
     color: '#ff4444',
+  },
+})
+
+const formStyles = StyleSheet.create({
+  toggleButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.lg,
+    marginHorizontal: 4,
+  },
+  toggleButtonText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontWeight: TYPOGRAPHY.weights.semibold,
+  },
+  setDetailsContainer: {
+    marginBottom: SPACING.lg,
+    marginHorizontal: 4,
+  },
+  setDetailsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.xs,
+  },
+  setDetailsHeaderText: {
+    fontSize: TYPOGRAPHY.sizes.xs,
+    fontWeight: TYPOGRAPHY.weights.semibold,
+    textTransform: 'uppercase',
+    width: 40,
+  },
+  setDetailsHeaderWeight: {
+    flex: 1,
+    marginHorizontal: SPACING.xs,
+  },
+  setDetailsHeaderReps: {
+    flex: 1,
+    marginHorizontal: SPACING.xs,
+  },
+  setDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  setDetailLabel: {
+    width: 40,
+    fontSize: TYPOGRAPHY.sizes.md,
+    fontWeight: TYPOGRAPHY.weights.semibold,
+    textAlign: 'center',
+  },
+  setDetailInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    fontSize: TYPOGRAPHY.sizes.md,
+    marginHorizontal: SPACING.xs,
+  },
+  setDetailRemoveButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  setDetailRemoveText: {
+    fontSize: TYPOGRAPHY.sizes.md,
+    color: '#ff4444',
+    fontWeight: TYPOGRAPHY.weights.bold,
+  },
+  setDetailsRemoveColumn: {
+    width: 32,
+  },
+  addSetButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.md,
+    borderStyle: 'dashed',
+    marginTop: SPACING.xs,
+  },
+  addSetButtonText: {
+    fontSize: TYPOGRAPHY.sizes.sm,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 })

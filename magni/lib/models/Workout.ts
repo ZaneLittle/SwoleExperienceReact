@@ -1,3 +1,8 @@
+export interface SetDetail {
+  weight: number;
+  reps: number;
+}
+
 export interface Workout {
   id: string;
   name: string;
@@ -7,6 +12,7 @@ export interface Workout {
   notes?: string;
   supersetParentId?: string;
   altParentId?: string;
+  setDetails?: SetDetail[];
 }
 
 export const WorkoutConverter = {
@@ -36,6 +42,20 @@ export class WorkoutValidator {
     if (workout.sets > WORKOUT_CONSTRAINTS.SETS_LIMIT) {
       throw new Error(`Sets cannot exceed ${WORKOUT_CONSTRAINTS.SETS_LIMIT}.`)
     }
+    if (workout.setDetails) {
+      for (const detail of workout.setDetails) {
+        if (detail.weight > WORKOUT_CONSTRAINTS.WEIGHT_LIMIT) {
+          throw new Error(`Weight cannot exceed ${WORKOUT_CONSTRAINTS.WEIGHT_LIMIT}.`)
+        }
+        if (detail.reps > WORKOUT_CONSTRAINTS.REPS_LIMIT) {
+          throw new Error(`Reps cannot exceed ${WORKOUT_CONSTRAINTS.REPS_LIMIT}.`)
+        }
+      }
+    }
+  }
+
+  static hasSetDetails(workout: Workout): boolean {
+    return !!(workout.setDetails && workout.setDetails.length > 0)
   }
 
   static hasNote(workout: Workout): boolean {

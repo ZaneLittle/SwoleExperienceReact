@@ -1,4 +1,5 @@
 import { WorkoutDay } from '../models/WorkoutDay'
+import { SetDetail } from '../models/Workout'
 import { workoutService } from './WorkoutService'
 import uuid from 'react-native-uuid'
 
@@ -58,6 +59,16 @@ class WorkoutImportService {
 
       const altParentId = getValue('altParentId')
       if (altParentId) workout.altParentId = altParentId
+
+      const setDetailsRaw = getValue('setDetails')
+      if (setDetailsRaw) {
+        try {
+          const parsed = JSON.parse(setDetailsRaw) as SetDetail[]
+          if (Array.isArray(parsed)) workout.setDetails = parsed
+        } catch {
+          // Ignore malformed setDetails
+        }
+      }
 
       workouts.push(workout)
     }

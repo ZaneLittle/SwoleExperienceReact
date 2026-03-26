@@ -2,7 +2,7 @@ import { Platform } from 'react-native'
 import { WorkoutDay } from '../models/WorkoutDay'
 import { workoutService } from './WorkoutService'
 
-const CSV_HEADERS = ['id', 'name', 'weight', 'sets', 'reps', 'notes', 'supersetParentId', 'altParentId', 'day', 'dayOrder'] as const
+const CSV_HEADERS = ['id', 'name', 'weight', 'sets', 'reps', 'notes', 'supersetParentId', 'altParentId', 'day', 'dayOrder', 'setDetails'] as const
 
 class WorkoutExportService {
   private static instance: WorkoutExportService
@@ -21,8 +21,9 @@ class WorkoutExportService {
     
     for (const workout of workouts) {
       const values = CSV_HEADERS.map(header => {
-        const value = workout[header]
+        const value = workout[header as keyof WorkoutDay]
         if (value === undefined || value === null) return ''
+        if (Array.isArray(value)) return this.escapeCSVField(JSON.stringify(value))
         if (typeof value === 'string') return this.escapeCSVField(value)
         return String(value)
       })
