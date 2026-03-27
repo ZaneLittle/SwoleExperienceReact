@@ -493,6 +493,134 @@ describe('Workout Model', () => {
     })
   })
 
+  describe('WorkoutValidator - setDetails', () => {
+    describe('validate with setDetails', () => {
+      it('validates workout with valid setDetails', () => {
+        const workout: Workout = {
+          id: 'valid-workout',
+          name: 'Valid Exercise',
+          weight: 135,
+          sets: 3,
+          reps: 8,
+          setDetails: [
+            { weight: 135, reps: 8 },
+            { weight: 145, reps: 6 },
+            { weight: 155, reps: 4 },
+          ],
+        }
+
+        expect(() => WorkoutValidator.validate(workout)).not.toThrow()
+      })
+
+      it('throws error when a set detail weight exceeds limit', () => {
+        const workout: Workout = {
+          id: 'invalid-workout',
+          name: 'Invalid Exercise',
+          weight: 100,
+          sets: 2,
+          reps: 10,
+          setDetails: [
+            { weight: 100, reps: 10 },
+            { weight: WORKOUT_CONSTRAINTS.WEIGHT_LIMIT + 1, reps: 10 },
+          ],
+        }
+
+        expect(() => WorkoutValidator.validate(workout)).toThrow(
+          `Weight cannot exceed ${WORKOUT_CONSTRAINTS.WEIGHT_LIMIT}.`,
+        )
+      })
+
+      it('throws error when a set detail reps exceeds limit', () => {
+        const workout: Workout = {
+          id: 'invalid-workout',
+          name: 'Invalid Exercise',
+          weight: 100,
+          sets: 2,
+          reps: 10,
+          setDetails: [
+            { weight: 100, reps: WORKOUT_CONSTRAINTS.REPS_LIMIT + 1 },
+            { weight: 100, reps: 10 },
+          ],
+        }
+
+        expect(() => WorkoutValidator.validate(workout)).toThrow(
+          `Reps cannot exceed ${WORKOUT_CONSTRAINTS.REPS_LIMIT}.`,
+        )
+      })
+
+      it('allows maximum valid values in setDetails', () => {
+        const workout: Workout = {
+          id: 'max-valid-workout',
+          name: 'Max Valid Exercise',
+          weight: WORKOUT_CONSTRAINTS.WEIGHT_LIMIT,
+          sets: 1,
+          reps: WORKOUT_CONSTRAINTS.REPS_LIMIT,
+          setDetails: [
+            { weight: WORKOUT_CONSTRAINTS.WEIGHT_LIMIT, reps: WORKOUT_CONSTRAINTS.REPS_LIMIT },
+          ],
+        }
+
+        expect(() => WorkoutValidator.validate(workout)).not.toThrow()
+      })
+
+      it('validates workout with empty setDetails array', () => {
+        const workout: Workout = {
+          id: 'empty-details',
+          name: 'Exercise',
+          weight: 100,
+          sets: 3,
+          reps: 10,
+          setDetails: [],
+        }
+
+        expect(() => WorkoutValidator.validate(workout)).not.toThrow()
+      })
+    })
+
+    describe('hasSetDetails', () => {
+      it('returns true when setDetails has entries', () => {
+        const workout: Workout = {
+          id: 'test-id',
+          name: 'Test Exercise',
+          weight: 100,
+          sets: 2,
+          reps: 10,
+          setDetails: [
+            { weight: 100, reps: 10 },
+            { weight: 110, reps: 8 },
+          ],
+        }
+
+        expect(WorkoutValidator.hasSetDetails(workout)).toBe(true)
+      })
+
+      it('returns false when setDetails is undefined', () => {
+        const workout: Workout = {
+          id: 'test-id',
+          name: 'Test Exercise',
+          weight: 100,
+          sets: 3,
+          reps: 10,
+        }
+
+        expect(WorkoutValidator.hasSetDetails(workout)).toBe(false)
+      })
+
+      it('returns false when setDetails is empty', () => {
+        const workout: Workout = {
+          id: 'test-id',
+          name: 'Test Exercise',
+          weight: 100,
+          sets: 3,
+          reps: 10,
+          setDetails: [],
+        }
+
+        expect(WorkoutValidator.hasSetDetails(workout)).toBe(false)
+      })
+    })
+  })
+
   describe('WORKOUT_CONSTRAINTS', () => {
     it('has correct constraint values', () => {
       expect(WORKOUT_CONSTRAINTS.NOTES_LENGTH_LIMIT).toBe(256)

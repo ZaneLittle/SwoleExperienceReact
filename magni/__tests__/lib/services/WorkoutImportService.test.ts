@@ -37,7 +37,7 @@ describe('WorkoutImportService', () => {
     })
 
     it('returns empty array for headers only', () => {
-      const csv = 'id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder'
+      const csv = 'id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails'
       const workouts = workoutImportService.parseCSV(csv)
       expect(workouts).toEqual([])
     })
@@ -150,8 +150,8 @@ id1,Test,invalid,abc,xyz,,,,bad,worse`
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify([]))
       mockAsyncStorage.setItem.mockResolvedValue(undefined)
 
-      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder
-id1,Bench Press,135,4,8,,,,1,0`
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails
+id1,Bench Press,135,4,8,,,,1,0,`
 
       const result = await workoutImportService.importWorkouts(csv)
       expect(result).toBe(true)
@@ -161,11 +161,53 @@ id1,Bench Press,135,4,8,,,,1,0`
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'))
       mockAsyncStorage.setItem.mockResolvedValue(undefined)
 
-      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder
-id1,Bench Press,135,4,8,,,,1,0`
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails
+id1,Bench Press,135,4,8,,,,1,0,`
 
       const result = await workoutImportService.importWorkouts(csv)
       expect(result).toBe(true)
+    })
+  })
+
+  describe('setDetails parsing', () => {
+    it('parses setDetails JSON from CSV', () => {
+      const setDetailsJson = '[{"weight":135,"reps":8},{"weight":145,"reps":6}]'
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails
+id1,Bench Press,135,2,8,,,,1,0,"${setDetailsJson.replace(/"/g, '""')}"`
+      const workouts = workoutImportService.parseCSV(csv)
+      
+      expect(workouts).toHaveLength(1)
+      expect(workouts[0].setDetails).toBeDefined()
+      expect(workouts[0].setDetails).toHaveLength(2)
+      expect(workouts[0].setDetails![0]).toEqual({ weight: 135, reps: 8 })
+      expect(workouts[0].setDetails![1]).toEqual({ weight: 145, reps: 6 })
+    })
+
+    it('handles missing setDetails column gracefully', () => {
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder
+id1,Bench Press,135,3,10,,,,1,0`
+      const workouts = workoutImportService.parseCSV(csv)
+      
+      expect(workouts).toHaveLength(1)
+      expect(workouts[0].setDetails).toBeUndefined()
+    })
+
+    it('handles empty setDetails field', () => {
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails
+id1,Bench Press,135,3,10,,,,1,0,`
+      const workouts = workoutImportService.parseCSV(csv)
+      
+      expect(workouts).toHaveLength(1)
+      expect(workouts[0].setDetails).toBeUndefined()
+    })
+
+    it('ignores malformed setDetails JSON', () => {
+      const csv = `id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails
+id1,Bench Press,135,3,10,,,,1,0,not-valid-json`
+      const workouts = workoutImportService.parseCSV(csv)
+      
+      expect(workouts).toHaveLength(1)
+      expect(workouts[0].setDetails).toBeUndefined()
     })
   })
 })
