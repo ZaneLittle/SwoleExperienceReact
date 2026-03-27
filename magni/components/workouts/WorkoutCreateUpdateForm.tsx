@@ -448,14 +448,45 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   const renderPerSetDetails = () => (
     <View style={formStyles.setDetailsContainer}>
       <View style={formStyles.setDetailsHeader}>
-        <Text style={[formStyles.setDetailsHeaderText, { color: colors.text.secondary }]}>Set</Text>
-        <Text style={[formStyles.setDetailsHeaderText, formStyles.setDetailsHeaderWeight, { color: colors.text.secondary }]}>Weight</Text>
-        <Text style={[formStyles.setDetailsHeaderText, formStyles.setDetailsHeaderReps, { color: colors.text.secondary }]}>Reps</Text>
+        <Text
+          style={[
+            formStyles.setDetailsHeaderText,
+            formStyles.setDetailsSetColumn,
+            { color: colors.text.secondary },
+          ]}
+        >
+          Set
+        </Text>
+        <Text
+          style={[
+            formStyles.setDetailsHeaderText,
+            formStyles.setDetailsValueColumn,
+            { color: colors.text.secondary },
+          ]}
+        >
+          Weight
+        </Text>
+        <Text
+          style={[
+            formStyles.setDetailsHeaderText,
+            formStyles.setDetailsValueColumn,
+            { color: colors.text.secondary },
+          ]}
+        >
+          Reps
+        </Text>
         <View style={formStyles.setDetailsRemoveColumn} />
       </View>
       {setDetails.map((detail, index) => (
         <View key={index} style={formStyles.setDetailRow}>
-          <Text style={[formStyles.setDetailLabel, { color: colors.text.primary }]}>{index + 1}</Text>
+          <Text
+            style={[
+              formStyles.setDetailLabel,
+              { color: colors.text.primary },
+            ]}
+          >
+            {index + 1}
+          </Text>
           <TextInput
             style={[
               formStyles.setDetailInput,
@@ -733,50 +764,58 @@ const formStyles = StyleSheet.create({
   },
   setDetailsContainer: {
     marginBottom: SPACING.lg,
-    marginHorizontal: 4,
+    marginHorizontal: 0,
+    width: '100%',
   },
   setDetailsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING.sm,
-    paddingHorizontal: SPACING.xs,
+    width: '100%',
   },
   setDetailsHeaderText: {
     fontSize: TYPOGRAPHY.sizes.xs,
     fontWeight: TYPOGRAPHY.weights.semibold,
     textTransform: 'uppercase',
-    width: 40,
+    flexShrink: 1,
   },
-  setDetailsHeaderWeight: {
-    flex: 1,
-    marginHorizontal: SPACING.xs,
+  setDetailsSetColumn: {
+    flex: 0.5,
+    minWidth: 0,
+    textAlign: 'center',
   },
-  setDetailsHeaderReps: {
-    flex: 1,
-    marginHorizontal: SPACING.xs,
+  setDetailsValueColumn: {
+    flex: 1.5,
+    minWidth: 0,
   },
-  setDetailRow: {
-    flexDirection: 'row',
+  setDetailsRemoveColumn: {
+    flex: 0.4,
+    minWidth: 0,
     alignItems: 'center',
-    marginBottom: SPACING.sm,
   },
   setDetailLabel: {
-    width: 40,
+    flex: 0.5,
+    minWidth: 0,
+    flexShrink: 1,
     fontSize: TYPOGRAPHY.sizes.md,
     fontWeight: TYPOGRAPHY.weights.semibold,
     textAlign: 'center',
   },
   setDetailInput: {
-    flex: 1,
+    flex: 1.5,
+    minWidth: 0,
+    flexShrink: 1,
     borderWidth: 1,
     borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: SPACING.sm,
     fontSize: TYPOGRAPHY.sizes.md,
     marginHorizontal: SPACING.xs,
   },
   setDetailRemoveButton: {
-    width: 32,
-    height: 32,
+    flex: 0.4,
+    minWidth: 0,
+    flexShrink: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -784,9 +823,6 @@ const formStyles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sizes.md,
     color: '#ff4444',
     fontWeight: TYPOGRAPHY.weights.bold,
-  },
-  setDetailsRemoveColumn: {
-    width: 32,
   },
   addSetButton: {
     alignSelf: 'flex-start',
@@ -800,5 +836,11 @@ const formStyles = StyleSheet.create({
   addSetButtonText: {
     fontSize: TYPOGRAPHY.sizes.sm,
     fontWeight: TYPOGRAPHY.weights.semibold,
+  },
+  setDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    width: '100%',
   },
 })
