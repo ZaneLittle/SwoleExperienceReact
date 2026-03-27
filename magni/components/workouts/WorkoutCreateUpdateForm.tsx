@@ -12,7 +12,9 @@ import {
 } from 'react-native'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { WorkoutValidator, SetDetail } from '../../lib/models/Workout'
+import { ExerciseMax, calculateWorkingWeight } from '../../lib/models/ExerciseMax'
 import { workoutService } from '../../lib/services/WorkoutService'
+import { exerciseMaxService } from '../../lib/services/ExerciseMaxService'
 import { useThemeColors } from '../../hooks/useThemeColors'
 import { confirmAlert } from '../../utils/confirm'
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
@@ -60,8 +62,16 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     weight?: string;
     sets?: string;
     reps?: string;
+    percentage?: string;
     setDetails?: Record<number, { weight?: string; reps?: string }>;
   }>({})
+
+  const [exerciseMaxes, setExerciseMaxes] = useState<ExerciseMax[]>([])
+  const [useMaxPercentage, setUseMaxPercentage] = useState<boolean>(!!workout?.exerciseMaxId)
+  const [selectedMaxId, setSelectedMaxId] = useState<string>(workout?.exerciseMaxId || '')
+  const [maxPercentage, setMaxPercentage] = useState<string>(workout?.maxPercentage?.toString() || '0')
+  const [showMaxDropdown, setShowMaxDropdown] = useState(false)
+  const [hasHydratedPerSetPercentages, setHasHydratedPerSetPercentages] = useState(false)
 
   useEffect(() => {
     if (workout?.altParentId) {
@@ -74,24 +84,77 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     } else {
       setSupersetId('')
     }
+    if (workout?.exerciseMaxId) {
+      setUseMaxPercentage(true)
+      setSelectedMaxId(workout.exerciseMaxId)
+      setMaxPercentage(workout.maxPercentage?.toString() || '0')
+    } else {
+      setUseMaxPercentage(false)
+      setSelectedMaxId('')
+      setMaxPercentage('0')
+    }
+    setHasHydratedPerSetPercentages(false)
     setErrors({})
   }, [workout])
+
+  useEffect(() => {
+    const loadMaxes = async () => {
+      const data = await exerciseMaxService.getExerciseMaxes()
+      setExerciseMaxes(data)
+    }
+    loadMaxes()
+  }, [])
+
+  const selectedMax = exerciseMaxes.find(m => m.id === selectedMaxId)
+  const derivedWeight = selectedMax && maxPercentage
+    ? calculateWorkingWeight(selectedMax.maxWeight, Number(maxPercentage))
+    : 0
+
+  const convertWeightToPercentage = (absoluteWeight: number, maxWeight: number): number => {
+    if (maxWeight <= 0) return 0
+    return Math.round((absoluteWeight / maxWeight) * 100)
+  }
+
+  useEffect(() => {
+    if (
+      !hasHydratedPerSetPercentages
+      && workout?.exerciseMaxId
+      && workout?.setDetails
+      && workout.setDetails.length > 0
+      && selectedMax
+      && perSetMode
+      && useMaxPercentage
+    ) {
+      setSetDetails(workout.setDetails.map(detail => ({
+        weight: convertWeightToPercentage(detail.weight, selectedMax.maxWeight),
+        reps: detail.reps,
+      })))
+      setHasHydratedPerSetPercentages(true)
+    }
+  }, [hasHydratedPerSetPercentages, workout, selectedMax, perSetMode, useMaxPercentage])
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {}
 
-    if (!name.trim()) {
+    if (!useMaxPercentage && !name.trim()) {
       newErrors.name = 'Name is required'
     }
 
     if (perSetMode) {
+      if (useMaxPercentage && !selectedMaxId) {
+        newErrors.weight = 'Please select an exercise max'
+      }
       if (setDetails.length === 0) {
         newErrors.sets = 'Add at least one set'
       }
       const detailErrors: Record<number, { weight?: string; reps?: string }> = {}
       setDetails.forEach((detail, index) => {
         const rowErrors: { weight?: string; reps?: string } = {}
-        if (isNaN(detail.weight) || detail.weight < 0) {
+        if (useMaxPercentage) {
+          if (isNaN(detail.weight) || detail.weight <= 0 || detail.weight > 200) {
+            rowErrors.weight = 'Invalid %'
+          }
+        } else if (isNaN(detail.weight) || detail.weight < 0) {
           rowErrors.weight = 'Invalid'
         }
         if (isNaN(detail.reps) || detail.reps < 0) {
@@ -103,6 +166,22 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       })
       if (Object.keys(detailErrors).length > 0) {
         newErrors.setDetails = detailErrors
+      }
+    } else if (useMaxPercentage) {
+      if (!selectedMaxId) {
+        newErrors.weight = 'Please select an exercise max'
+      }
+      const pct = Number(maxPercentage)
+      if (maxPercentage === '' || isNaN(pct) || pct <= 0 || pct > 200) {
+        newErrors.percentage = 'Enter a valid percentage (1-200)'
+      }
+      const setsNum = Number(sets)
+      if (sets === '' || sets.trim() === '' || isNaN(setsNum) || setsNum < 0) {
+        newErrors.sets = 'Please enter a valid number of sets'
+      }
+      const repsNum = Number(reps)
+      if (reps === '' || reps.trim() === '' || isNaN(repsNum) || repsNum < 0) {
+        newErrors.reps = 'Please enter a valid number of reps'
       }
     } else {
       const weightNum = Number(weight)
@@ -128,29 +207,50 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
 
     try {
       const workoutDay = workout?.day ?? day
+      const resolvedSetDetails = perSetMode
+        ? (
+          useMaxPercentage && selectedMax
+            ? setDetails.map(detail => ({
+              weight: calculateWorkingWeight(selectedMax.maxWeight, detail.weight),
+              reps: detail.reps,
+            }))
+            : setDetails
+        )
+        : undefined
 
-      const resolvedWeight = perSetMode && setDetails.length > 0
-        ? setDetails[0].weight
-        : Number(weight)
+      let resolvedWeight: number
+      if (perSetMode && resolvedSetDetails && resolvedSetDetails.length > 0) {
+        resolvedWeight = resolvedSetDetails[0].weight
+      } else if (useMaxPercentage && selectedMax) {
+        resolvedWeight = derivedWeight
+      } else {
+        resolvedWeight = Number(weight)
+      }
       const resolvedSets = perSetMode
-        ? setDetails.length
+        ? (resolvedSetDetails?.length || 0)
         : Number(sets)
-      const resolvedReps = perSetMode && setDetails.length > 0
-        ? setDetails[0].reps
+      const resolvedReps = perSetMode && resolvedSetDetails && resolvedSetDetails.length > 0
+        ? resolvedSetDetails[0].reps
         : Number(reps)
+
+      const resolvedName = useMaxPercentage && selectedMax
+        ? selectedMax.name
+        : name.trim()
 
       const workoutData: WorkoutDay = {
         id: workout?.id || Date.now().toString(),
         day: workoutDay,
         dayOrder: workout?.dayOrder ?? defaultOrder,
-        name: name.trim(),
+        name: resolvedName,
         weight: resolvedWeight,
         sets: resolvedSets,
         reps: resolvedReps,
         notes: notes.trim() || undefined,
         altParentId: alternativeId || undefined,
         supersetParentId: supersetId || undefined,
-        setDetails: perSetMode ? setDetails : undefined,
+        setDetails: resolvedSetDetails,
+        exerciseMaxId: useMaxPercentage ? selectedMaxId || undefined : undefined,
+        maxPercentage: useMaxPercentage && !perSetMode ? Number(maxPercentage) || undefined : undefined,
       }
 
       WorkoutValidator.validate(workoutData)
@@ -391,15 +491,213 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     )
   }
 
+  const handleToggleMaxPercentage = () => {
+    const turningOn = !useMaxPercentage
+    if (turningOn && !selectedMaxId && exerciseMaxes.length > 0) {
+      setSelectedMaxId(exerciseMaxes[0].id)
+    }
+
+    if (perSetMode) {
+      const maxForConversion = selectedMax || (exerciseMaxes.length > 0 ? exerciseMaxes[0] : undefined)
+      if (turningOn && maxForConversion) {
+        setSetDetails(prev => prev.map(detail => ({
+          weight: convertWeightToPercentage(detail.weight, maxForConversion.maxWeight),
+          reps: detail.reps,
+        })))
+      } else if (!turningOn && selectedMax) {
+        setSetDetails(prev => prev.map(detail => ({
+          weight: calculateWorkingWeight(selectedMax.maxWeight, detail.weight),
+          reps: detail.reps,
+        })))
+      }
+    }
+
+    setUseMaxPercentage(turningOn)
+    setErrors({})
+  }
+
+  const renderMaxPercentageFields = () => {
+    const maxOptions = exerciseMaxes
+    const selectedMaxOption = maxOptions.find(m => m.id === selectedMaxId)
+    const displayText = selectedMaxOption
+      ? `${selectedMaxOption.name} (${selectedMaxOption.maxWeight})`
+      : 'Select Exercise'
+
+    return (
+      <View style={formStyles.maxPercentageContainer}>
+        <View style={styles.inputContainer}>
+          <Text style={[styles.inputLabel, { color: colors.text.primary }]}>Name</Text>
+          <TouchableOpacity
+            style={[styles.dropdownButton, {
+              backgroundColor: colors.surface,
+              borderColor: errors.weight ? '#ff4444' : colors.border,
+            }]}
+            onPress={() => setShowMaxDropdown(true)}
+            accessibilityLabel="Select exercise max"
+            accessibilityRole="button"
+          >
+            <Text style={[styles.dropdownButtonText, { color: colors.text.primary }]}>
+              {displayText}
+            </Text>
+            <Text style={[styles.dropdownArrow, { color: colors.text.secondary }]}>▼</Text>
+          </TouchableOpacity>
+          {errors.weight && (
+            <Text style={[styles.errorText, { color: '#ff4444' }]}>{errors.weight}</Text>
+          )}
+
+          <Modal
+            visible={showMaxDropdown}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowMaxDropdown(false)}
+          >
+            <TouchableOpacity
+              style={styles.modalOverlay}
+              activeOpacity={1}
+              onPress={() => setShowMaxDropdown(false)}
+            >
+              <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
+                {maxOptions.map((option, index) => (
+                  <TouchableOpacity
+                    key={option.id}
+                    style={[
+                      styles.dropdownModalOption,
+                      index === maxOptions.length - 1 && styles.dropdownModalOptionLast,
+                    ]}
+                    onPress={() => {
+                      setSelectedMaxId(option.id)
+                      setShowMaxDropdown(false)
+                      if (errors.weight) setErrors(prev => ({ ...prev, weight: undefined }))
+                    }}
+                  >
+                    <Text style={[styles.dropdownModalText, { color: colors.text.primary }]}>
+                      {option.name} ({option.maxWeight})
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </Modal>
+        </View>
+
+        <View style={styles.row}>
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: colors.text.primary }]}>Percentage</Text>
+            <TextInput
+              style={[styles.input, {
+                backgroundColor: colors.surface,
+                color: colors.text.primary,
+                borderColor: errors.percentage ? '#ff4444' : colors.border,
+              }]}
+              value={maxPercentage}
+              onChangeText={(text) => {
+                setMaxPercentage(text)
+                if (errors.percentage) setErrors(prev => ({ ...prev, percentage: undefined }))
+              }}
+              placeholder="0"
+              placeholderTextColor={colors.text.tertiary}
+              keyboardType="numeric"
+              accessibilityLabel="Percentage of max"
+            />
+            {errors.percentage && (
+              <Text style={[styles.errorText, { color: '#ff4444' }]}>{errors.percentage}</Text>
+            )}
+          </View>
+
+          <View style={[styles.inputContainer, { justifyContent: 'center' }]}>
+            <Text style={[styles.inputLabel, { color: colors.text.primary }]}>Weight</Text>
+            <View style={[styles.input, {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              justifyContent: 'center',
+            }]}>
+              <Text style={[formStyles.derivedWeightText, { color: colors.text.primary }]}>
+                {derivedWeight > 0 ? derivedWeight : '—'}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    )
+  }
+
+  const renderMaxSelectorField = () => {
+    const selectedMaxOption = exerciseMaxes.find(m => m.id === selectedMaxId)
+    const displayText = selectedMaxOption
+      ? `${selectedMaxOption.name} (${selectedMaxOption.maxWeight})`
+      : 'Select Exercise'
+
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={[styles.inputLabel, { color: colors.text.primary }]}>Name</Text>
+        <TouchableOpacity
+          style={[styles.dropdownButton, {
+            backgroundColor: colors.surface,
+            borderColor: errors.weight ? '#ff4444' : colors.border,
+          }]}
+          onPress={() => setShowMaxDropdown(true)}
+          accessibilityLabel="Select exercise max"
+          accessibilityRole="button"
+        >
+          <Text style={[styles.dropdownButtonText, { color: colors.text.primary }]}>
+            {displayText}
+          </Text>
+          <Text style={[styles.dropdownArrow, { color: colors.text.secondary }]}>▼</Text>
+        </TouchableOpacity>
+        {errors.weight && (
+          <Text style={[styles.errorText, { color: '#ff4444' }]}>{errors.weight}</Text>
+        )}
+
+        <Modal
+          visible={showMaxDropdown}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowMaxDropdown(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowMaxDropdown(false)}
+          >
+            <View style={[styles.dropdownModal, { backgroundColor: colors.surface }]}>
+              {exerciseMaxes.map((option, index) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[
+                    styles.dropdownModalOption,
+                    index === exerciseMaxes.length - 1 && styles.dropdownModalOptionLast,
+                  ]}
+                  onPress={() => {
+                    setSelectedMaxId(option.id)
+                    setShowMaxDropdown(false)
+                    if (errors.weight) setErrors(prev => ({ ...prev, weight: undefined }))
+                  }}
+                >
+                  <Text style={[styles.dropdownModalText, { color: colors.text.primary }]}>
+                    {option.name} ({option.maxWeight})
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
+    )
+  }
+
   const handleTogglePerSetMode = () => {
     if (!perSetMode) {
       const count = Math.max(Number(sets) || 1, 1)
-      const w = Number(weight) || 0
+      const w = useMaxPercentage ? (Number(maxPercentage) || 0) : (Number(weight) || 0)
       const r = Number(reps) || 0
       setSetDetails(Array.from({ length: count }, () => ({ weight: w, reps: r })))
     } else {
       if (setDetails.length > 0) {
-        setWeight(String(setDetails[0].weight))
+        if (useMaxPercentage) {
+          setMaxPercentage(String(setDetails[0].weight))
+        } else {
+          setWeight(String(setDetails[0].weight))
+        }
         setReps(String(setDetails[0].reps))
         setSets(String(setDetails.length))
       }
@@ -464,8 +762,19 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
             { color: colors.text.secondary },
           ]}
         >
-          Weight
+          {useMaxPercentage ? 'Percentage' : 'Weight'}
         </Text>
+        {useMaxPercentage && (
+          <Text
+            style={[
+              formStyles.setDetailsHeaderText,
+              formStyles.setDetailsValueColumn,
+              { color: colors.text.secondary },
+            ]}
+          >
+            Weight
+          </Text>
+        )}
         <Text
           style={[
             formStyles.setDetailsHeaderText,
@@ -502,6 +811,22 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
             placeholder="0"
             placeholderTextColor={colors.text.tertiary}
           />
+          {useMaxPercentage && (
+            <View
+              style={[
+                formStyles.setDetailInput,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  justifyContent: 'center',
+                },
+              ]}
+            >
+              <Text style={[formStyles.derivedWeightText, { color: colors.text.primary }]}>
+                {selectedMax ? calculateWorkingWeight(selectedMax.maxWeight, detail.weight) : '—'}
+              </Text>
+            </View>
+          )}
           <TextInput
             style={[
               formStyles.setDetailInput,
@@ -545,9 +870,11 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={[styles.form, { backgroundColor: colors.background }]}>
-          {renderInputField('Name', name, setName, 'Exercise name', 'default', false, errors.name, 'name')}
+          {!useMaxPercentage && (
+            renderInputField('Name', name, setName, 'Exercise name', 'default', false, errors.name, 'name')
+          )}
           
-          {!perSetMode && (
+          {!perSetMode && !useMaxPercentage && (
             <View style={styles.row}>
               {renderInputField('Weight', weight, setWeight, '0', 'numeric', false, errors.weight, 'weight')}
               {renderInputField('Sets', sets, setSets, '0', 'numeric', false, errors.sets, 'sets')}
@@ -555,14 +882,43 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
             </View>
           )}
 
-          <TouchableOpacity
-            style={[formStyles.toggleButton, { borderColor: colors.border }]}
-            onPress={handleTogglePerSetMode}
-          >
-            <Text style={[formStyles.toggleButtonText, { color: colors.primary }]}>
-              {perSetMode ? 'Use Standard Mode' : 'Per-Set Details'}
-            </Text>
-          </TouchableOpacity>
+          {!perSetMode && useMaxPercentage && (
+            <View>
+              {renderMaxPercentageFields()}
+              <View style={styles.row}>
+                {renderInputField('Sets', sets, setSets, '0', 'numeric', false, errors.sets, 'sets')}
+                {renderInputField('Reps', reps, setReps, '0', 'numeric', false, errors.reps, 'reps')}
+              </View>
+            </View>
+          )}
+
+          {perSetMode && useMaxPercentage && (
+            <View>
+              {renderMaxSelectorField()}
+            </View>
+          )}
+
+          <View style={formStyles.toggleRow}>
+            <TouchableOpacity
+              style={[formStyles.toggleButton, { borderColor: colors.border }]}
+              onPress={handleTogglePerSetMode}
+            >
+              <Text style={[formStyles.toggleButtonText, { color: colors.primary }]}>
+                {perSetMode ? 'Use Standard Mode' : 'Per-Set Details'}
+              </Text>
+            </TouchableOpacity>
+
+            {exerciseMaxes.length > 0 && (
+              <TouchableOpacity
+                style={[formStyles.toggleButton, { borderColor: colors.border }]}
+                onPress={handleToggleMaxPercentage}
+              >
+                <Text style={[formStyles.toggleButtonText, { color: colors.primary }]}>
+                  {useMaxPercentage ? 'Manual Mode' : '% of Max'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {perSetMode && renderPerSetDetails()}
 
@@ -749,14 +1105,18 @@ const styles = StyleSheet.create({
 })
 
 const formStyles = StyleSheet.create({
+  toggleRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+    marginHorizontal: 4,
+  },
   toggleButton: {
     alignSelf: 'flex-start',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderWidth: 1,
     borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.lg,
-    marginHorizontal: 4,
   },
   toggleButtonText: {
     fontSize: TYPOGRAPHY.sizes.sm,
@@ -842,5 +1202,12 @@ const formStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.sm,
     width: '100%',
+  },
+  maxPercentageContainer: {
+    marginBottom: SPACING.sm,
+  },
+  derivedWeightText: {
+    fontSize: TYPOGRAPHY.sizes.md,
+    fontWeight: TYPOGRAPHY.weights.semibold,
   },
 })

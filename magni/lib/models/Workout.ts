@@ -13,6 +13,8 @@ export interface Workout {
   supersetParentId?: string;
   altParentId?: string;
   setDetails?: SetDetail[];
+  exerciseMaxId?: string;
+  maxPercentage?: number;
 }
 
 export const WorkoutConverter = {
