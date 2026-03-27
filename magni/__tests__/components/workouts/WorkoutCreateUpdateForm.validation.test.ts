@@ -156,3 +156,165 @@ describe('WorkoutCreateUpdateForm Validation Logic', () => {
   })
 })
 
+interface SetDetail {
+  weight: number;
+  reps: number;
+}
+
+describe('WorkoutCreateUpdateForm Per-Set Mode Validation Logic', () => {
+  const validatePerSetForm = (
+    name: string,
+    setDetails: SetDetail[],
+  ): {
+    name?: string;
+    sets?: string;
+    setDetails?: Record<number, { weight?: string; reps?: string }>;
+  } => {
+    const errors: {
+      name?: string;
+      sets?: string;
+      setDetails?: Record<number, { weight?: string; reps?: string }>;
+    } = {}
+
+    if (!name.trim()) {
+      errors.name = 'Name is required'
+    }
+
+    if (setDetails.length === 0) {
+      errors.sets = 'Add at least one set'
+    }
+    const detailErrors: Record<number, { weight?: string; reps?: string }> = {}
+    setDetails.forEach((detail, index) => {
+      const rowErrors: { weight?: string; reps?: string } = {}
+      if (isNaN(detail.weight) || detail.weight < 0) {
+        rowErrors.weight = 'Invalid'
+      }
+      if (isNaN(detail.reps) || detail.reps < 0) {
+        rowErrors.reps = 'Invalid'
+      }
+      if (Object.keys(rowErrors).length > 0) {
+        detailErrors[index] = rowErrors
+      }
+    })
+    if (Object.keys(detailErrors).length > 0) {
+      errors.setDetails = detailErrors
+    }
+
+    return errors
+  }
+
+  describe('Valid per-set data', () => {
+    it('should accept valid set details', () => {
+      const errors = validatePerSetForm('Bench Press', [
+        { weight: 135, reps: 8 },
+        { weight: 145, reps: 6 },
+        { weight: 155, reps: 4 },
+      ])
+      expect(Object.keys(errors).length).toBe(0)
+    })
+
+    it('should accept a single set', () => {
+      const errors = validatePerSetForm('Squat', [{ weight: 225, reps: 5 }])
+      expect(Object.keys(errors).length).toBe(0)
+    })
+
+    it('should accept sets with zero weight', () => {
+      const errors = validatePerSetForm('Push-ups', [
+        { weight: 0, reps: 20 },
+        { weight: 0, reps: 15 },
+      ])
+      expect(Object.keys(errors).length).toBe(0)
+    })
+
+    it('should accept sets with zero reps', () => {
+      const errors = validatePerSetForm('Plank', [{ weight: 0, reps: 0 }])
+      expect(Object.keys(errors).length).toBe(0)
+    })
+  })
+
+  describe('Empty set details', () => {
+    it('should return error when set details array is empty', () => {
+      const errors = validatePerSetForm('Bench Press', [])
+      expect(errors.sets).toBe('Add at least one set')
+    })
+  })
+
+  describe('Invalid set detail values', () => {
+    it('should return error for negative weight in a set', () => {
+      const errors = validatePerSetForm('Bench Press', [
+        { weight: 135, reps: 8 },
+        { weight: -10, reps: 6 },
+      ])
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![1]?.weight).toBe('Invalid')
+      expect(errors.setDetails![0]).toBeUndefined()
+    })
+
+    it('should return error for negative reps in a set', () => {
+      const errors = validatePerSetForm('Bench Press', [
+        { weight: 135, reps: -1 },
+      ])
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![0]?.reps).toBe('Invalid')
+    })
+
+    it('should return errors for multiple invalid sets', () => {
+      const errors = validatePerSetForm('Bench Press', [
+        { weight: -5, reps: -3 },
+        { weight: 135, reps: 8 },
+        { weight: -10, reps: -1 },
+      ])
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![0]?.weight).toBe('Invalid')
+      expect(errors.setDetails![0]?.reps).toBe('Invalid')
+      expect(errors.setDetails![1]).toBeUndefined()
+      expect(errors.setDetails![2]?.weight).toBe('Invalid')
+      expect(errors.setDetails![2]?.reps).toBe('Invalid')
+    })
+
+    it('should return error for NaN weight', () => {
+      const errors = validatePerSetForm('Test', [
+        { weight: NaN, reps: 10 },
+      ])
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![0]?.weight).toBe('Invalid')
+    })
+
+    it('should return error for NaN reps', () => {
+      const errors = validatePerSetForm('Test', [
+        { weight: 100, reps: NaN },
+      ])
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![0]?.reps).toBe('Invalid')
+    })
+  })
+
+  describe('Name validation in per-set mode', () => {
+    it('should still require name when in per-set mode', () => {
+      const errors = validatePerSetForm('', [{ weight: 100, reps: 10 }])
+      expect(errors.name).toBe('Name is required')
+    })
+
+    it('should reject whitespace-only name in per-set mode', () => {
+      const errors = validatePerSetForm('   ', [{ weight: 100, reps: 10 }])
+      expect(errors.name).toBe('Name is required')
+    })
+  })
+
+  describe('Combined errors', () => {
+    it('should return both name and set errors simultaneously', () => {
+      const errors = validatePerSetForm('', [{ weight: -5, reps: -3 }])
+      expect(errors.name).toBe('Name is required')
+      expect(errors.setDetails).toBeDefined()
+      expect(errors.setDetails![0]?.weight).toBe('Invalid')
+      expect(errors.setDetails![0]?.reps).toBe('Invalid')
+    })
+
+    it('should return name error and empty sets error simultaneously', () => {
+      const errors = validatePerSetForm('', [])
+      expect(errors.name).toBe('Name is required')
+      expect(errors.sets).toBe('Add at least one set')
+    })
+  })
+})
+

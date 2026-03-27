@@ -787,6 +787,40 @@ describe('WorkoutHistoryService', () => {
         expect(result.supersetParentId).toBeUndefined()
         expect(result.altParentId).toBeUndefined()
       })
+
+      it('preserves setDetails in history conversion', () => {
+        const setDetails = [
+          { weight: 135, reps: 8 },
+          { weight: 145, reps: 6 },
+          { weight: 155, reps: 4 },
+        ]
+        const workoutDay = createMockWorkoutDay({
+          id: 'workout-with-details',
+          name: 'Bench Press',
+          weight: 135,
+          sets: 3,
+          reps: 8,
+          setDetails,
+        })
+
+        const result = WorkoutHistoryService.workoutDayToHistory(workoutDay)
+
+        expect(result.setDetails).toBeDefined()
+        expect(result.setDetails).toHaveLength(3)
+        expect(result.setDetails).toEqual(setDetails)
+        expect(result.workoutId).toBe('workout-with-details')
+      })
+
+      it('keeps setDetails undefined when not present on workout', () => {
+        const workoutDay = createMockWorkoutDay({
+          id: 'workout-no-details',
+          name: 'Squat',
+        })
+
+        const result = WorkoutHistoryService.workoutDayToHistory(workoutDay)
+
+        expect(result.setDetails).toBeUndefined()
+      })
     })
   })
 

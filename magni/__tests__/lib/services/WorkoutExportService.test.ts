@@ -29,7 +29,7 @@ describe('WorkoutExportService', () => {
   describe('workoutsToCSV', () => {
     it('generates CSV with headers for empty array', () => {
       const csv = workoutExportService.workoutsToCSV([])
-      expect(csv).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder')
+      expect(csv).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails')
     })
 
     it('generates CSV with workout data', () => {
@@ -38,8 +38,8 @@ describe('WorkoutExportService', () => {
       const lines = csv.split('\n')
       
       expect(lines).toHaveLength(2)
-      expect(lines[0]).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder')
-      expect(lines[1]).toBe('test-id,Test Exercise,100,3,10,,,,1,0')
+      expect(lines[0]).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails')
+      expect(lines[1]).toBe('test-id,Test Exercise,100,3,10,,,,1,0,')
     })
 
     it('handles optional fields correctly', () => {
@@ -111,7 +111,30 @@ describe('WorkoutExportService', () => {
       const lines = csv.split('\n')
       
       expect(lines).toHaveLength(1)
-      expect(lines[0]).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder')
+      expect(lines[0]).toBe('id,name,weight,sets,reps,notes,supersetParentId,altParentId,day,dayOrder,setDetails')
+    })
+  })
+
+  describe('setDetails in CSV', () => {
+    it('exports setDetails as JSON string', () => {
+      const workouts = [createMockWorkout({
+        setDetails: [
+          { weight: 135, reps: 8 },
+          { weight: 145, reps: 6 },
+        ],
+      })]
+      const csv = workoutExportService.workoutsToCSV(workouts)
+      const lines = csv.split('\n')
+      
+      expect(lines[1]).toContain('"[{""weight"":135,""reps"":8},{""weight"":145,""reps"":6}]"')
+    })
+
+    it('exports empty string when setDetails is undefined', () => {
+      const workouts = [createMockWorkout()]
+      const csv = workoutExportService.workoutsToCSV(workouts)
+      const lines = csv.split('\n')
+      
+      expect(lines[1]).toMatch(/,$/)
     })
   })
 })

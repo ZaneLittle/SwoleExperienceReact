@@ -167,6 +167,41 @@ describe('WorkoutExportImport Integration', () => {
       expect(importedWorkouts[0].id).not.toBe(importedWorkouts[1].id)
     })
 
+    it('preserves setDetails through export and import', () => {
+      const originalWorkouts: WorkoutDay[] = [
+        createWorkout({
+          id: 'w1',
+          name: 'Bench Press',
+          weight: 135,
+          sets: 3,
+          reps: 8,
+          day: 1,
+          dayOrder: 0,
+          setDetails: [
+            { weight: 135, reps: 8 },
+            { weight: 145, reps: 6 },
+            { weight: 155, reps: 4 },
+          ],
+        }),
+        createWorkout({ id: 'w2', name: 'Squat', weight: 225, sets: 5, reps: 5, day: 1, dayOrder: 1 }),
+      ]
+
+      const csv = workoutExportService.workoutsToCSV(originalWorkouts)
+      const importedWorkouts = workoutImportService.parseCSV(csv)
+
+      expect(importedWorkouts).toHaveLength(2)
+
+      const importedBench = importedWorkouts.find(w => w.name === 'Bench Press')
+      expect(importedBench?.setDetails).toBeDefined()
+      expect(importedBench?.setDetails).toHaveLength(3)
+      expect(importedBench?.setDetails![0]).toEqual({ weight: 135, reps: 8 })
+      expect(importedBench?.setDetails![1]).toEqual({ weight: 145, reps: 6 })
+      expect(importedBench?.setDetails![2]).toEqual({ weight: 155, reps: 4 })
+
+      const importedSquat = importedWorkouts.find(w => w.name === 'Squat')
+      expect(importedSquat?.setDetails).toBeUndefined()
+    })
+
     it('preserves day and dayOrder across multiple days', () => {
       const originalWorkouts: WorkoutDay[] = [
         createWorkout({ id: 'w1', name: 'Day 1 Ex 1', day: 1, dayOrder: 0 }),
