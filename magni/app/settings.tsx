@@ -12,6 +12,7 @@ import AppearanceSection from '../components/settings/AppearanceSection'
 import WeightPeriodSection from '../components/settings/WeightPeriodSection'
 import SupportSection from '../components/settings/SupportSection'
 import AuthSection from '../components/settings/AuthSection'
+import ExerciseMaxSection from '../components/settings/ExerciseMaxSection'
 import ClearHistoryModal from '../components/settings/ClearHistoryModal'
 import ImportConfirmModal from '../components/settings/ImportConfirmModal'
 import { useWeightPeriod } from '../contexts/WeightPeriodContext'
@@ -121,6 +122,8 @@ export default function SettingsScreen() {
           onExport={handleExportWorkouts}
           onFileSelected={handleFileSelected}
         />
+
+        <ExerciseMaxSection />
 
         <AppearanceSection
           themeMode={themeMode}

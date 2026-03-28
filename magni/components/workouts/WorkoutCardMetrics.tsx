@@ -31,13 +31,17 @@ export const WorkoutCardMetrics: React.FC<WorkoutCardMetricsProps> = ({ workout 
     )
   }
 
+  const hasMaxPercentage = !!(workout.exerciseMaxId && workout.maxPercentage)
+
   return (
     <View style={styles.metricsRow}>
       <Text style={[styles.metric, { color: colors.text.secondary }]}>
         Sets: <Text style={[styles.metricValue, { color: colors.text.primary }]}>{workout.sets}</Text>
       </Text>
       <Text style={[styles.metric, { color: colors.text.secondary }]}>
-        Weight: <Text style={[styles.metricValue, { color: colors.text.primary }]}>{workout.weight}</Text>
+        Weight: <Text style={[styles.metricValue, { color: colors.text.primary }]}>
+          {workout.weight}{hasMaxPercentage ? ` (${workout.maxPercentage}%)` : ''}
+        </Text>
       </Text>
       <Text style={[styles.metric, { color: colors.text.secondary }]}>
         Reps: <Text style={[styles.metricValue, { color: colors.text.primary }]}>{workout.reps}</Text>

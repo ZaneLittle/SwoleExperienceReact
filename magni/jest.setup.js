@@ -55,7 +55,12 @@ beforeAll(() => {
        args[0].includes('Error adding weight:') ||
        args[0].includes('Error calculating averages:') ||
        args[0].includes('Error getting current day:') ||
-       args[0].includes('Error setting current day:'))
+       args[0].includes('Error setting current day:') ||
+       args[0].includes('Error getting exercise maxes:') ||
+       args[0].includes('Error creating exercise max:') ||
+       args[0].includes('Error updating exercise max:') ||
+       args[0].includes('Error removing exercise max:') ||
+       args[0].includes('Error getting exercise max by id:'))
     ) {
       return;
     }
