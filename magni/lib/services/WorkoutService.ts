@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { WorkoutDay, WorkoutDayValidator } from '../models/WorkoutDay'
-import { WorkoutValidator } from '../models/Workout'
+import { WorkoutValidator, getSyncGroupId } from '../models/Workout'
 
 const WORKOUT_STORAGE_KEY = 'workouts'
 const CURRENT_DAY_STORAGE_KEY = 'current_workout_day'
@@ -10,6 +10,10 @@ class WorkoutService {
   private static instance: WorkoutService
 
   private constructor() {}
+
+  private isWorkoutInSyncGroup(workout: WorkoutDay, syncGroupId: string): boolean {
+    return workout.id === syncGroupId || workout.sharedWorkoutId === syncGroupId
+  }
 
   static getInstance(): WorkoutService {
     if (!WorkoutService.instance) {
@@ -82,9 +86,32 @@ class WorkoutService {
       WorkoutValidator.validate(workout)
       
       const existingWorkouts = await this.getWorkouts()
-      const updatedWorkouts = existingWorkouts.map(w => 
-        w.id === workout.id ? workout : w,
-      )
+      const syncGroupId = getSyncGroupId(workout)
+      const sharedUpdate = {
+        name: workout.name,
+        weight: workout.weight,
+        sets: workout.sets,
+        reps: workout.reps,
+        notes: workout.notes,
+        setDetails: workout.setDetails,
+        exerciseMaxId: workout.exerciseMaxId,
+        maxPercentage: workout.maxPercentage,
+      }
+
+      const updatedWorkouts = existingWorkouts.map(existingWorkout => {
+        if (!this.isWorkoutInSyncGroup(existingWorkout, syncGroupId)) {
+          return existingWorkout
+        }
+
+        if (existingWorkout.id === workout.id) {
+          return workout
+        }
+
+        return {
+          ...existingWorkout,
+          ...sharedUpdate,
+        }
+      })
       
       await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts))
       return true

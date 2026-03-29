@@ -229,5 +229,63 @@ describe('WorkoutCreateUpdateForm Day Preservation Logic', () => {
       expect(updatedWorkout.supersetParentId).toBe(originalWorkout.supersetParentId)
     })
   })
+
+  describe('Create from existing workout linking', () => {
+    it('should link new workout to the selected existing workout group', async () => {
+      const existingWorkout: WorkoutDay = createMockWorkoutDay({
+        id: 'existing-workout',
+        name: 'Romanian Deadlift',
+        day: 1,
+      })
+
+      // Simulate "Create from Existing" behavior in the form.
+      const sharedWorkoutId = existingWorkout.sharedWorkoutId ?? existingWorkout.id
+      const newWorkout: WorkoutDay = createMockWorkoutDay({
+        id: 'copied-workout',
+        day: 3,
+        dayOrder: 0,
+        name: existingWorkout.name,
+        weight: existingWorkout.weight,
+        sets: existingWorkout.sets,
+        reps: existingWorkout.reps,
+        sharedWorkoutId,
+      })
+
+      await mockWorkoutService.createWorkout(newWorkout)
+
+      expect(newWorkout.sharedWorkoutId).toBe('existing-workout')
+      expect(newWorkout.day).toBe(3)
+      expect(mockWorkoutService.createWorkout).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'copied-workout',
+          sharedWorkoutId: 'existing-workout',
+        }),
+      )
+    })
+
+    it('should keep linking to the original source when copying an already linked workout', async () => {
+      const linkedWorkout: WorkoutDay = createMockWorkoutDay({
+        id: 'linked-workout',
+        sharedWorkoutId: 'master-workout',
+        name: 'Incline Bench',
+      })
+
+      const sharedWorkoutId = linkedWorkout.sharedWorkoutId ?? linkedWorkout.id
+      const newWorkout: WorkoutDay = createMockWorkoutDay({
+        id: 'another-copy',
+        sharedWorkoutId,
+        day: 2,
+      })
+
+      await mockWorkoutService.createWorkout(newWorkout)
+
+      expect(newWorkout.sharedWorkoutId).toBe('master-workout')
+      expect(mockWorkoutService.createWorkout).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedWorkoutId: 'master-workout',
+        }),
+      )
+    })
+  })
 })
 

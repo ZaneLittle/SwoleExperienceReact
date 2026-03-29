@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
+import { getSyncGroupId } from '../../lib/models/Workout'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
 import { useThemeColors } from '../../hooks/useThemeColors'
@@ -23,6 +24,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [editingWorkout, setEditingWorkout] = useState<WorkoutDay | undefined>()
   const [showForm, setShowForm] = useState(false)
+  const [showExistingWorkoutSelector, setShowExistingWorkoutSelector] = useState(false)
   const [selectedDay, setSelectedDay] = useState(1)
   const [totalDays, setTotalDays] = useState(0)
 
@@ -51,6 +53,10 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   const handleAddWorkout = () => {
     setEditingWorkout(undefined)
     setShowForm(true)
+  }
+
+  const handleAddExistingWorkout = () => {
+    setShowExistingWorkoutSelector(true)
   }
 
   const handleEditWorkout = (workout: WorkoutDay) => {
@@ -172,7 +178,49 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     return workouts.filter(w => w.day === day).sort((a, b) => a.dayOrder - b.dayOrder)
   }
 
+  const getSelectableExistingWorkouts = (): WorkoutDay[] => {
+    return workouts
+      .filter((workout, index, allWorkouts) => {
+        const syncKey = getSyncGroupId(workout)
+        return allWorkouts.findIndex(item => getSyncGroupId(item) === syncKey) === index
+      })
+      .sort((first, second) => first.name.localeCompare(second.name))
+  }
 
+  const handleSelectExistingWorkout = async (selectedWorkout: WorkoutDay) => {
+    try {
+      const dayWorkouts = getWorkoutsForDay(selectedDay)
+      const syncGroupId = getSyncGroupId(selectedWorkout)
+      const copiedSetDetails = selectedWorkout.setDetails?.map(detail => ({ ...detail }))
+
+      const newWorkout: WorkoutDay = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        sharedWorkoutId: syncGroupId,
+        day: selectedDay,
+        dayOrder: dayWorkouts.length + 1,
+        name: selectedWorkout.name,
+        weight: selectedWorkout.weight,
+        sets: selectedWorkout.sets,
+        reps: selectedWorkout.reps,
+        notes: selectedWorkout.notes,
+        setDetails: copiedSetDetails,
+        exerciseMaxId: selectedWorkout.exerciseMaxId,
+        maxPercentage: selectedWorkout.maxPercentage,
+      }
+
+      const success = await workoutService.createWorkout(newWorkout)
+      if (!success) {
+        confirmAlert('Error', 'Failed to add existing workout')
+        return
+      }
+
+      setShowExistingWorkoutSelector(false)
+      await loadWorkouts()
+    } catch (error) {
+      console.error('Error selecting existing workout:', error)
+      confirmAlert('Error', 'Failed to add existing workout')
+    }
+  }
 
   const handleNextDay = () => {
     const nextDay = selectedDay + 1
@@ -278,6 +326,39 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     </View>
   )
 
+  const renderAddButtons = () => (
+    <View style={styles.addButtonsRow}>
+      <TouchableOpacity
+        style={[
+          styles.addButton,
+          styles.addButtonHalf,
+          { backgroundColor: colors.primary },
+        ]}
+        onPress={handleAddWorkout}
+        accessibilityLabel="Add new workout"
+        accessibilityRole="button"
+      >
+        <Text style={[styles.addButtonText, { color: '#fff' }]}>Add New Workout</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.addButton,
+          styles.addButtonHalf,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+          },
+        ]}
+        onPress={handleAddExistingWorkout}
+        accessibilityLabel="Select existing workout"
+        accessibilityRole="button"
+      >
+        <Text style={[styles.addButtonText, { color: colors.text.primary }]}>Select Existing Workout</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
   const renderWorkoutList = () => {
     const dayWorkouts = getWorkoutsForDay(selectedDay)
     
@@ -289,19 +370,8 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             {isNewDay ? `Create workouts for Day ${selectedDay}` : `No workouts for Day ${selectedDay}`}
           </Text>
           <View style={styles.emptyStateButtons}>
-            <TouchableOpacity 
-              style={[
-                styles.addButton, 
-                { 
-                  backgroundColor: colors.primary,
-                },
-              ]} 
-              onPress={handleAddWorkout}
-            >
-              <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
-            </TouchableOpacity>
+            {renderAddButtons()}
             {!isNewDay && (() => {
-              // Check if this is the last day
               const uniqueDays = Array.from(new Set(workouts.map(w => w.day))).sort((a, b) => a - b)
               const isLastDay = uniqueDays.length > 0 && selectedDay === uniqueDays[uniqueDays.length - 1]
               
@@ -343,18 +413,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             renderWorkoutItem(workout, index, dayWorkouts.length),
           )}
         </ScrollView>
-        
-        <TouchableOpacity 
-          style={[
-            styles.addButton, 
-            { 
-              backgroundColor: colors.primary,
-            },
-          ]} 
-          onPress={handleAddWorkout}
-        >
-          <Text style={[styles.addButtonText, { color: '#fff' }]}>+ Add Workout</Text>
-        </TouchableOpacity>
+        {renderAddButtons()}
       </View>
     )
   }
@@ -389,6 +448,55 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     </View>
   )
 
+  const renderExistingWorkoutSelectorModal = () => {
+    const selectableWorkouts = getSelectableExistingWorkouts()
+
+    return (
+      <View style={styles.modalOverlay}>
+        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
+              Select Existing Workout
+            </Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowExistingWorkoutSelector(false)}
+              accessibilityLabel="Close workout selector"
+              accessibilityRole="button"
+            >
+              <Text style={[styles.closeButtonText, { color: colors.text.secondary }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.existingWorkoutList}>
+            {selectableWorkouts.length === 0 ? (
+              <Text style={[styles.emptyStateText, { color: colors.text.secondary }]}>
+                No existing workouts available
+              </Text>
+            ) : (
+              selectableWorkouts.map(workout => (
+                <TouchableOpacity
+                  key={getSyncGroupId(workout)}
+                  style={[styles.existingWorkoutItem, { backgroundColor: colors.background, borderColor: colors.border }]}
+                  onPress={() => handleSelectExistingWorkout(workout)}
+                  accessibilityLabel={`Select ${workout.name}`}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.existingWorkoutName, { color: colors.text.primary }]}>
+                    {workout.name}
+                  </Text>
+                  <Text style={[styles.existingWorkoutDetails, { color: colors.text.secondary }]}>
+                    {workout.weight} lb • {workout.sets} sets • {workout.reps} reps
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    )
+  }
+
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -414,6 +522,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
       </ScrollView>
 
       {showForm && renderFormModal()}
+      {showExistingWorkoutSelector && renderExistingWorkoutSelectorModal()}
     </View>
   )
 }
@@ -619,13 +728,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 20,
     marginBottom: 20, // Add extra bottom margin
+  },
+  addButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  addButtonHalf: {
+    flex: 1,
+    marginTop: 0,
+    marginBottom: 0,
+    paddingHorizontal: 12,
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   deleteDayButton: {
     backgroundColor: '#ff3b30',
@@ -656,6 +779,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     maxHeight: '80%',
+  },
+  existingWorkoutList: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  existingWorkoutItem: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  existingWorkoutName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  existingWorkoutDetails: {
+    fontSize: 14,
   },
   modalHeader: {
     flexDirection: 'row',

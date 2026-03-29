@@ -5,6 +5,7 @@ export interface SetDetail {
 
 export interface Workout {
   id: string;
+  sharedWorkoutId?: string;
   name: string;
   weight: number;
   sets: number;
@@ -29,6 +30,10 @@ export const WORKOUT_CONSTRAINTS = {
   SETS_LIMIT: 9999,
   REPS_LIMIT: 9999,
 } as const
+
+export function getSyncGroupId(workout: Workout): string {
+  return workout.sharedWorkoutId ?? workout.id
+}
 
 export class WorkoutValidator {
   static validate(workout: Workout): void {
