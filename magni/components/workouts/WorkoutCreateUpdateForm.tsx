@@ -74,6 +74,14 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   const [hasHydratedPerSetPercentages, setHasHydratedPerSetPercentages] = useState(false)
 
   useEffect(() => {
+    setName(workout?.name || '')
+    setWeight(workout?.weight?.toString() || '')
+    setSets(workout?.sets?.toString() || '')
+    setReps(workout?.reps?.toString() || '')
+    setNotes(workout?.notes || '')
+    setPerSetMode(!!(workout?.setDetails && workout.setDetails.length > 0))
+    setSetDetails(workout?.setDetails ?? [])
+
     if (workout?.altParentId) {
       setAlternativeId(workout.altParentId)
     } else {
@@ -239,6 +247,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
 
       const workoutData: WorkoutDay = {
         id: workout?.id || Date.now().toString(),
+        sharedWorkoutId: workout?.sharedWorkoutId,
         day: workoutDay,
         dayOrder: workout?.dayOrder ?? defaultOrder,
         name: resolvedName,

@@ -40,7 +40,7 @@ afterAll(() => {
 
 describe('WorkoutService', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.resetAllMocks()
   })
 
   describe('getWorkouts', () => {
@@ -303,7 +303,7 @@ describe('WorkoutService', () => {
 
       await workoutService.createWorkout(newWorkout)
 
-      const setItemCall = mockSetItem.mock.calls[0]
+      const setItemCall = mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1]
       const storedData = JSON.parse(setItemCall[1] as string)
 
       expect(storedData).toHaveLength(2)
@@ -360,7 +360,7 @@ describe('WorkoutService', () => {
 
       expect(result).toBe(true)
 
-      const setItemCall = mockSetItem.mock.calls[0]
+      const setItemCall = mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1]
       const storedData = JSON.parse(setItemCall[1] as string)
 
       expect(storedData).toHaveLength(2)
@@ -379,7 +379,7 @@ describe('WorkoutService', () => {
 
       expect(result).toBe(true)
 
-      const setItemCall = mockSetItem.mock.calls[0]
+      const setItemCall = mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1]
       const storedData = JSON.parse(setItemCall[1] as string)
 
       expect(storedData).toHaveLength(1) // Should still have the existing workout
@@ -427,7 +427,7 @@ describe('WorkoutService', () => {
 
       expect(result).toBe(true)
 
-      const setItemCall = mockSetItem.mock.calls[0]
+      const setItemCall = mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1]
       const storedData = JSON.parse(setItemCall[1] as string)
 
       const updatedItem = storedData.find((w: any) => w.id === 'update-1')
@@ -476,6 +476,126 @@ describe('WorkoutService', () => {
       const result = await workoutService.updateWorkout(updatedWorkout)
 
       expect(result).toBe(false)
+    })
+
+    it('updates all workouts linked by sharedWorkoutId', async () => {
+      const existingWorkouts = [
+        createMockWorkoutDay({
+          id: 'master-workout',
+          name: 'Bench Press',
+          weight: 100,
+          day: 1,
+        }),
+        createMockWorkoutDay({
+          id: 'linked-workout',
+          sharedWorkoutId: 'master-workout',
+          name: 'Bench Press',
+          weight: 100,
+          day: 2,
+          dayOrder: 3,
+          altParentId: 'alt-relationship',
+        }),
+        createMockWorkoutDay({
+          id: 'unrelated-workout',
+          name: 'Squat',
+          weight: 200,
+          day: 1,
+        }),
+      ]
+
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(existingWorkouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      const updatedWorkout = createMockWorkoutDay({
+        id: 'master-workout',
+        name: 'Paused Bench Press',
+        weight: 115,
+        sets: 5,
+        reps: 5,
+        notes: 'Use spotter',
+      })
+
+      const result = await workoutService.updateWorkout(updatedWorkout)
+
+      expect(result).toBe(true)
+
+      const setItemCall = mockSetItem.mock.calls[0]
+      const storedData = JSON.parse(setItemCall[1] as string)
+      const storedIds = storedData.map((w: any) => w.id)
+
+      expect(storedIds).toEqual(expect.arrayContaining([
+        'master-workout',
+        'linked-workout',
+        'unrelated-workout',
+      ]))
+
+      const updatedMaster = storedData.find((w: any) => w.id === 'master-workout')
+      const updatedLinked = storedData.find((w: any) => w.id === 'linked-workout')
+      const untouchedWorkout = storedData.find((w: any) => w.id === 'unrelated-workout')
+
+      expect(updatedMaster.name).toBe('Paused Bench Press')
+      expect(updatedLinked.name).toBe('Paused Bench Press')
+      expect(updatedLinked.weight).toBe(115)
+      expect(updatedLinked.sets).toBe(5)
+      expect(updatedLinked.reps).toBe(5)
+      expect(updatedLinked.notes).toBe('Use spotter')
+
+      // Day and relationship metadata should stay local to each workout instance.
+      expect(updatedLinked.day).toBe(2)
+      expect(updatedLinked.dayOrder).toBe(3)
+      expect(updatedLinked.altParentId).toBe('alt-relationship')
+
+      expect(untouchedWorkout.name).toBe('Squat')
+      expect(untouchedWorkout.weight).toBe(200)
+    })
+
+    it('updates master workout when editing a linked workout', async () => {
+      const existingWorkouts = [
+        createMockWorkoutDay({
+          id: 'master-workout',
+          name: 'Overhead Press',
+          weight: 60,
+          sets: 3,
+          reps: 8,
+        }),
+        createMockWorkoutDay({
+          id: 'linked-workout',
+          sharedWorkoutId: 'master-workout',
+          name: 'Overhead Press',
+          weight: 60,
+          sets: 3,
+          reps: 8,
+          day: 2,
+        }),
+      ]
+
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(existingWorkouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      const updatedLinkedWorkout = createMockWorkoutDay({
+        id: 'linked-workout',
+        sharedWorkoutId: 'master-workout',
+        name: 'Strict Press',
+        weight: 65,
+        sets: 4,
+        reps: 6,
+        day: 2,
+      })
+
+      const result = await workoutService.updateWorkout(updatedLinkedWorkout)
+
+      expect(result).toBe(true)
+
+      const setItemCall = mockSetItem.mock.calls[0]
+      const storedData = JSON.parse(setItemCall[1] as string)
+      const updatedMaster = storedData.find((w: any) => w.id === 'master-workout')
+      const updatedLinked = storedData.find((w: any) => w.id === 'linked-workout')
+
+      expect(updatedMaster.name).toBe('Strict Press')
+      expect(updatedMaster.weight).toBe(65)
+      expect(updatedMaster.sets).toBe(4)
+      expect(updatedMaster.reps).toBe(6)
+      expect(updatedLinked.day).toBe(2)
     })
   })
 
