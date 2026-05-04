@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { WorkoutValidator, SetDetail } from '../../lib/models/Workout'
+import { parseDetailNumberFromInput, setDetailsToPerSetTexts, type PerSetTextRow } from '../../lib/utils/setDetailInput'
 import { ExerciseMax, calculateWorkingWeight } from '../../lib/models/ExerciseMax'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { exerciseMaxService } from '../../lib/services/ExerciseMaxService'
@@ -57,6 +58,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   const [setDetails, setSetDetails] = useState<SetDetail[]>(
     workout?.setDetails ?? [],
   )
+  const [perSetTexts, setPerSetTexts] = useState<PerSetTextRow[]>(() =>
+    setDetailsToPerSetTexts(workout?.setDetails ?? []),
+  )
   const [errors, setErrors] = useState<{
     name?: string;
     weight?: string;
@@ -80,7 +84,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     setReps(workout?.reps?.toString() || '')
     setNotes(workout?.notes || '')
     setPerSetMode(!!(workout?.setDetails && workout.setDetails.length > 0))
-    setSetDetails(workout?.setDetails ?? [])
+    const nextDetails = workout?.setDetails ?? []
+    setSetDetails(nextDetails)
+    setPerSetTexts(setDetailsToPerSetTexts(nextDetails))
 
     if (workout?.altParentId) {
       setAlternativeId(workout.altParentId)
@@ -133,10 +139,12 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       && perSetMode
       && useMaxPercentage
     ) {
-      setSetDetails(workout.setDetails.map(detail => ({
+      const hydrated = workout.setDetails.map(detail => ({
         weight: convertWeightToPercentage(detail.weight, selectedMax.maxWeight),
         reps: detail.reps,
-      })))
+      }))
+      setSetDetails(hydrated)
+      setPerSetTexts(setDetailsToPerSetTexts(hydrated))
       setHasHydratedPerSetPercentages(true)
     }
   }, [hasHydratedPerSetPercentages, workout, selectedMax, perSetMode, useMaxPercentage])
@@ -158,14 +166,24 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       const detailErrors: Record<number, { weight?: string; reps?: string }> = {}
       setDetails.forEach((detail, index) => {
         const rowErrors: { weight?: string; reps?: string } = {}
+        const weightRaw = (perSetTexts[index]?.weight ?? String(detail.weight)).trim()
+        const repsRaw = (perSetTexts[index]?.reps ?? String(detail.reps)).trim()
+        const weightVal = weightRaw === '' ? NaN : parseFloat(weightRaw)
+        const repsVal = repsRaw === '' ? NaN : parseFloat(repsRaw)
         if (useMaxPercentage) {
-          if (isNaN(detail.weight) || detail.weight <= 0 || detail.weight > 200) {
+          if (weightRaw !== '' && !Number.isFinite(weightVal)) {
+            rowErrors.weight = 'Invalid %'
+          } else if (isNaN(detail.weight) || detail.weight <= 0 || detail.weight > 200) {
             rowErrors.weight = 'Invalid %'
           }
+        } else if (weightRaw !== '' && !Number.isFinite(weightVal)) {
+          rowErrors.weight = 'Invalid'
         } else if (isNaN(detail.weight) || detail.weight < 0) {
           rowErrors.weight = 'Invalid'
         }
-        if (isNaN(detail.reps) || detail.reps < 0) {
+        if (repsRaw !== '' && !Number.isFinite(repsVal)) {
+          rowErrors.reps = 'Invalid'
+        } else if (isNaN(detail.reps) || detail.reps < 0) {
           rowErrors.reps = 'Invalid'
         }
         if (Object.keys(rowErrors).length > 0) {
@@ -218,11 +236,17 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       const resolvedSetDetails = perSetMode
         ? (
           useMaxPercentage && selectedMax
-            ? setDetails.map(detail => ({
-              weight: calculateWorkingWeight(selectedMax.maxWeight, detail.weight),
-              reps: detail.reps,
+            ? setDetails.map((detail, index) => ({
+              weight: calculateWorkingWeight(
+                selectedMax.maxWeight,
+                parseDetailNumberFromInput(perSetTexts[index]?.weight ?? String(detail.weight)),
+              ),
+              reps: parseDetailNumberFromInput(perSetTexts[index]?.reps ?? String(detail.reps)),
             }))
-            : setDetails
+            : setDetails.map((detail, index) => ({
+              weight: parseDetailNumberFromInput(perSetTexts[index]?.weight ?? String(detail.weight)),
+              reps: parseDetailNumberFromInput(perSetTexts[index]?.reps ?? String(detail.reps)),
+            }))
         )
         : undefined
 
@@ -509,15 +533,23 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     if (perSetMode) {
       const maxForConversion = selectedMax || (exerciseMaxes.length > 0 ? exerciseMaxes[0] : undefined)
       if (turningOn && maxForConversion) {
-        setSetDetails(prev => prev.map(detail => ({
-          weight: convertWeightToPercentage(detail.weight, maxForConversion.maxWeight),
-          reps: detail.reps,
-        })))
+        setSetDetails(prev => {
+          const next = prev.map(detail => ({
+            weight: convertWeightToPercentage(detail.weight, maxForConversion.maxWeight),
+            reps: detail.reps,
+          }))
+          setPerSetTexts(setDetailsToPerSetTexts(next))
+          return next
+        })
       } else if (!turningOn && selectedMax) {
-        setSetDetails(prev => prev.map(detail => ({
-          weight: calculateWorkingWeight(selectedMax.maxWeight, detail.weight),
-          reps: detail.reps,
-        })))
+        setSetDetails(prev => {
+          const next = prev.map(detail => ({
+            weight: calculateWorkingWeight(selectedMax.maxWeight, detail.weight),
+            reps: detail.reps,
+          }))
+          setPerSetTexts(setDetailsToPerSetTexts(next))
+          return next
+        })
       }
     }
 
@@ -699,7 +731,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       const count = Math.max(Number(sets) || 1, 1)
       const w = useMaxPercentage ? (Number(maxPercentage) || 0) : (Number(weight) || 0)
       const r = Number(reps) || 0
-      setSetDetails(Array.from({ length: count }, () => ({ weight: w, reps: r })))
+      const next = Array.from({ length: count }, () => ({ weight: w, reps: r }))
+      setSetDetails(next)
+      setPerSetTexts(setDetailsToPerSetTexts(next))
     } else {
       if (setDetails.length > 0) {
         if (useMaxPercentage) {
@@ -711,16 +745,32 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
         setSets(String(setDetails.length))
       }
       setSetDetails([])
+      setPerSetTexts([])
     }
     setPerSetMode(prev => !prev)
     setErrors({})
   }
 
   const updateSetDetail = (index: number, field: keyof SetDetail, value: string) => {
-    setSetDetails(prev => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: Number(value) || 0 }
-      return updated
+    setPerSetTexts(prevTexts => {
+      const base = prevTexts.length === setDetails.length
+        ? [...prevTexts]
+        : setDetailsToPerSetTexts(setDetails)
+      const prevRow = base[index] ?? { weight: '0', reps: '0' }
+      base[index] = { ...prevRow, [field]: value }
+      const wRaw = base[index].weight
+      const rRaw = base[index].reps
+      setSetDetails(prevDetails => {
+        if (index >= prevDetails.length) return prevDetails
+        const updated = [...prevDetails]
+        updated[index] = {
+          ...updated[index],
+          weight: parseDetailNumberFromInput(wRaw),
+          reps: parseDetailNumberFromInput(rRaw),
+        }
+        return updated
+      })
+      return base
     })
     if (errors.setDetails?.[index]?.[field]) {
       setErrors(prev => {
@@ -743,13 +793,20 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
   }
 
   const addSet = () => {
-    const lastSet = setDetails[setDetails.length - 1]
-    setSetDetails(prev => [...prev, lastSet ? { ...lastSet } : { weight: 0, reps: 0 }])
+    setSetDetails(prev => {
+      const lastSet = prev[prev.length - 1]
+      return [...prev, lastSet ? { ...lastSet } : { weight: 0, reps: 0 }]
+    })
+    setPerSetTexts(prev => {
+      const lastText = prev[prev.length - 1]
+      return [...prev, lastText ? { ...lastText } : { weight: '0', reps: '0' }]
+    })
   }
 
   const removeSet = (index: number) => {
     if (setDetails.length <= 1) return
     setSetDetails(prev => prev.filter((_, i) => i !== index))
+    setPerSetTexts(prev => prev.filter((_, i) => i !== index))
   }
 
   const renderPerSetDetails = () => (
@@ -814,9 +871,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
                 borderColor: errors.setDetails?.[index]?.weight ? '#ff4444' : colors.border,
               },
             ]}
-            value={String(detail.weight)}
+            value={perSetTexts[index]?.weight ?? ''}
             onChangeText={(text) => updateSetDetail(index, 'weight', text)}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             placeholder="0"
             placeholderTextColor={colors.text.tertiary}
           />
@@ -845,9 +902,9 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
                 borderColor: errors.setDetails?.[index]?.reps ? '#ff4444' : colors.border,
               },
             ]}
-            value={String(detail.reps)}
+            value={perSetTexts[index]?.reps ?? ''}
             onChangeText={(text) => updateSetDetail(index, 'reps', text)}
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
             placeholder="0"
             placeholderTextColor={colors.text.tertiary}
           />
