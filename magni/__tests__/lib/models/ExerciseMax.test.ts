@@ -3,6 +3,7 @@ import {
   ExerciseMaxConverter,
   ExerciseMaxValidator,
   EXERCISE_MAX_CONSTRAINTS,
+  absoluteWeightToMaxPercent,
   calculateE1RM,
   calculateWorkingWeight,
 } from '../../../lib/models/ExerciseMax'
@@ -234,6 +235,17 @@ describe('ExerciseMax Model', () => {
     it('rounds to nearest whole number', () => {
       // 100 * (1 + 7/30) = 100 * 1.2333... = 123.33... → 123
       expect(calculateE1RM(100, 7)).toBe(123)
+    })
+  })
+
+  describe('absoluteWeightToMaxPercent', () => {
+    it('converts absolute weight to rounded percent of max', () => {
+      expect(absoluteWeightToMaxPercent(200, 400)).toBe(50)
+    })
+
+    it('returns 0 when max is zero or negative', () => {
+      expect(absoluteWeightToMaxPercent(200, 0)).toBe(0)
+      expect(absoluteWeightToMaxPercent(200, -100)).toBe(0)
     })
   })
 

@@ -790,6 +790,82 @@ describe('WorkoutService', () => {
     })
   })
 
+  describe('applyExerciseMaxChangeToWorkouts', () => {
+    it('updates standard % workouts: same maxPercentage, new weight', async () => {
+      const maxId = 'bench-1'
+      const workouts = [
+        createMockWorkoutDay({
+          id: 'w1',
+          exerciseMaxId: maxId,
+          maxPercentage: 50,
+          weight: 200,
+          day: 1,
+          dayOrder: 0,
+        }),
+        createMockWorkoutDay({
+          id: 'w2',
+          name: 'Other',
+          exerciseMaxId: 'other-max',
+          maxPercentage: 50,
+          weight: 100,
+          day: 1,
+          dayOrder: 1,
+        }),
+      ]
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(workouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      const ok = await workoutService.applyExerciseMaxChangeToWorkouts(maxId, 500, 400)
+      expect(ok).toBe(true)
+
+      const stored = JSON.parse(mockSetItem.mock.calls[0][1] as string) as WorkoutDay[]
+      expect(stored.find(w => w.id === 'w1')).toMatchObject({
+        maxPercentage: 50,
+        weight: 250,
+      })
+      expect(stored.find(w => w.id === 'w2')).toMatchObject({ weight: 100 })
+    })
+
+    it('updates per-set absolute weights from implied % at previous max', async () => {
+      const maxId = 'squat-1'
+      const workouts = [
+        createMockWorkoutDay({
+          id: 'w1',
+          exerciseMaxId: maxId,
+          sets: 2,
+          reps: 5,
+          weight: 200,
+          setDetails: [
+            { weight: 200, reps: 5 },
+            { weight: 180, reps: 5 },
+          ],
+          day: 1,
+          dayOrder: 0,
+        }),
+      ]
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(workouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      await workoutService.applyExerciseMaxChangeToWorkouts(maxId, 500, 400)
+
+      const stored = JSON.parse(mockSetItem.mock.calls[0][1] as string) as WorkoutDay[]
+      const w = stored[0]
+      expect(w.setDetails).toEqual([
+        { weight: 250, reps: 5 },
+        { weight: 225, reps: 5 },
+      ])
+      expect(w.weight).toBe(250)
+    })
+
+    it('no-ops when previous and new max are equal', async () => {
+      mockGetItem.mockResolvedValueOnce(JSON.stringify([createMockWorkoutDay({ exerciseMaxId: 'm1', maxPercentage: 50, weight: 200 })]))
+
+      const ok = await workoutService.applyExerciseMaxChangeToWorkouts('m1', 400, 400)
+      expect(ok).toBe(true)
+      expect(mockSetItem).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Singleton Pattern', () => {
     it('returns the same instance on multiple calls', () => {
       const instance1 = workoutService

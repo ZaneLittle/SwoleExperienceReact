@@ -44,6 +44,14 @@ export const calculateE1RM = (weight: number, reps: number): number => {
 }
 
 /**
+ * Percentage of max implied by an absolute working weight (rounded to whole %).
+ */
+export const absoluteWeightToMaxPercent = (absoluteWeight: number, maxWeight: number): number => {
+  if (maxWeight <= 0) return 0
+  return Math.round((absoluteWeight / maxWeight) * 100)
+}
+
+/**
  * Calculate the working weight from a max and a percentage.
  * Rounds to the nearest whole number.
  */
