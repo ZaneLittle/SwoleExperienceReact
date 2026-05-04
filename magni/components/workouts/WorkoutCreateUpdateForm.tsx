@@ -13,7 +13,7 @@ import {
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { WorkoutValidator, SetDetail } from '../../lib/models/Workout'
 import { parseDetailNumberFromInput, setDetailsToPerSetTexts, type PerSetTextRow } from '../../lib/utils/setDetailInput'
-import { ExerciseMax, calculateWorkingWeight } from '../../lib/models/ExerciseMax'
+import { ExerciseMax, absoluteWeightToMaxPercent, calculateWorkingWeight } from '../../lib/models/ExerciseMax'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { exerciseMaxService } from '../../lib/services/ExerciseMaxService'
 import { useThemeColors } from '../../hooks/useThemeColors'
@@ -124,11 +124,6 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
     ? calculateWorkingWeight(selectedMax.maxWeight, Number(maxPercentage))
     : 0
 
-  const convertWeightToPercentage = (absoluteWeight: number, maxWeight: number): number => {
-    if (maxWeight <= 0) return 0
-    return Math.round((absoluteWeight / maxWeight) * 100)
-  }
-
   useEffect(() => {
     if (
       !hasHydratedPerSetPercentages
@@ -140,7 +135,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       && useMaxPercentage
     ) {
       const hydrated = workout.setDetails.map(detail => ({
-        weight: convertWeightToPercentage(detail.weight, selectedMax.maxWeight),
+        weight: absoluteWeightToMaxPercent(detail.weight, selectedMax.maxWeight),
         reps: detail.reps,
       }))
       setSetDetails(hydrated)
@@ -535,7 +530,7 @@ export const WorkoutCreateUpdateForm: React.FC<WorkoutCreateUpdateFormProps> = (
       if (turningOn && maxForConversion) {
         setSetDetails(prev => {
           const next = prev.map(detail => ({
-            weight: convertWeightToPercentage(detail.weight, maxForConversion.maxWeight),
+            weight: absoluteWeightToMaxPercent(detail.weight, maxForConversion.maxWeight),
             reps: detail.reps,
           }))
           setPerSetTexts(setDetailsToPerSetTexts(next))

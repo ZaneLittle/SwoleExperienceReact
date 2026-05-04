@@ -12,7 +12,9 @@ import {
 } from 'react-native'
 import { ExerciseMax, calculateE1RM, EXERCISE_MAX_CONSTRAINTS } from '../../lib/models/ExerciseMax'
 import { exerciseMaxService } from '../../lib/services/ExerciseMaxService'
+import { workoutService } from '../../lib/services/WorkoutService'
 import { useThemeColors } from '../../hooks/useThemeColors'
+import { confirmAlert } from '../../utils/confirm'
 import { SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../lib/constants/ui'
 
 interface ExerciseMaxFormModalProps {
@@ -113,6 +115,20 @@ export default function ExerciseMaxFormModal({
     const success = exerciseMax
       ? await exerciseMaxService.updateExerciseMax(data)
       : await exerciseMaxService.createExerciseMax(data)
+
+    if (success && exerciseMax && exerciseMax.maxWeight !== data.maxWeight) {
+      const synced = await workoutService.applyExerciseMaxChangeToWorkouts(
+        data.id,
+        data.maxWeight,
+        exerciseMax.maxWeight,
+      )
+      if (!synced) {
+        confirmAlert(
+          'Workout update failed',
+          'Your max was saved, but some workouts could not be updated to match. Try editing those workouts manually.',
+        )
+      }
+    }
 
     if (success) {
       onSave(data)

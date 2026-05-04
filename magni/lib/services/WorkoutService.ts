@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { WorkoutDay, WorkoutDayValidator } from '../models/WorkoutDay'
 import { WorkoutValidator, getSyncGroupId } from '../models/Workout'
+import { absoluteWeightToMaxPercent, calculateWorkingWeight } from '../models/ExerciseMax'
 
 const WORKOUT_STORAGE_KEY = 'workouts'
 const CURRENT_DAY_STORAGE_KEY = 'current_workout_day'
@@ -77,6 +78,83 @@ class WorkoutService {
       return true
     } catch (error) {
       console.error('Error removing workout:', error)
+      return false
+    }
+  }
+
+  /**
+   * When a 1RM changes, keep programmed % the same and refresh stored absolute weights.
+   * `previousMaxWeight` is the max before the edit (used to recover % for per-set and legacy rows).
+   */
+  async applyExerciseMaxChangeToWorkouts(
+    exerciseMaxId: string,
+    newMaxWeight: number,
+    previousMaxWeight: number,
+  ): Promise<boolean> {
+    try {
+      if (previousMaxWeight <= 0 || newMaxWeight <= 0 || previousMaxWeight === newMaxWeight) {
+        return true
+      }
+
+      const existingWorkouts = await this.getWorkouts()
+      let anyChanged = false
+
+      const updatedWorkouts = existingWorkouts.map(workout => {
+        if (workout.exerciseMaxId !== exerciseMaxId) {
+          return workout
+        }
+
+        if (WorkoutValidator.hasSetDetails(workout) && workout.setDetails?.length) {
+          const setDetails = workout.setDetails.map(detail => ({
+            reps: detail.reps,
+            weight: calculateWorkingWeight(
+              newMaxWeight,
+              absoluteWeightToMaxPercent(detail.weight, previousMaxWeight),
+            ),
+          }))
+          anyChanged = true
+          const next: WorkoutDay = {
+            ...workout,
+            setDetails,
+            weight: setDetails[0]?.weight ?? workout.weight,
+          }
+          WorkoutValidator.validate(next)
+          return next
+        }
+
+        if (typeof workout.maxPercentage === 'number' && workout.maxPercentage > 0) {
+          const next: WorkoutDay = {
+            ...workout,
+            weight: calculateWorkingWeight(newMaxWeight, workout.maxPercentage),
+          }
+          anyChanged = true
+          WorkoutValidator.validate(next)
+          return next
+        }
+
+        const pct = absoluteWeightToMaxPercent(workout.weight, previousMaxWeight)
+        if (pct <= 0) {
+          return workout
+        }
+
+        const next: WorkoutDay = {
+          ...workout,
+          weight: calculateWorkingWeight(newMaxWeight, pct),
+          maxPercentage: pct,
+        }
+        anyChanged = true
+        WorkoutValidator.validate(next)
+        return next
+      })
+
+      if (!anyChanged) {
+        return true
+      }
+
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts))
+      return true
+    } catch (error) {
+      console.error('Error applying exercise max change to workouts:', error)
       return false
     }
   }
