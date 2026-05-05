@@ -9,8 +9,11 @@ import {
 } from 'react-native'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { getSyncGroupId } from '../../lib/models/Workout'
+import { BankedWorkout, filterBankForActivePrograms } from '../../lib/models/BankedWorkout'
 import { workoutService } from '../../lib/services/WorkoutService'
+import { workoutBankService } from '../../lib/services/WorkoutBankService'
 import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
+import { WorkoutLibraryModal } from './WorkoutLibraryModal'
 import { useThemeColors } from '../../hooks/useThemeColors'
 import { confirm, confirmAlert, confirmDelete } from '../../utils/confirm'
 
@@ -21,23 +24,26 @@ interface WorkoutsConfigureProps {
 export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   const colors = useThemeColors()
   const [workouts, setWorkouts] = useState<WorkoutDay[]>([])
+  const [bankedWorkouts, setBankedWorkouts] = useState<BankedWorkout[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [editingWorkout, setEditingWorkout] = useState<WorkoutDay | undefined>()
   const [showForm, setShowForm] = useState(false)
-  const [showExistingWorkoutSelector, setShowExistingWorkoutSelector] = useState(false)
+  const [showLibrary, setShowLibrary] = useState(false)
   const [selectedDay, setSelectedDay] = useState(1)
   const [totalDays, setTotalDays] = useState(0)
 
   const loadWorkouts = async () => {
     try {
       setIsLoading(true)
-      const [workoutsData, uniqueDays] = await Promise.all([
+      const [workoutsData, uniqueDays, bankedData] = await Promise.all([
         workoutService.getWorkouts(),
         workoutService.getUniqueDays(),
+        workoutBankService.getBankedWorkouts(),
       ])
-      
+
       setWorkouts(workoutsData)
       setTotalDays(uniqueDays)
+      setBankedWorkouts(bankedData)
     } catch (error) {
       console.error('Error loading workouts:', error)
       confirmAlert('Error', 'Failed to load workouts')
@@ -55,8 +61,110 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     setShowForm(true)
   }
 
-  const handleAddExistingWorkout = () => {
-    setShowExistingWorkoutSelector(true)
+  const handleOpenLibrary = () => {
+    setShowLibrary(true)
+  }
+
+  const handleSaveWorkoutToBank = (workout: WorkoutDay) => {
+    const syncGroupId = getSyncGroupId(workout)
+    const linkedInstances = workouts.filter(w => getSyncGroupId(w) === syncGroupId)
+    const otherDays = Array.from(
+      new Set(linkedInstances.filter(w => w.id !== workout.id).map(w => w.day)),
+    ).sort((a, b) => a - b)
+
+    let daysList = `Day ${workout.day}`
+    if (otherDays.length === 1) {
+      daysList = `Days ${workout.day} and ${otherDays[0]}`
+    } else if (otherDays.length > 1) {
+      const allDays = [workout.day, ...otherDays].sort((a, b) => a - b)
+      daysList = `Days ${allDays.slice(0, -1).join(', ')} and ${allDays[allDays.length - 1]}`
+    }
+
+    const message = otherDays.length === 0
+      ? `Save "${workout.name}" to your workout bank for later? It will be removed from Day ${workout.day} but its weights, reps, and notes will be preserved.`
+      : `"${workout.name}" is also scheduled in ${otherDays.length === 1 ? `Day ${otherDays[0]}` : `Days ${otherDays.join(', ')}`}. Saving to your bank will remove it from ${daysList}. Its weights, reps, and notes will be preserved.`
+
+    confirm(
+      'Save to Bank?',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => {} },
+        {
+          text: 'Save to Bank',
+          style: 'default',
+          onPress: async () => {
+            try {
+              const banked = await workoutBankService.bankWorkout(workout)
+              if (!banked) {
+                confirmAlert('Error', 'Failed to save workout to bank')
+                return
+              }
+              const idsToRemove = linkedInstances.map(w => w.id)
+              const removed = await workoutService.removeWorkoutsByIds(idsToRemove)
+              if (!removed) {
+                confirmAlert(
+                  'Error',
+                  'Saved to bank but failed to remove all copies from your program. Check other days and remove duplicates manually.',
+                )
+              }
+              await loadWorkouts()
+            } catch (error) {
+              console.error('Error saving workout to bank:', error)
+              confirmAlert('Error', 'Failed to save workout to bank')
+            }
+          },
+        },
+      ],
+    )
+  }
+
+  const handleSelectBankedWorkout = async (banked: BankedWorkout) => {
+    try {
+      const dayWorkouts = getWorkoutsForDay(selectedDay)
+      const newWorkout: WorkoutDay = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        sharedWorkoutId: banked.sharedWorkoutId,
+        day: selectedDay,
+        dayOrder: dayWorkouts.length + 1,
+        name: banked.name,
+        weight: banked.weight,
+        sets: banked.sets,
+        reps: banked.reps,
+        notes: banked.notes,
+        setDetails: banked.setDetails?.map(detail => ({ ...detail })),
+        exerciseMaxId: banked.exerciseMaxId,
+        maxPercentage: banked.maxPercentage,
+      }
+
+      const created = await workoutService.createWorkout(newWorkout)
+      if (!created) {
+        confirmAlert('Error', 'Failed to add workout from bank')
+        return
+      }
+
+      await workoutBankService.removeBankedWorkout(banked.id)
+      setShowLibrary(false)
+      await loadWorkouts()
+    } catch (error) {
+      console.error('Error restoring banked workout:', error)
+      confirmAlert('Error', 'Failed to add workout from bank')
+    }
+  }
+
+  const handleDeleteBankedWorkout = (banked: BankedWorkout) => {
+    confirmDelete(
+      'Remove from Bank',
+      `Remove "${banked.name}" from your workout bank? This cannot be undone.`,
+      async () => {
+        const success = await workoutBankService.removeBankedWorkout(banked.id)
+        if (!success) {
+          confirmAlert('Error', 'Failed to remove banked workout')
+          return
+        }
+        await loadWorkouts()
+      },
+      () => {},
+    )
   }
 
   const handleEditWorkout = (workout: WorkoutDay) => {
@@ -214,7 +322,7 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         return
       }
 
-      setShowExistingWorkoutSelector(false)
+      setShowLibrary(false)
       await loadWorkouts()
     } catch (error) {
       console.error('Error selecting existing workout:', error)
@@ -293,17 +401,29 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
         <View style={styles.workoutHeader}>
           <Text style={[styles.workoutName, { color: colors.text.primary }]}>{workout.name}</Text>
           <View style={styles.workoutActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleEditWorkout(workout)}
+              accessibilityLabel={`Edit ${workout.name}`}
+              accessibilityRole="button"
             >
               <Text style={[styles.editButtonText, { color: colors.primary }]}>✎</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleSaveWorkoutToBank(workout)}
+              accessibilityLabel={`Save ${workout.name} to bank`}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.bankButtonText, { color: colors.warning }]}>★</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={() => {
                 handleDeleteWorkout(workout)
               }}
+              accessibilityLabel={`Delete ${workout.name}`}
+              accessibilityRole="button"
             >
               <Text style={[
                 styles.deleteButtonText,
@@ -350,11 +470,11 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
             borderWidth: 1,
           },
         ]}
-        onPress={handleAddExistingWorkout}
-        accessibilityLabel="Select existing workout"
+        onPress={handleOpenLibrary}
+        accessibilityLabel="Open workout library"
         accessibilityRole="button"
       >
-        <Text style={[styles.addButtonText, { color: colors.text.primary }]}>Select Existing Workout</Text>
+        <Text style={[styles.addButtonText, { color: colors.text.primary }]}>From Library</Text>
       </TouchableOpacity>
     </View>
   )
@@ -448,55 +568,6 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     </View>
   )
 
-  const renderExistingWorkoutSelectorModal = () => {
-    const selectableWorkouts = getSelectableExistingWorkouts()
-
-    return (
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text.primary }]}>
-              Select Existing Workout
-            </Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowExistingWorkoutSelector(false)}
-              accessibilityLabel="Close workout selector"
-              accessibilityRole="button"
-            >
-              <Text style={[styles.closeButtonText, { color: colors.text.secondary }]}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.existingWorkoutList}>
-            {selectableWorkouts.length === 0 ? (
-              <Text style={[styles.emptyStateText, { color: colors.text.secondary }]}>
-                No existing workouts available
-              </Text>
-            ) : (
-              selectableWorkouts.map(workout => (
-                <TouchableOpacity
-                  key={getSyncGroupId(workout)}
-                  style={[styles.existingWorkoutItem, { backgroundColor: colors.background, borderColor: colors.border }]}
-                  onPress={() => handleSelectExistingWorkout(workout)}
-                  accessibilityLabel={`Select ${workout.name}`}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.existingWorkoutName, { color: colors.text.primary }]}>
-                    {workout.name}
-                  </Text>
-                  <Text style={[styles.existingWorkoutDetails, { color: colors.text.secondary }]}>
-                    {workout.weight} lb • {workout.sets} sets • {workout.reps} reps
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      </View>
-    )
-  }
-
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -522,7 +593,16 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
       </ScrollView>
 
       {showForm && renderFormModal()}
-      {showExistingWorkoutSelector && renderExistingWorkoutSelectorModal()}
+      {showLibrary && (
+        <WorkoutLibraryModal
+          activeWorkouts={getSelectableExistingWorkouts()}
+          bankedWorkouts={filterBankForActivePrograms(bankedWorkouts, workouts)}
+          onSelectActive={handleSelectExistingWorkout}
+          onSelectBanked={handleSelectBankedWorkout}
+          onDeleteBanked={handleDeleteBankedWorkout}
+          onClose={() => setShowLibrary(false)}
+        />
+      )}
     </View>
   )
 }
@@ -715,6 +795,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  bankButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   disabledButton: {
     backgroundColor: '#e0e0e0',
     opacity: 0.5,
@@ -779,25 +863,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '100%',
     maxHeight: '80%',
-  },
-  existingWorkoutList: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  existingWorkoutItem: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 10,
-  },
-  existingWorkoutName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  existingWorkoutDetails: {
-    fontSize: 14,
   },
   modalHeader: {
     flexDirection: 'row',

@@ -407,6 +407,38 @@ describe('WorkoutService', () => {
     })
   })
 
+  describe('removeWorkoutsByIds', () => {
+    it('removes multiple workouts in one write', async () => {
+      const existingWorkouts = [
+        createMockWorkoutDay({ id: 'a', name: 'A' }),
+        createMockWorkoutDay({ id: 'b', name: 'B' }),
+        createMockWorkoutDay({ id: 'c', name: 'C' }),
+      ]
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(existingWorkouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      const result = await workoutService.removeWorkoutsByIds(['a', 'c'])
+
+      expect(result).toBe(true)
+      const stored = JSON.parse(mockSetItem.mock.calls[mockSetItem.mock.calls.length - 1][1] as string)
+      expect(stored).toHaveLength(1)
+      expect(stored[0].id).toBe('b')
+    })
+
+    it('returns true when ids is empty without touching storage', async () => {
+      const result = await workoutService.removeWorkoutsByIds([])
+      expect(result).toBe(true)
+      expect(mockGetItem).not.toHaveBeenCalled()
+      expect(mockSetItem).not.toHaveBeenCalled()
+    })
+
+    it('returns false when setItem fails', async () => {
+      mockGetItem.mockResolvedValueOnce(JSON.stringify([createMockWorkoutDay({ id: 'x' })]))
+      mockSetItem.mockRejectedValueOnce(new Error('Set item error'))
+      expect(await workoutService.removeWorkoutsByIds(['x'])).toBe(false)
+    })
+  })
+
   describe('updateWorkout', () => {
     it('updates workout successfully', async () => {
       const existingWorkouts = [

@@ -83,6 +83,28 @@ class WorkoutService {
   }
 
   /**
+   * Removes every workout whose id is in `ids` in a single read/write. Use this instead of
+   * multiple parallel `removeWorkout` calls — concurrent removes each re-read and re-write
+   * the full list, so the last write wins and drops other removals (lost update bug).
+   */
+  async removeWorkoutsByIds(ids: string[]): Promise<boolean> {
+    try {
+      if (ids.length === 0) {
+        return true
+      }
+      const idSet = new Set(ids)
+      const existingWorkouts = await this.getWorkouts()
+      const filteredWorkouts = existingWorkouts.filter(workout => !idSet.has(workout.id))
+
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(filteredWorkouts))
+      return true
+    } catch (error) {
+      console.error('Error removing workouts:', error)
+      return false
+    }
+  }
+
+  /**
    * When a 1RM changes, keep programmed % the same and refresh stored absolute weights.
    * `previousMaxWeight` is the max before the edit (used to recover % for per-set and legacy rows).
    */
