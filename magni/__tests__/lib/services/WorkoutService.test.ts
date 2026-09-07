@@ -186,7 +186,7 @@ describe('WorkoutService', () => {
       expect(result).toBe(0)
     })
 
-    it('returns correct count of unique days', async () => {
+    it('returns the highest programmed day number', async () => {
       const mockWorkoutsData: WorkoutDayData[] = [
         {
           id: 'workout-1',
@@ -233,11 +233,48 @@ describe('WorkoutService', () => {
       expect(result).toBe(3) // Days 1, 2, and 3
     })
 
+    it('keeps empty day positions in the program count', async () => {
+      const mockWorkoutsData = [
+        createMockWorkoutDay({ id: 'day-1', day: 1 }),
+        createMockWorkoutDay({ id: 'day-4', day: 4 }),
+      ]
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(mockWorkoutsData))
+
+      expect(await workoutService.getUniqueDays()).toBe(4)
+    })
+
     it('returns 0 when storage throws error', async () => {
       mockGetItem.mockRejectedValueOnce(new Error('Storage error'))
       const result = await workoutService.getUniqueDays()
       expect(result).toBe(0)
     })
+  })
+
+  describe('day ordering', () => {
+    it('swaps every workout in two days without changing the stored current day', async () => {
+      const existingWorkouts = [
+        createMockWorkoutDay({ id: 'day-3-a', day: 3 }),
+        createMockWorkoutDay({ id: 'day-3-b', day: 3 }),
+        createMockWorkoutDay({ id: 'day-4', day: 4 }),
+      ]
+      mockGetItem.mockResolvedValueOnce(JSON.stringify(existingWorkouts))
+      mockSetItem.mockResolvedValueOnce(undefined)
+
+      expect(await workoutService.swapDays(3, 4)).toBe(true)
+
+      expect(mockSetItem).toHaveBeenCalledTimes(1)
+      expect(mockSetItem).toHaveBeenCalledWith(
+        'workouts',
+        expect.stringContaining('day-3-a'),
+      )
+      const stored = JSON.parse(mockSetItem.mock.calls[0][1] as string)
+      expect(stored.filter((item: WorkoutDay) => item.day === 3).map((item: WorkoutDay) => item.id))
+        .toEqual(['day-4'])
+      expect(stored.filter((item: WorkoutDay) => item.day === 4).map((item: WorkoutDay) => item.id))
+        .toEqual(['day-3-a', 'day-3-b'])
+      expect(mockSetItem).not.toHaveBeenCalledWith('current_workout_day', expect.anything())
+    })
+
   })
 
   describe('createWorkout', () => {

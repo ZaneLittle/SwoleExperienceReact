@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native'
+import { useRouter } from 'expo-router'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { getSyncGroupId } from '../../lib/models/Workout'
 import { BankedWorkout, filterBankForActivePrograms } from '../../lib/models/BankedWorkout'
@@ -16,6 +17,7 @@ import { WorkoutCreateUpdateForm } from './WorkoutCreateUpdateForm'
 import { WorkoutLibraryModal } from './WorkoutLibraryModal'
 import { useThemeColors } from '../../hooks/useThemeColors'
 import { confirm, confirmAlert, confirmDelete } from '../../utils/confirm'
+import { ReorderControls } from './ReorderControls'
 
 interface WorkoutsConfigureProps {
   onBack: () => void;
@@ -23,6 +25,7 @@ interface WorkoutsConfigureProps {
 
 export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
   const colors = useThemeColors()
+  const router = useRouter()
   const [workouts, setWorkouts] = useState<WorkoutDay[]>([])
   const [bankedWorkouts, setBankedWorkouts] = useState<BankedWorkout[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -340,62 +343,68 @@ export default function WorkoutsConfigure({ onBack }: WorkoutsConfigureProps) {
     setSelectedDay(nextDay)
   }
 
+  const handleReorderDays = () => {
+    router.push('/reorder-days')
+  }
+
   const renderDaySelector = () => (
     <View style={styles.daySelector}>
-      <TouchableOpacity 
-        style={styles.dayButton}
-        onPress={() => setSelectedDay(Math.max(1, selectedDay - 1))}
-        disabled={selectedDay <= 1}
-        testID="prev-day-button"
-      >
-        <View style={[styles.navButtonLeft, { borderRightColor: colors.primary }]} />
-      </TouchableOpacity>
-      
-      <View style={styles.dayInfo}>
-        <Text style={[
-          styles.dayText, 
-          selectedDay > (totalDays || 0) && styles.newDayTextStyle,
-          { color: colors.text.primary },
-        ]}>
-          Day {selectedDay}
-        </Text>
+      <View style={styles.dayNavigation}>
+        <TouchableOpacity
+          style={styles.dayButton}
+          onPress={() => setSelectedDay(Math.max(1, selectedDay - 1))}
+          disabled={selectedDay <= 1}
+          testID="prev-day-button"
+        >
+          <View style={[styles.navButtonLeft, { borderRightColor: colors.primary }]} />
+        </TouchableOpacity>
+
+        <View style={styles.dayInfo}>
+          <Text style={[
+            styles.dayText,
+            selectedDay > (totalDays || 0) && styles.newDayTextStyle,
+            { color: colors.text.primary },
+          ]}>
+            Day {selectedDay}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.dayButton}
+          onPress={handleNextDay}
+          testID="next-day-button"
+        >
+          <View style={[
+            styles.navButtonRight,
+            {
+              borderLeftColor: colors.primary,
+            },
+          ]} />
+        </TouchableOpacity>
       </View>
       
       <TouchableOpacity 
-        style={styles.dayButton}
-        onPress={handleNextDay}
-        testID="next-day-button"
+        style={styles.reorderButton}
+        onPress={handleReorderDays}
+        accessibilityLabel="Reorder workout days"
+        accessibilityRole="button"
+        testID="reorder-days-button"
       >
-        <View style={[
-          styles.navButtonRight, 
-          { 
-            borderLeftColor: colors.primary,
-          },
-        ]} />
+        <Text style={[styles.editButtonText, { color: colors.primary }]}>✎</Text>
       </TouchableOpacity>
     </View>
   )
 
   const renderWorkoutItem = (workout: WorkoutDay, index: number, totalItems: number) => (
     <View style={[styles.workoutItem, { backgroundColor: colors.surface }]}>
-      <View style={styles.reorderControls}>
-        {index > 0 && (
-          <TouchableOpacity 
-            style={[styles.reorderButton, { backgroundColor: '#666666' }]}
-            onPress={() => handleMoveWorkout(workout, 'up')}
-          >
-            <Text style={[styles.reorderButtonText, { color: '#FFFFFF' }]}>↑</Text>
-          </TouchableOpacity>
-        )}
-        {index < totalItems - 1 && (
-          <TouchableOpacity 
-            style={[styles.reorderButton, { backgroundColor: '#666666' }]}
-            onPress={() => handleMoveWorkout(workout, 'down')}
-          >
-            <Text style={[styles.reorderButtonText, { color: '#FFFFFF' }]}>↓</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <ReorderControls
+        index={index}
+        totalItems={totalItems}
+        onMoveUp={() => handleMoveWorkout(workout, 'up')}
+        onMoveDown={() => handleMoveWorkout(workout, 'down')}
+        upAccessibilityLabel={`Move ${workout.name} up`}
+        downAccessibilityLabel={`Move ${workout.name} down`}
+      />
       
       <View style={styles.workoutContent}>
         <View style={styles.workoutHeader}>
@@ -657,7 +666,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 20,
+    position: 'relative',
+  },
+  dayNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 24,
+  },
+  reorderButton: {
+    position: 'absolute',
+    right: 0,
+    padding: 8,
   },
   dayButton: {
     padding: 8,
@@ -728,23 +747,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-  },
-  reorderControls: {
-    flexDirection: 'column',
-    marginRight: 12,
-    justifyContent: 'center',
-  },
-  reorderButton: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 4,
-    padding: 8,
-    marginVertical: 2,
-    minWidth: 32,
-    alignItems: 'center',
-  },
-  reorderButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   workoutContent: {
     flex: 1,

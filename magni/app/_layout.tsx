@@ -59,6 +59,10 @@ function AppContent() {
             tabBarIcon: () => <Text style={{ fontSize: 20, color: colors.text.primary }}>○</Text>,
           }} 
         />
+        <Tabs.Screen
+          name="reorder-days"
+          options={{ href: null }}
+        />
       </Tabs>
     </>
   )
@@ -81,5 +85,4 @@ export default function RootLayout() {
     </ErrorBoundary>
   )
 }
-
 
