@@ -150,7 +150,6 @@ export const WorkoutsScreen: React.FC = () => {
         hasContent={hasContent}
         onPreviousDay={() => handleDayNavigation(-1)}
         onNextDay={() => handleDayNavigation(1)}
-        onReorderDays={() => router.push('/reorder-days')}
       />
       
       {isLoading ? (

@@ -7,7 +7,6 @@ interface WorkoutsHeaderProps {
   hasContent: boolean;
   onPreviousDay: () => void;
   onNextDay: () => void;
-  onReorderDays: () => void;
 }
 
 export const WorkoutsHeader: React.FC<WorkoutsHeaderProps> = ({
@@ -15,25 +14,8 @@ export const WorkoutsHeader: React.FC<WorkoutsHeaderProps> = ({
   hasContent,
   onPreviousDay,
   onNextDay,
-  onReorderDays,
 }) => {
   const colors = useThemeColors()
-
-  if (!hasContent) {
-    return (
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={styles.reorderButton}
-          onPress={onReorderDays}
-          accessibilityLabel="Reorder workout days"
-          accessibilityRole="button"
-          testID="reorder-days-button"
-        >
-          <Text style={[styles.reorderButtonText, { color: colors.primary }]}>✎</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
 
   return (
     <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
@@ -56,15 +38,6 @@ export const WorkoutsHeader: React.FC<WorkoutsHeaderProps> = ({
           <View style={[styles.navButtonRight, { borderLeftColor: colors.primary }]} />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.reorderButton}
-        onPress={onReorderDays}
-        accessibilityLabel="Reorder workout days"
-        accessibilityRole="button"
-        testID="reorder-days-button"
-      >
-        <Text style={[styles.reorderButtonText, { color: colors.primary }]}>✎</Text>
-      </TouchableOpacity>
     </View>
   )
 }
@@ -110,17 +83,5 @@ const styles = StyleSheet.create({
   dayText: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  reorderButton: {
-    position: 'absolute',
-    right: 16,
-    width: 36,
-    height: 36,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    padding: 4,
-  },
-  reorderButtonText: {
-    fontSize: 24,
-  },
+  }
 })
