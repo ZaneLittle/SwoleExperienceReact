@@ -16,6 +16,7 @@ import ExerciseMaxSection from '../components/settings/ExerciseMaxSection'
 import ClearHistoryModal from '../components/settings/ClearHistoryModal'
 import ImportConfirmModal from '../components/settings/ImportConfirmModal'
 import { useWeightPeriod } from '../contexts/WeightPeriodContext'
+import { useRouter } from 'expo-router'
 
 export default function SettingsScreen() {
   const [showWorkoutConfig, setShowWorkoutConfig] = useState(false)
@@ -26,6 +27,7 @@ export default function SettingsScreen() {
   const { periodWindow, setPeriodWindow } = useWeightPeriod()
   const colors = useThemeColors()
   const { showToast } = useToast()
+  const router = useRouter()
 
   if (showWorkoutConfig) {
     return <WorkoutsConfigure onBack={() => setShowWorkoutConfig(false)} />
@@ -118,6 +120,7 @@ export default function SettingsScreen() {
 
         <WorkoutManagementSection
           onConfigureWorkouts={() => setShowWorkoutConfig(true)}
+          onReorderDays={() => router.push('/reorder-days')}
           onClearHistory={() => setShowClearHistoryModal(true)}
           onExport={handleExportWorkouts}
           onFileSelected={handleFileSelected}
@@ -175,5 +178,4 @@ const styles = StyleSheet.create({
     padding: 16,
   },
 })
-
 

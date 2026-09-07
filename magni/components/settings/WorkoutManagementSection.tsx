@@ -4,6 +4,7 @@ import { useThemeColors } from '../../hooks/useThemeColors'
 
 interface WorkoutManagementSectionProps {
   onConfigureWorkouts: () => void
+  onReorderDays: () => void
   onClearHistory: () => void
   onExport: () => void
   onFileSelected: (event: React.ChangeEvent<HTMLInputElement>) => void
@@ -11,6 +12,7 @@ interface WorkoutManagementSectionProps {
 
 export default function WorkoutManagementSection({
   onConfigureWorkouts,
+  onReorderDays,
   onClearHistory,
   onExport,
   onFileSelected,
@@ -37,6 +39,17 @@ export default function WorkoutManagementSection({
           <Text style={[styles.settingDescription, { color: colors.text.secondary }]}>
             Add, edit, and organize your workout routines
           </Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.text.tertiary }]}>›</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.settingItem, { backgroundColor: colors.surface }]}
+        onPress={onReorderDays}
+      >
+        <View style={styles.settingContent}>
+          <Text style={[styles.settingTitle, { color: colors.text.primary }]}>Reorder Workout Days</Text>
+          <Text style={[styles.settingDescription, { color: colors.text.secondary }]}>Move, swap, and shift workout days</Text>
         </View>
         <Text style={[styles.chevron, { color: colors.text.tertiary }]}>›</Text>
       </TouchableOpacity>
@@ -132,4 +145,3 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 })
-

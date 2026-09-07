@@ -18,9 +18,11 @@ import { useWorkoutCompletion } from '../../hooks/useWorkoutCompletion'
 import { useWorkoutForm } from '../../hooks/useWorkoutForm'
 import { useDayText } from '../../hooks/useDayText'
 import { confirmAlert } from '../../utils/confirm'
+import { useRouter } from 'expo-router'
 
 export const WorkoutsScreen: React.FC = () => {
   const colors = useThemeColors()
+  const router = useRouter()
   
   // Feature toggles (you can make these configurable later)
   const [isSupersetsEnabled] = useState(true)
@@ -148,6 +150,7 @@ export const WorkoutsScreen: React.FC = () => {
         hasContent={hasContent}
         onPreviousDay={() => handleDayNavigation(-1)}
         onNextDay={() => handleDayNavigation(1)}
+        onReorderDays={() => router.push('/reorder-days')}
       />
       
       {isLoading ? (

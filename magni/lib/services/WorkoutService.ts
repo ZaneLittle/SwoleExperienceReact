@@ -3,6 +3,7 @@ import { Platform } from 'react-native'
 import { WorkoutDay, WorkoutDayValidator } from '../models/WorkoutDay'
 import { WorkoutValidator, getSyncGroupId } from '../models/Workout'
 import { absoluteWeightToMaxPercent, calculateWorkingWeight } from '../models/ExerciseMax'
+import { getProgramDayCount, swapWorkoutDays } from '../utils/dayOrder'
 
 const WORKOUT_STORAGE_KEY = 'workouts'
 const CURRENT_DAY_STORAGE_KEY = 'current_workout_day'
@@ -43,11 +44,14 @@ class WorkoutService {
     }
   }
 
+  /**
+   * Highest programmed day number, including empty days that sit before a later populated day.
+   * Days 1, 2, and 4 with day 3 empty returns 4.
+   */
   async getUniqueDays(): Promise<number> {
     try {
       const workouts = await this.getWorkouts()
-      const uniqueDays = new Set(workouts.map(w => w.day))
-      return uniqueDays.size
+      return getProgramDayCount(workouts)
     } catch (error) {
       console.error('Error getting unique days:', error)
       return 0
@@ -240,6 +244,25 @@ class WorkoutService {
       return true
     } catch (error) {
       console.error('Error reordering workouts:', error)
+      return false
+    }
+  }
+
+  /**
+   * Exchange all workouts between two day numbers. Does not change the stored current day.
+   */
+  async swapDays(dayA: number, dayB: number): Promise<boolean> {
+    try {
+      if (dayA < 1 || dayB < 1 || dayA === dayB) {
+        return true
+      }
+
+      const existingWorkouts = await this.getWorkouts()
+      const updatedWorkouts = swapWorkoutDays(existingWorkouts, dayA, dayB)
+      await AsyncStorage.setItem(WORKOUT_STORAGE_KEY, JSON.stringify(updatedWorkouts))
+      return true
+    } catch (error) {
+      console.error('Error swapping days:', error)
       return false
     }
   }

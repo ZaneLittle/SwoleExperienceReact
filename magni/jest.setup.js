@@ -11,6 +11,8 @@ jest.mock('react-native-uuid', () => ({
   v4: jest.fn(() => 'mocked-uuid-123'),
 }));
 
+jest.mock('@expo/vector-icons/MaterialIcons', () => 'MaterialIcons');
+
 // Mock specific React Native modules that cause issues
 jest.mock('react-native/Libraries/Alert/Alert', () => ({
   alert: jest.fn(),
