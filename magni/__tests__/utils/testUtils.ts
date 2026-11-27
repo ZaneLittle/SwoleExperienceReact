@@ -1,4 +1,4 @@
-import { v4 } from 'react-native-uuid'
+import UUID from 'react-native-uuid'
 import { Weight } from '../../lib/models/Weight'
 import { Average } from '../../lib/models/Average'
 import { Workout } from '../../lib/models/Workout'
@@ -7,7 +7,7 @@ import { WorkoutHistory } from '../../lib/models/WorkoutHistory'
 
 // Helper to create mock weights
 export const createMockWeight = (overrides?: Partial<Weight>): Weight => ({
-  id: v4() as string,
+  id: UUID.v4() as string,
   dateTime: new Date(),
   weight: 180.0,
   ...overrides,
@@ -24,7 +24,7 @@ export const createMockAverage = (overrides?: Partial<Average>): Average => ({
 
 // Helper to create mock workouts
 export const createMockWorkout = (overrides?: Partial<Workout>): Workout => ({
-  id: v4() as string,
+  id: UUID.v4() as string,
   name: 'Test Exercise',
   weight: 100,
   sets: 3,
@@ -34,7 +34,7 @@ export const createMockWorkout = (overrides?: Partial<Workout>): Workout => ({
 
 // Helper to create mock workout days
 export const createMockWorkoutDay = (overrides?: Partial<WorkoutDay>): WorkoutDay => ({
-  id: v4() as string,
+  id: UUID.v4() as string,
   name: 'Test Exercise',
   weight: 100,
   sets: 3,
@@ -46,8 +46,8 @@ export const createMockWorkoutDay = (overrides?: Partial<WorkoutDay>): WorkoutDa
 
 // Helper to create mock workout history
 export const createMockWorkoutHistory = (overrides?: Partial<WorkoutHistory>): WorkoutHistory => ({
-  id: v4() as string,
-  workoutId: v4() as string,
+  id: UUID.v4() as string,
+  workoutId: UUID.v4() as string,
   date: '2024-01-15',
   name: 'Test Exercise',
   weight: 100,

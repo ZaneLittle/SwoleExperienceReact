@@ -20,8 +20,8 @@ describe('useWorkoutData', () => {
     mockWorkoutHistoryService.getWorkoutHistory.mockResolvedValue([])
   })
 
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useWorkoutData())
+  it('should initialize with default values', async () => {
+    const { result } = await renderHook(() => useWorkoutData())
 
     expect(result.current.workouts).toEqual([])
     expect(result.current.workoutHistory).toEqual([])
@@ -42,7 +42,7 @@ describe('useWorkoutData', () => {
     mockWorkoutService.getWorkouts.mockResolvedValue(mockWorkouts)
     mockWorkoutHistoryService.getWorkoutHistory.mockResolvedValue(mockHistory)
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
 
     await act(async () => {
       await result.current.loadDataForOffset(0)
@@ -62,7 +62,7 @@ describe('useWorkoutData', () => {
 
     mockWorkoutHistoryService.getWorkoutHistory.mockResolvedValue(mockHistory)
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
 
     await act(async () => {
       await result.current.loadDataForOffset(-1)
@@ -82,10 +82,10 @@ describe('useWorkoutData', () => {
 
     mockWorkoutService.getWorkouts.mockResolvedValue(mockWorkouts)
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
     
     // Set totalDays to enable future day calculation
-    act(() => {
+    await act(async () => {
       result.current.setTotalDays(3)
     })
 
@@ -107,10 +107,10 @@ describe('useWorkoutData', () => {
 
     mockWorkoutService.getWorkouts.mockResolvedValue(mockWorkouts)
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
     
     // Set currentDay to 2 and totalDays to 2, so offset 1 should wrap to day 1
-    act(() => {
+    await act(async () => {
       result.current.setCurrentDay(2)
       result.current.setTotalDays(2)
     })
@@ -122,16 +122,16 @@ describe('useWorkoutData', () => {
     expect(mockWorkoutService.getWorkouts).toHaveBeenCalledWith(1)
   })
 
-  it('should handle day navigation correctly', () => {
-    const { result } = renderHook(() => useWorkoutData())
+  it('should handle day navigation correctly', async () => {
+    const { result } = await renderHook(() => useWorkoutData())
 
-    act(() => {
+    await act(async () => {
       result.current.handleDayNavigation(-1)
     })
 
     expect(result.current.dayOffset).toBe(-1)
 
-    act(() => {
+    await act(async () => {
       result.current.handleDayNavigation(2)
     })
 
@@ -147,7 +147,7 @@ describe('useWorkoutData', () => {
     mockWorkoutService.getUniqueDays.mockResolvedValue(3)
     mockWorkoutHistoryService.getWorkoutHistory.mockResolvedValue([])
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
 
     await act(async () => {
       await result.current.loadInitialData()
@@ -162,7 +162,7 @@ describe('useWorkoutData', () => {
   it('should handle errors gracefully', async () => {
     mockWorkoutService.getWorkouts.mockRejectedValue(new Error('Service error'))
 
-    const { result } = renderHook(() => useWorkoutData())
+    const { result } = await renderHook(() => useWorkoutData())
 
     await act(async () => {
       try {

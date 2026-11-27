@@ -56,8 +56,8 @@ describe('AuthSection Delete Account Functionality', () => {
       })
     })
 
-    it('provides deleteAccount function when authenticated', () => {
-      const { result } = renderHook(() => useAuth())
+    it('provides deleteAccount function when authenticated', async () => {
+      const { result } = await renderHook(() => useAuth())
 
       expect(typeof result.current.deleteAccount).toBe('function')
       expect(result.current.isAuthenticated).toBe(true)
@@ -67,7 +67,7 @@ describe('AuthSection Delete Account Functionality', () => {
     it('calls deleteAccount when invoked', async () => {
       mockDeleteAccount.mockResolvedValueOnce(undefined)
 
-      const { result } = renderHook(() => useAuth())
+      const { result } = await renderHook(() => useAuth())
 
       await act(async () => {
         await result.current.deleteAccount()
@@ -80,7 +80,7 @@ describe('AuthSection Delete Account Functionality', () => {
       const error = new Error('Failed to delete account')
       mockDeleteAccount.mockRejectedValueOnce(error)
 
-      const { result } = renderHook(() => useAuth())
+      const { result } = await renderHook(() => useAuth())
 
       await act(async () => {
         await expect(result.current.deleteAccount()).rejects.toThrow('Failed to delete account')

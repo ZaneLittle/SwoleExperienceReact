@@ -3,6 +3,8 @@ package services
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -107,7 +109,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (*Login
 
 	refreshToken := middleware.GenerateRefreshToken()
 
-	key := "session:" + refreshToken
+	key := refreshSessionKey(refreshToken)
 	value := user.ID.String()
 	err = s.redis.Set(ctx, key, value, s.refreshTTL).Err()
 	if err != nil {
@@ -124,7 +126,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (*Login
 }
 
 func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*RefreshResponse, error) {
-	key := "session:" + refreshToken
+	key := refreshSessionKey(refreshToken)
 	userIDStr, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
@@ -149,7 +151,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*R
 	}
 
 	newRefreshToken := middleware.GenerateRefreshToken()
-	newKey := "session:" + newRefreshToken
+	newKey := refreshSessionKey(newRefreshToken)
 
 	pipe := s.redis.Pipeline()
 	pipe.Set(ctx, newKey, userIDStr, s.refreshTTL)
@@ -166,12 +168,19 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*R
 }
 
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
-	key := "session:" + refreshToken
+	key := refreshSessionKey(refreshToken)
 	err := s.redis.Del(ctx, key).Err()
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+// refreshSessionKey avoids storing bearer refresh tokens in Redis in plaintext.
+// A Redis read alone therefore cannot be replayed as an authenticated session.
+func refreshSessionKey(refreshToken string) string {
+	sum := sha256.Sum256([]byte(refreshToken))
+	return "session:" + hex.EncodeToString(sum[:])
 }
 
 // DeleteAccount deletes a user account and all associated data.

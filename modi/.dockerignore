@@ -1,0 +1,17 @@
+# Prevent credentials, local state, and development output from entering image
+# layers or the remote Docker build context.
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+bin
+coverage
+*.coverprofile
+tmp
+logs
+*.log
+README.md
+TEST_STRATEGY.md
+BACKEND_ARCHITECTURE.md
+DEPLOYMENT.md

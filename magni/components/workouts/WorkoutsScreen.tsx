@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect } from 'expo-router'
 import { WorkoutDay } from '../../lib/models/WorkoutDay'
 import { workoutService } from '../../lib/services/WorkoutService'
 import { WorkoutList } from './WorkoutList'

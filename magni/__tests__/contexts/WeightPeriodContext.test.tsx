@@ -30,7 +30,7 @@ describe('WeightPeriodContext', () => {
     it('returns default period window when no saved preference exists', async () => {
       mockGetItem.mockResolvedValueOnce(null)
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -40,17 +40,17 @@ describe('WeightPeriodContext', () => {
     it('loads saved period window from storage', async () => {
       mockGetItem.mockResolvedValueOnce('week')
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('week')
       })
     })
 
-    it('returns correct days for each period window', () => {
+    it('returns correct days for each period window', async () => {
       mockGetItem.mockResolvedValueOnce(null)
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       expect(result.current.getDaysFromWindow('week')).toBe(7)
       expect(result.current.getDaysFromWindow('month')).toBe(30)
@@ -63,7 +63,7 @@ describe('WeightPeriodContext', () => {
       mockGetItem.mockResolvedValueOnce(null)
       mockSetItem.mockResolvedValueOnce(undefined)
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -80,7 +80,7 @@ describe('WeightPeriodContext', () => {
     it('handles invalid saved period window gracefully', async () => {
       mockGetItem.mockResolvedValueOnce('invalid')
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -90,7 +90,7 @@ describe('WeightPeriodContext', () => {
     it('handles storage errors gracefully when loading', async () => {
       mockGetItem.mockRejectedValueOnce(new Error('Storage error'))
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -101,7 +101,7 @@ describe('WeightPeriodContext', () => {
       mockGetItem.mockResolvedValueOnce(null)
       mockSetItem.mockRejectedValueOnce(new Error('Storage error'))
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -119,7 +119,7 @@ describe('WeightPeriodContext', () => {
       mockGetItem.mockResolvedValueOnce(null)
       mockSetItem.mockResolvedValue(undefined)
 
-      const { result } = renderHook(() => useWeightPeriod(), { wrapper })
+      const { result } = await renderHook(() => useWeightPeriod(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.periodWindow).toBe('twoMonths')
@@ -141,14 +141,14 @@ describe('WeightPeriodContext', () => {
       expect(result.current.periodWindow).toBe('twelveMonths')
     })
 
-    it('throws error when used outside provider', () => {
+    it('throws error when used outside provider', async () => {
       // Suppress console.error for this test
       const originalError = console.error
       console.error = jest.fn()
 
-      expect(() => {
-        renderHook(() => useWeightPeriod())
-      }).toThrow('useWeightPeriod must be used within a WeightPeriodProvider')
+      await expect(renderHook(() => useWeightPeriod())).rejects.toThrow(
+        'useWeightPeriod must be used within a WeightPeriodProvider',
+      )
 
       console.error = originalError
     })

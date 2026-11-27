@@ -24,8 +24,8 @@ const workout = (overrides: Partial<WorkoutDay>): WorkoutDay => ({
 })
 
 describe('ProgramDayList', () => {
-  it('shows every day, including an empty day, and summarizes each populated day', () => {
-    const { getAllByText, getByText, getByTestId } = render(
+  it('shows every day, including an empty day, and summarizes each populated day', async () => {
+    const { getAllByText, getByText, getByTestId } = await render(
       <ProgramDayList
         dayCount={4}
         workouts={[
@@ -44,9 +44,9 @@ describe('ProgramDayList', () => {
     expect(getByText('Bench')).toBeTruthy()
   })
 
-  it('uses arrows to request an adjacent day swap', () => {
+  it('uses arrows to request an adjacent day swap', async () => {
     const onSwapDays = jest.fn()
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <ProgramDayList
         dayCount={4}
         workouts={[workout({ day: 3 })]}
@@ -56,15 +56,15 @@ describe('ProgramDayList', () => {
       />,
     )
 
-    fireEvent.press(getByTestId('move-day-3-up'))
-    fireEvent.press(getByTestId('move-day-3-down'))
+    await fireEvent.press(getByTestId('move-day-3-up'))
+    await fireEvent.press(getByTestId('move-day-3-down'))
 
     expect(onSwapDays).toHaveBeenNthCalledWith(1, 3, 2)
     expect(onSwapDays).toHaveBeenNthCalledWith(2, 3, 4)
   })
 
-  it('identifies the original and current day at each reordered position', () => {
-    const { getByTestId, getByText, queryByText } = render(
+  it('identifies the original and current day at each reordered position', async () => {
+    const { getByTestId, getByText, queryByText } = await render(
       <ProgramDayList
         dayCount={3}
         workouts={[]}

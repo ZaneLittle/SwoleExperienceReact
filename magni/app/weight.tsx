@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { ScrollView, View, StyleSheet, Text, Platform } from 'react-native'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect } from 'expo-router'
 import { WeightEntryForm } from '../components/weight/WeightEntryForm'
 import { WeightChart } from '../components/weight/WeightChart'
 import { WeightHistory } from '../components/weight/WeightHistory'

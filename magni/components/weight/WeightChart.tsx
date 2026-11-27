@@ -32,6 +32,12 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
   // Prepare chart data - must be called before any early returns
   const { dailyStats, averageData, yDomain, stats } = useDailyStats(weights, averages)
 
+  // VictoryGroup divides the chart width by the number of datasets it receives.
+  // Rendering a group whose children all have empty data makes that division
+  // produce Infinity (width: Infinity), so only render groups that have data.
+  const threeDayAverageData = averageData.filter(d => d.threeDayAverage !== null)
+  const sevenDayAverageData = averageData.filter(d => d.sevenDayAverage !== null)
+
   const renderStatCard = (value: number | undefined, label: string, change?: number, isTrendOnly?: boolean) => {
     const getChevronColor = () => {
       if (label.includes('3 Day')) return 'rgba(75, 192, 192, 1)'
@@ -221,10 +227,10 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
               />
             </VictoryGroup>
           )}
-          {options.showThreeDayAverage && averageData.length > 0 && (
+          {options.showThreeDayAverage && threeDayAverageData.length > 0 && (
             <VictoryGroup>
               <VictoryLine
-                data={averageData.filter(d => d.threeDayAverage !== null)}
+                data={threeDayAverageData}
                 x="date"
                 y="threeDayAverage"
                 style={{
@@ -232,7 +238,7 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
                 }}
               />
               <VictoryScatter
-                data={averageData.filter(d => d.threeDayAverage !== null)}
+                data={threeDayAverageData}
                 x="date"
                 y="threeDayAverage"
                 size={4}
@@ -242,10 +248,10 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
               />
             </VictoryGroup>
           )}
-          {options.showSevenDayAverage && averageData.length > 0 && (
+          {options.showSevenDayAverage && sevenDayAverageData.length > 0 && (
             <VictoryGroup>
               <VictoryLine
-                data={averageData.filter(d => d.sevenDayAverage !== null)}
+                data={sevenDayAverageData}
                 x="date"
                 y="sevenDayAverage"
                 style={{
@@ -253,7 +259,7 @@ export const WeightChart: React.FC<WeightChartProps> = ({ weights, averages }) =
                 }}
               />
               <VictoryScatter
-                data={averageData.filter(d => d.sevenDayAverage !== null)}
+                data={sevenDayAverageData}
                 x="date"
                 y="sevenDayAverage"
                 size={4}

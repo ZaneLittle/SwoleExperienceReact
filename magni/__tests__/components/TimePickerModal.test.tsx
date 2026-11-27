@@ -1,43 +1,19 @@
-// Mock React Native components for web testing
-jest.mock('react-native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const React = require('react')
-  
-  const View = ({ children, style, testID, ...props }: { children?: React.ReactNode; style?: unknown; testID?: string; [key: string]: unknown }) => 
-    React.createElement('div', { 'data-testid': testID, style, ...props }, children)
-  View.displayName = 'View'
-  
-  const Text = ({ children, style, ...props }: { children?: React.ReactNode; style?: unknown; [key: string]: unknown }) => 
-    React.createElement('span', { style, ...props }, children)
-  Text.displayName = 'Text'
-  
-  const TouchableOpacity = ({ children, onPress, style, testID, ...props }: { children?: React.ReactNode; onPress?: () => void; style?: unknown; testID?: string; [key: string]: unknown }) => 
-    React.createElement('button', { onClick: onPress, style, 'data-testid': testID, ...props }, children)
-  TouchableOpacity.displayName = 'TouchableOpacity'
-  
-  const Modal = ({ visible, children, ...props }: { visible?: boolean; children?: React.ReactNode; [key: string]: unknown }) => 
-    visible ? React.createElement('div', { 'data-testid': 'modal', ...props }, children) : null
-  Modal.displayName = 'Modal'
-  
-  return {
-    View,
-    Text,
-    TouchableOpacity,
-    Modal,
-    StyleSheet: {
-      create: (styles: Record<string, unknown>) => styles,
-    },
-  }
-})
+// React Native + React Native Testing Library (matches the jest-expo preset).
+// The React Native mock comes from jest.setup.rntl.js; only the MUI X pickers
+// are mocked here (they render web DOM, which has no place in RN testing).
+import React from 'react'
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native'
+import { TimePickerModal } from '../../components/TimePickerModal'
 
-// Mock MUI X date pickers - using web testing library like DatePickerModal
+// Mock MUI X date pickers with React Native host elements
 jest.mock('@mui/x-date-pickers/TimeClock', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react')
-  
+
   const TimeClock = (props: { onChange?: (value: Date | null) => void; value?: Date; views?: Array<'hours' | 'minutes'>; sx?: unknown; [key: string]: unknown }) => {
-    const { onChange, value, views, ...otherProps } = props 
-    const handleClick = () => {
+    const { onChange, value, views, ...otherProps } = props
+
+    const handlePress = () => {
       if (onChange && views && views[0]) {
         const testDate = new Date(value || new Date())
         if (views[0] === 'hours') {
@@ -48,31 +24,31 @@ jest.mock('@mui/x-date-pickers/TimeClock', () => {
         onChange(testDate)
       }
     }
-    
-    return React.createElement('div', {
-      'data-testid': 'time-clock',
-      'data-value': value?.toISOString(),
-      'data-views': views?.join(','),
-      onClick: handleClick,
+
+    return React.createElement('View', {
       ...otherProps,
+      onPress: handlePress,
+      testID: 'time-clock',
+      value: value?.toISOString(),
+      views: views?.join(','),
     })
   }
-  
+
   TimeClock.displayName = 'TimeClock'
-  
+
   return {
     TimeClock,
   }
 })
 
 jest.mock('@mui/x-date-pickers/LocalizationProvider', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react')
-  
+
   const LocalizationProvider = ({ children }: { children: React.ReactNode; dateAdapter?: unknown }) => {
-    return React.createElement('div', { 'data-testid': 'localization-provider' }, children)
+    return React.createElement(React.Fragment, null, children)
   }
-  
+
   return {
     LocalizationProvider,
   }
@@ -85,10 +61,6 @@ jest.mock('@mui/x-date-pickers/AdapterDateFns', () => {
     AdapterDateFns: MockAdapter,
   }
 })
-
-import React from 'react'
-import { render, fireEvent, waitFor } from '@testing-library/react'
-import { TimePickerModal } from '../../components/TimePickerModal'
 
 // Mock ThemeContext
 jest.mock('../../contexts/ThemeContext', () => {
@@ -170,14 +142,16 @@ describe('TimePickerModal', () => {
     jest.useFakeTimers()
   })
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers()
+  afterEach(async () => {
+    await act(async () => {
+      jest.runOnlyPendingTimers()
+    })
     jest.useRealTimers()
   })
 
   describe('Rendering', () => {
-    it('should not render when visible is false', () => {
-      const { queryByText } = render(
+    it('should not render when visible is false', async () => {
+      const { queryByText } = await render(
         <TimePickerModal
           visible={false}
           currentDate={testDate}
@@ -190,8 +164,8 @@ describe('TimePickerModal', () => {
       expect(queryByText('Cancel')).toBeNull()
     })
 
-    it('should render when visible is true', () => {
-      const { getByText, getByTestId } = render(
+    it('should render when visible is true', async () => {
+      const { getByText, getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -205,8 +179,8 @@ describe('TimePickerModal', () => {
       expect(getByTestId('time-clock')).toBeTruthy()
     })
 
-    it('should render time display with correct format', () => {
-      const { getByText } = render(
+    it('should render time display with correct format', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -221,8 +195,8 @@ describe('TimePickerModal', () => {
       expect(getByText(':')).toBeTruthy()
     })
 
-    it('should render AM/PM buttons', () => {
-      const { getByText } = render(
+    it('should render AM/PM buttons', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -235,9 +209,9 @@ describe('TimePickerModal', () => {
       expect(getByText('PM')).toBeTruthy()
     })
 
-    it('should show PM as selected for afternoon time', () => {
+    it('should show PM as selected for afternoon time', async () => {
       const pmDate = new Date('2024-01-10T14:30:00') // 2:30 PM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={pmDate}
@@ -250,9 +224,9 @@ describe('TimePickerModal', () => {
       expect(pmButton).toBeTruthy()
     })
 
-    it('should show AM as selected for morning time', () => {
+    it('should show AM as selected for morning time', async () => {
       const amDate = new Date('2024-01-10T09:30:00') // 9:30 AM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={amDate}
@@ -267,8 +241,8 @@ describe('TimePickerModal', () => {
   })
 
   describe('Time Display Interaction', () => {
-    it('should switch to hours view when hour is clicked', () => {
-      const { getByText, getByTestId } = render(
+    it('should switch to hours view when hour is clicked', async () => {
+      const { getByText, getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -278,14 +252,14 @@ describe('TimePickerModal', () => {
       )
 
       const hourDisplay = getByText('02')
-      fireEvent.click(hourDisplay.parentElement || hourDisplay)
+      await fireEvent.press(hourDisplay)
 
       const clock = getByTestId('time-clock')
-      expect(clock.getAttribute('data-views')).toBe('hours')
+      expect(clock.props.views).toBe('hours')
     })
 
-    it('should switch to minutes view when minute is clicked', () => {
-      const { getByText, getByTestId } = render(
+    it('should switch to minutes view when minute is clicked', async () => {
+      const { getByText, getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -295,16 +269,16 @@ describe('TimePickerModal', () => {
       )
 
       const minuteDisplay = getByText('30')
-      fireEvent.click(minuteDisplay.parentElement || minuteDisplay)
+      await fireEvent.press(minuteDisplay)
 
       const clock = getByTestId('time-clock')
-      expect(clock.getAttribute('data-views')).toBe('minutes')
+      expect(clock.props.views).toBe('minutes')
     })
   })
 
   describe('Time Selection', () => {
-    it('should initialize with currentDate', () => {
-      const { getByTestId } = render(
+    it('should initialize with currentDate', async () => {
+      const { getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -314,11 +288,11 @@ describe('TimePickerModal', () => {
       )
 
       const clock = getByTestId('time-clock')
-      expect(clock.getAttribute('data-value')).toBe(testDate.toISOString())
+      expect(clock.props.value).toBe(testDate.toISOString())
     })
 
     it('should update hour when clock is clicked in hours view', async () => {
-      const { getByTestId, getByText } = render(
+      const { getByTestId, getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -328,19 +302,20 @@ describe('TimePickerModal', () => {
       )
 
       const clock = getByTestId('time-clock')
-      fireEvent.click(clock)
+      await fireEvent.press(clock)
 
-      // Wait for the view to switch to minutes
-      await waitFor(() => {
-        expect(clock.getAttribute('data-views')).toBe('minutes')
-      }, { timeout: 200 })
+      // Wait for the view to switch to minutes (component defers 100ms)
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(150)
+      })
+      expect(getByTestId('time-clock').props.views).toBe('minutes')
 
       // The hour should be updated (our mock sets it to 3)
       expect(getByText('03')).toBeTruthy()
     })
 
     it('should update minute when clock is clicked in minutes view', async () => {
-      const { getByTestId, getByText } = render(
+      const { getByTestId, getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -351,10 +326,10 @@ describe('TimePickerModal', () => {
 
       // Switch to minutes view first
       const minuteDisplay = getByText('30')
-      fireEvent.click(minuteDisplay.parentElement || minuteDisplay)
+      await fireEvent.press(minuteDisplay)
 
       const clock = getByTestId('time-clock')
-      fireEvent.click(clock)
+      await fireEvent.press(clock)
 
       // The minute should be updated (our mock sets it to 15)
       await waitFor(() => {
@@ -363,7 +338,7 @@ describe('TimePickerModal', () => {
     })
 
     it('should automatically switch to minutes view after hour selection', async () => {
-      const { getByTestId } = render(
+      const { getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -372,23 +347,23 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      const clock = getByTestId('time-clock')
       // Initially should be in hours view
-      expect(clock.getAttribute('data-views')).toBe('hours')
+      expect(getByTestId('time-clock').props.views).toBe('hours')
 
-      fireEvent.click(clock)
+      await fireEvent.press(getByTestId('time-clock'))
 
       // Should switch to minutes view after delay
-      await waitFor(() => {
-        expect(clock.getAttribute('data-views')).toBe('minutes')
-      }, { timeout: 200 })
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(150)
+      })
+      expect(getByTestId('time-clock').props.views).toBe('minutes')
     })
   })
 
   describe('AM/PM Toggle', () => {
-    it('should toggle to AM when AM button is clicked', () => {
+    it('should toggle to AM when AM button is clicked', async () => {
       const pmDate = new Date('2024-01-10T14:30:00') // 2:30 PM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={pmDate}
@@ -398,15 +373,15 @@ describe('TimePickerModal', () => {
       )
 
       const amButton = getByText('AM')
-      fireEvent.click(amButton.parentElement || amButton)
+      await fireEvent.press(amButton)
 
       // Time should now show 02:30 AM (2:30 PM converted to AM)
       expect(getByText('02')).toBeTruthy()
     })
 
-    it('should toggle to PM when PM button is clicked', () => {
+    it('should toggle to PM when PM button is clicked', async () => {
       const amDate = new Date('2024-01-10T09:30:00') // 9:30 AM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={amDate}
@@ -416,15 +391,15 @@ describe('TimePickerModal', () => {
       )
 
       const pmButton = getByText('PM')
-      fireEvent.click(pmButton.parentElement || pmButton)
+      await fireEvent.press(pmButton)
 
       // Time should now show 09:30 PM (9:30 AM converted to PM)
       expect(getByText('09')).toBeTruthy()
     })
 
-    it('should convert hours correctly when toggling AM/PM', () => {
+    it('should convert hours correctly when toggling AM/PM', async () => {
       const pmDate = new Date('2024-01-10T14:30:00') // 2:30 PM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={pmDate}
@@ -435,7 +410,7 @@ describe('TimePickerModal', () => {
 
       // Click AM button
       const amButton = getByText('AM')
-      fireEvent.click(amButton.parentElement || amButton)
+      await fireEvent.press(amButton)
 
       // Should still show 02:30 (hours preserved, just AM/PM changed)
       expect(getByText('02')).toBeTruthy()
@@ -444,8 +419,8 @@ describe('TimePickerModal', () => {
   })
 
   describe('Button Interactions', () => {
-    it('should call onClose when Cancel button is pressed', () => {
-      const { getByText } = render(
+    it('should call onClose when Cancel button is pressed', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -454,15 +429,14 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      const cancelButton = getByText('Cancel')
-      fireEvent.click(cancelButton.parentElement || cancelButton)
+      await fireEvent.press(getByText('Cancel'))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
       expect(mockOnTimeSelected).not.toHaveBeenCalled()
     })
 
-    it('should call onTimeSelected and onClose when Select Time button is pressed', () => {
-      const { getByText } = render(
+    it('should call onTimeSelected and onClose when Select Time button is pressed', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -471,8 +445,7 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Time')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Time'))
 
       expect(mockOnTimeSelected).toHaveBeenCalledTimes(1)
       expect(mockOnClose).toHaveBeenCalledTimes(1)
@@ -481,8 +454,8 @@ describe('TimePickerModal', () => {
       expect(selectedDate).toBeInstanceOf(Date)
     })
 
-    it('should preserve date when time is selected', () => {
-      const { getByText } = render(
+    it('should preserve date when time is selected', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -491,8 +464,7 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Time')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Time'))
 
       const selectedDate = mockOnTimeSelected.mock.calls[0][0]
       // Should preserve the date part
@@ -501,8 +473,8 @@ describe('TimePickerModal', () => {
       expect(selectedDate.getDate()).toBe(testDate.getDate())
     })
 
-    it('should update time part when time is selected', () => {
-      const { getByText } = render(
+    it('should update time part when time is selected', async () => {
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -511,8 +483,7 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Time')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Time'))
 
       const selectedDate = mockOnTimeSelected.mock.calls[0][0]
       // Should preserve the time that was selected
@@ -523,9 +494,9 @@ describe('TimePickerModal', () => {
   })
 
   describe('State Updates', () => {
-    it('should update selected time when currentDate prop changes', () => {
+    it('should update selected time when currentDate prop changes', async () => {
       const newDate = new Date('2024-01-10T10:15:00') // 10:15 AM
-      const { rerender, getByTestId, getByText } = render(
+      const { rerender, getByTestId, getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -534,7 +505,7 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      rerender(
+      await rerender(
         <TimePickerModal
           visible={true}
           currentDate={newDate}
@@ -544,15 +515,15 @@ describe('TimePickerModal', () => {
       )
 
       const clock = getByTestId('time-clock')
-      expect(clock.getAttribute('data-value')).toBe(newDate.toISOString())
-      
+      expect(clock.props.value).toBe(newDate.toISOString())
+
       // Should display new time
       expect(getByText('10')).toBeTruthy()
       expect(getByText('15')).toBeTruthy()
     })
 
-    it('should reset to hours view when modal becomes visible', () => {
-      const { rerender, getByTestId } = render(
+    it('should reset to hours view when modal becomes visible', async () => {
+      const { rerender, getByTestId } = await render(
         <TimePickerModal
           visible={false}
           currentDate={testDate}
@@ -561,7 +532,7 @@ describe('TimePickerModal', () => {
         />,
       )
 
-      rerender(
+      await rerender(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -571,14 +542,14 @@ describe('TimePickerModal', () => {
       )
 
       const clock = getByTestId('time-clock')
-      expect(clock.getAttribute('data-views')).toBe('hours')
+      expect(clock.props.views).toBe('hours')
     })
   })
 
   describe('Edge Cases', () => {
-    it('should handle midnight (00:00)', () => {
+    it('should handle midnight (00:00)', async () => {
       const midnight = new Date('2024-01-10T00:00:00')
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={midnight}
@@ -592,9 +563,9 @@ describe('TimePickerModal', () => {
       expect(getByText('00')).toBeTruthy()
     })
 
-    it('should handle noon (12:00)', () => {
+    it('should handle noon (12:00)', async () => {
       const noon = new Date('2024-01-10T12:00:00')
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={noon}
@@ -608,9 +579,9 @@ describe('TimePickerModal', () => {
       expect(getByText('00')).toBeTruthy()
     })
 
-    it('should handle 11:59 PM', () => {
+    it('should handle 11:59 PM', async () => {
       const lateNight = new Date('2024-01-10T23:59:00')
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={lateNight}
@@ -623,9 +594,9 @@ describe('TimePickerModal', () => {
       expect(getByText('59')).toBeTruthy()
     })
 
-    it('should handle 12-hour format conversion correctly', () => {
+    it('should handle 12-hour format conversion correctly', async () => {
       const onePM = new Date('2024-01-10T13:00:00') // 1:00 PM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={onePM}
@@ -639,17 +610,17 @@ describe('TimePickerModal', () => {
       expect(getByText('00')).toBeTruthy()
     })
 
-    it('should handle null onChange value gracefully', () => {
+    it('should handle null onChange value gracefully', async () => {
       // Mock TimeClock to return null
       jest.doMock('@mui/x-date-pickers/TimeClock', () => {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const React = require('react')
         return function TimeClock() {
-          return React.createElement('div', { 'data-testid': 'time-clock' })
+          return React.createElement('View', { testID: 'time-clock' })
         }
       })
 
-      const { getByTestId } = render(
+      const { getByTestId } = await render(
         <TimePickerModal
           visible={true}
           currentDate={testDate}
@@ -665,9 +636,9 @@ describe('TimePickerModal', () => {
   })
 
   describe('Time Formatting', () => {
-    it('should pad single digit hours with zero', () => {
+    it('should pad single digit hours with zero', async () => {
       const singleDigitHour = new Date('2024-01-10T09:30:00') // 9:30 AM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={singleDigitHour}
@@ -679,9 +650,9 @@ describe('TimePickerModal', () => {
       expect(getByText('09')).toBeTruthy()
     })
 
-    it('should pad single digit minutes with zero', () => {
+    it('should pad single digit minutes with zero', async () => {
       const singleDigitMinute = new Date('2024-01-10T14:05:00') // 2:05 PM
-      const { getByText } = render(
+      const { getByText } = await render(
         <TimePickerModal
           visible={true}
           currentDate={singleDigitMinute}
@@ -693,9 +664,9 @@ describe('TimePickerModal', () => {
       expect(getByText('05')).toBeTruthy()
     })
 
-    it('should display 12 for midnight and noon', () => {
+    it('should display 12 for midnight and noon', async () => {
       const midnight = new Date('2024-01-10T00:00:00')
-      const { getByText: getByTextMidnight, unmount } = render(
+      const { getByText: getByTextMidnight, unmount } = await render(
         <TimePickerModal
           visible={true}
           currentDate={midnight}
@@ -704,10 +675,10 @@ describe('TimePickerModal', () => {
         />,
       )
       expect(getByTextMidnight('12')).toBeTruthy()
-      unmount()
+      await unmount()
 
       const noon = new Date('2024-01-10T12:00:00')
-      const { getByText: getByTextNoon } = render(
+      const { getByText: getByTextNoon } = await render(
         <TimePickerModal
           visible={true}
           currentDate={noon}

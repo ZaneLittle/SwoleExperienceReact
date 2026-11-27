@@ -8,7 +8,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 // Mock react-native-uuid
 jest.mock('react-native-uuid', () => ({
-  v4: jest.fn(() => 'mocked-uuid-123'),
+  __esModule: true,
+  default: { v4: jest.fn(() => 'mocked-uuid-123') },
 }));
 
 jest.mock('@expo/vector-icons/MaterialIcons', () => 'MaterialIcons');

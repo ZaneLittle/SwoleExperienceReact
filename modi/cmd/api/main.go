@@ -23,6 +23,9 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.Load()
+	if err := cfg.Validate(); err != nil {
+		log.Fatal("Invalid configuration: ", err)
+	}
 
 	log.Printf("Config loaded - Database URL: %s, Redis URL: %s",
 		maskURL(cfg.DatabaseURL), maskURL(cfg.RedisURL))
@@ -32,7 +35,6 @@ func main() {
 	if cfg.DatabaseURL != "" {
 		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
 		db, err = pgxpool.New(ctx, cfg.DatabaseURL)
 		if err != nil {
@@ -48,6 +50,7 @@ func main() {
 				log.Println("Database connection established")
 			}
 		}
+		cancel()
 	} else {
 		log.Println("Warning: DATABASE_URL not set, running without database")
 	}
@@ -63,7 +66,6 @@ func main() {
 			redisClient = redis.NewClient(opt)
 			// Test the connection
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
 			if err := redisClient.Ping(ctx).Err(); err != nil {
 				log.Printf("Warning: Failed to connect to Redis: %v", err)
 				log.Println("Continuing without Redis connection...")
@@ -71,6 +73,7 @@ func main() {
 			} else {
 				log.Println("Redis connection established")
 			}
+			cancel()
 		}
 	} else {
 		log.Println("Warning: REDIS_URL not set, running without Redis")
@@ -78,10 +81,14 @@ func main() {
 
 	// Setup router
 	r := gin.Default()
+	if err := r.SetTrustedProxies(cfg.TrustedProxyCIDRs); err != nil {
+		log.Fatal("Invalid TRUSTED_PROXY_CIDRS: ", err)
+	}
+	r.Use(middleware.MaxBodySize(1 << 20))
 
 	// Configure CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // In production, specify exact origins
+		AllowOrigins:     cfg.CORSAllowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "X-Request-ID"},
 		ExposeHeaders:    []string{"Content-Length", "X-Request-ID", "X-Timestamp", "X-Server-Timestamp", "X-Rate-Limit-Limit", "X-Rate-Limit-Remaining", "X-Rate-Limit-Reset"},
@@ -103,6 +110,7 @@ func main() {
 			authHandler := handlers.NewAuthHandler(authService)
 
 			authGroup := api.Group("/auth")
+			authGroup.Use(middleware.NewRateLimiter(cfg.AuthRateLimit, time.Minute).Middleware())
 			{
 				authGroup.POST("/register", authHandler.Register)
 				authGroup.POST("/login", authHandler.Login)

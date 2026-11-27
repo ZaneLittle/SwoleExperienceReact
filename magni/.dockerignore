@@ -9,6 +9,12 @@ dist
 .expo
 .expo-shared
 
+# Secrets and local runtime configuration. EXPO_PUBLIC_* values should be
+# provided as explicit Docker build arguments when they must be embedded.
+.env
+.env.*
+!.env.example
+
 # Development files
 .env.local
 .env.development.local

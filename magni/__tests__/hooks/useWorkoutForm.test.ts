@@ -22,8 +22,8 @@ describe('useWorkoutForm', () => {
     mockWorkoutService.removeWorkout.mockResolvedValue(true)
   })
 
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useWorkoutForm())
+  it('should initialize with default values', async () => {
+    const { result } = await renderHook(() => useWorkoutForm())
 
     expect(result.current.showForm).toBe(false)
     expect(result.current.editingWorkout).toBeUndefined()
@@ -34,10 +34,10 @@ describe('useWorkoutForm', () => {
     expect(typeof result.current.handleCancelForm).toBe('function')
   })
 
-  it('should handle add workout', () => {
-    const { result } = renderHook(() => useWorkoutForm())
+  it('should handle add workout', async () => {
+    const { result } = await renderHook(() => useWorkoutForm())
 
-    act(() => {
+    await act(async () => {
       result.current.handleAddWorkout()
     })
 
@@ -45,7 +45,7 @@ describe('useWorkoutForm', () => {
     expect(result.current.editingWorkout).toBeUndefined()
   })
 
-  it('should handle edit workout', () => {
+  it('should handle edit workout', async () => {
     const mockWorkout = {
       id: '1',
       name: 'Exercise 1',
@@ -56,9 +56,9 @@ describe('useWorkoutForm', () => {
       dayOrder: 0,
     }
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
-    act(() => {
+    await act(async () => {
       result.current.handleEditWorkout(mockWorkout)
     })
 
@@ -84,9 +84,9 @@ describe('useWorkoutForm', () => {
       confirmCallback = onConfirm
     })
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
-    act(() => {
+    await act(async () => {
       result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
     })
 
@@ -128,9 +128,9 @@ describe('useWorkoutForm', () => {
       confirmCallback = onConfirm
     })
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
-    act(() => {
+    await act(async () => {
       result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
     })
 
@@ -167,9 +167,9 @@ describe('useWorkoutForm', () => {
       confirmCallback = onConfirm
     })
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
-    act(() => {
+    await act(async () => {
       result.current.handleDeleteWorkout(mockWorkout, mockOnRefresh)
     })
 
@@ -187,7 +187,7 @@ describe('useWorkoutForm', () => {
     expect(mockConfirmAlert).toHaveBeenCalledWith('Error', 'Failed to delete workout')
   })
 
-  it('should handle save workout', () => {
+  it('should handle save workout', async () => {
     const mockOnRefresh = jest.fn()
     const _mockWorkout = {
       id: '1',
@@ -199,14 +199,14 @@ describe('useWorkoutForm', () => {
       dayOrder: 0,
     }
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
     // Set form as visible first
-    act(() => {
+    await act(async () => {
       result.current.setShowForm(true)
     })
 
-    act(() => {
+    await act(async () => {
       result.current.handleSaveWorkout(mockOnRefresh)
     })
 
@@ -214,7 +214,7 @@ describe('useWorkoutForm', () => {
     expect(mockOnRefresh).toHaveBeenCalled()
   })
 
-  it('should handle cancel form', () => {
+  it('should handle cancel form', async () => {
     const mockWorkout = {
       id: '1',
       name: 'Exercise 1',
@@ -225,15 +225,15 @@ describe('useWorkoutForm', () => {
       dayOrder: 0,
     }
 
-    const { result } = renderHook(() => useWorkoutForm())
+    const { result } = await renderHook(() => useWorkoutForm())
 
     // Set form as visible and editing first
-    act(() => {
+    await act(async () => {
       result.current.setShowForm(true)
       result.current.setEditingWorkout(mockWorkout)
     })
 
-    act(() => {
+    await act(async () => {
       result.current.handleCancelForm()
     })
 
