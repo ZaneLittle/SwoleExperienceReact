@@ -4,8 +4,10 @@
     "strict": true,
     "jsx": "react-jsx",
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "node"],
     "lib": ["ES2020", "DOM"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
       "@/components/*": [
@@ -24,5 +26,6 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  "exclude": ["__tests__"]
 }

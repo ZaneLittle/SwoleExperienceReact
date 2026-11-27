@@ -68,16 +68,16 @@ jest.mock('../../lib/constants/ui', () => ({
 
 describe('ConfirmationModal Utilities', () => {
   describe('useConfirmation hook', () => {
-    it('should initialize with no confirmation', () => {
-      const { result } = renderHook(() => useConfirmation())
+    it('should initialize with no confirmation', async () => {
+      const { result } = await renderHook(() => useConfirmation())
       
       expect(result.current.ConfirmationComponent).toBeNull()
     })
 
-    it('should show confirmation when showConfirmation is called', () => {
-      const { result } = renderHook(() => useConfirmation())
+    it('should show confirmation when showConfirmation is called', async () => {
+      const { result } = await renderHook(() => useConfirmation())
       
-      act(() => {
+      await act(async () => {
         result.current.showConfirmation({
           title: 'Test Title',
           message: 'Test Message',
@@ -90,10 +90,10 @@ describe('ConfirmationModal Utilities', () => {
       expect(result.current.ConfirmationComponent).not.toBeNull()
     })
 
-    it('should hide confirmation when hideConfirmation is called', () => {
-      const { result } = renderHook(() => useConfirmation())
+    it('should hide confirmation when hideConfirmation is called', async () => {
+      const { result } = await renderHook(() => useConfirmation())
       
-      act(() => {
+      await act(async () => {
         result.current.showConfirmation({
           title: 'Test Title',
           message: 'Test Message',
@@ -105,7 +105,7 @@ describe('ConfirmationModal Utilities', () => {
 
       expect(result.current.ConfirmationComponent).not.toBeNull()
 
-      act(() => {
+      await act(async () => {
         result.current.hideConfirmation()
       })
 
@@ -114,7 +114,7 @@ describe('ConfirmationModal Utilities', () => {
   })
 
   describe('confirm utility function', () => {
-    it('should call global handler when set', () => {
+    it('should call global handler when set', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -131,7 +131,7 @@ describe('ConfirmationModal Utilities', () => {
       })
     })
 
-    it('should handle multiple buttons', () => {
+    it('should handle multiple buttons', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -153,7 +153,7 @@ describe('ConfirmationModal Utilities', () => {
   })
 
   describe('confirmAlert utility function', () => {
-    it('should create alert with OK button', () => {
+    it('should create alert with OK button', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -169,7 +169,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(callArgs.buttons[0].style).toBe('default')
     })
 
-    it('should include Cancel button when onCancel is provided', () => {
+    it('should include Cancel button when onCancel is provided', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -185,7 +185,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(callArgs.buttons[1].text).toBe('OK')
     })
 
-    it('should call onConfirm when OK button is pressed', () => {
+    it('should call onConfirm when OK button is pressed', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -197,7 +197,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(onConfirm).toHaveBeenCalledTimes(1)
     })
 
-    it('should call onCancel when Cancel button is pressed', () => {
+    it('should call onCancel when Cancel button is pressed', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -212,7 +212,7 @@ describe('ConfirmationModal Utilities', () => {
   })
 
   describe('confirmDelete utility function', () => {
-    it('should create delete confirmation with Delete button', () => {
+    it('should create delete confirmation with Delete button', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -228,7 +228,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(callArgs.buttons[0].style).toBe('destructive')
     })
 
-    it('should include Cancel button when onCancel is provided', () => {
+    it('should include Cancel button when onCancel is provided', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -245,7 +245,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(callArgs.buttons[1].style).toBe('destructive')
     })
 
-    it('should call onConfirm when Delete button is pressed', () => {
+    it('should call onConfirm when Delete button is pressed', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -257,7 +257,7 @@ describe('ConfirmationModal Utilities', () => {
       expect(onConfirm).toHaveBeenCalledTimes(1)
     })
 
-    it('should call onCancel when Cancel button is pressed', () => {
+    it('should call onCancel when Cancel button is pressed', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 
@@ -272,7 +272,7 @@ describe('ConfirmationModal Utilities', () => {
   })
 
   describe('Edge Cases', () => {
-    it('should handle confirm when handler is not set', () => {
+    it('should handle confirm when handler is not set', async () => {
       setGlobalConfirmationHandler(null as any)
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
 
@@ -285,7 +285,7 @@ describe('ConfirmationModal Utilities', () => {
       consoleSpy.mockRestore()
     })
 
-    it('should handle empty buttons array in confirm', () => {
+    it('should handle empty buttons array in confirm', async () => {
       const mockHandler = jest.fn()
       setGlobalConfirmationHandler(mockHandler)
 

@@ -3,12 +3,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: magni
-    ports:
-      - "42069:42069"
+    # Keep the app off the NAS LAN. Attach cloudflared to swole-network and use
+    # http://magni:42069 as its service URL.
+    expose:
+      - "42069"
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
     # volumes:
       # Mount logs directory for debugging (disabled due to SMB permission issues)
       # - /mnt/your-pool/docker-logs/swole-experience:/var/log/nginx

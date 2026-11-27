@@ -29,17 +29,13 @@ describe('AuthContext', () => {
 
   describe('Initial State', () => {
     it('initializes with loading state', async () => {
-      mockTokenStorage.getUser.mockResolvedValueOnce(null)
+      mockTokenStorage.getUser.mockReturnValueOnce(new Promise(() => {}))
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       expect(result.current.isLoading).toBe(true)
       expect(result.current.user).toBeNull()
       expect(result.current.isAuthenticated).toBe(false)
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false)
-      })
     })
 
     it('loads existing user from storage on mount', async () => {
@@ -51,7 +47,7 @@ describe('AuthContext', () => {
       }
       mockTokenStorage.getUser.mockResolvedValueOnce(storedUser)
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -80,7 +76,7 @@ describe('AuthContext', () => {
       mockAuthService.login.mockResolvedValueOnce(mockResponse)
       mockTokenStorage.saveTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -109,7 +105,7 @@ describe('AuthContext', () => {
       const error = new Error('Invalid credentials')
       mockAuthService.login.mockRejectedValueOnce(error)
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -143,7 +139,7 @@ describe('AuthContext', () => {
       mockAuthService.register.mockResolvedValueOnce(mockResponse)
       mockTokenStorage.saveTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -172,7 +168,7 @@ describe('AuthContext', () => {
       const error = new Error('Email already exists')
       mockAuthService.register.mockRejectedValueOnce(error)
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -199,7 +195,7 @@ describe('AuthContext', () => {
       mockAuthService.logout.mockResolvedValueOnce()
       mockTokenStorage.clearTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -229,7 +225,7 @@ describe('AuthContext', () => {
       mockAuthService.logout.mockRejectedValueOnce(new Error('Network error'))
       mockTokenStorage.clearTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -249,7 +245,7 @@ describe('AuthContext', () => {
       mockTokenStorage.getRefreshToken.mockResolvedValueOnce(null)
       mockTokenStorage.clearTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -278,7 +274,7 @@ describe('AuthContext', () => {
       mockAuthService.deleteAccount.mockResolvedValueOnce()
       mockTokenStorage.clearTokens.mockResolvedValueOnce()
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -300,7 +296,7 @@ describe('AuthContext', () => {
       mockTokenStorage.getUser.mockResolvedValueOnce(null)
       mockTokenStorage.getAccessToken.mockResolvedValueOnce(null)
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)
@@ -326,7 +322,7 @@ describe('AuthContext', () => {
       const error = new Error('Failed to delete account')
       mockAuthService.deleteAccount.mockRejectedValueOnce(error)
 
-      const { result } = renderHook(() => useAuth(), { wrapper })
+      const { result } = await renderHook(() => useAuth(), { wrapper })
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false)

@@ -28,7 +28,7 @@ func NewAuthHandler(authService services.AuthService) *AuthHandler {
 // RegisterRequest represents a user registration request.
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Password string `json:"password" binding:"required,min=8,max=128"`
 }
 
 // LoginRequest represents a user login request.
@@ -80,7 +80,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": errorMsg,
-				"details": err.Error(),
 			},
 		})
 		return
@@ -136,7 +135,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": errorMsg,
-				"details": err.Error(),
 			},
 		})
 		return
@@ -176,7 +174,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": "Invalid request",
-				"details": err.Error(),
 			},
 		})
 		return
@@ -216,7 +213,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 			"error": gin.H{
 				"code":    "VALIDATION_ERROR",
 				"message": "Invalid request",
-				"details": err.Error(),
 			},
 		})
 		return

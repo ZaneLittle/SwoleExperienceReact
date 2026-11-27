@@ -14,7 +14,7 @@ function AppContent() {
   
   return (
     <>
-      <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
+      <StatusBar style={colors.background === '#1A1A1A' ? 'light' : 'dark'} />
       <Tabs 
         screenOptions={{
           headerShown: false,

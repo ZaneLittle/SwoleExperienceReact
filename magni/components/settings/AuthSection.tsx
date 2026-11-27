@@ -122,7 +122,9 @@ export default function AuthSection() {
         visible={showDeleteConfirm}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
+        onRequestClose={() => {
+          if (!isDeleting) setShowDeleteConfirm(false)
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>

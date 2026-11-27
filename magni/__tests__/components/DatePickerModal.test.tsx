@@ -1,73 +1,48 @@
-// Mock React Native components for web testing
-jest.mock('react-native', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const React = require('react')
-  
-  const View = ({ children, style, testID, ...props }: { children?: React.ReactNode; style?: unknown; testID?: string; [key: string]: unknown }) => 
-    React.createElement('div', { 'data-testid': testID, style, ...props }, children)
-  View.displayName = 'View'
-  
-  const Text = ({ children, style, ...props }: { children?: React.ReactNode; style?: unknown; [key: string]: unknown }) => 
-    React.createElement('span', { style, ...props }, children)
-  Text.displayName = 'Text'
-  
-  const TouchableOpacity = ({ children, onPress, style, testID, ...props }: { children?: React.ReactNode; onPress?: () => void; style?: unknown; testID?: string; [key: string]: unknown }) => 
-    React.createElement('button', { onClick: onPress, style, 'data-testid': testID, ...props }, children)
-  TouchableOpacity.displayName = 'TouchableOpacity'
-  
-  const Modal = ({ visible, children, ...props }: { visible?: boolean; children?: React.ReactNode; [key: string]: unknown }) => 
-    visible ? React.createElement('div', { 'data-testid': 'modal', ...props }, children) : null
-  Modal.displayName = 'Modal'
-  
-  return {
-    View,
-    Text,
-    TouchableOpacity,
-    Modal,
-    StyleSheet: {
-      create: (styles: Record<string, unknown>) => styles,
-    },
-  }
-})
+// React Native + React Native Testing Library (matches the jest-expo preset).
+// The React Native mock comes from jest.setup.rntl.js; only the MUI X pickers
+// are mocked here (they render web DOM, which has no place in RN testing).
+import React from 'react'
+import { render, fireEvent } from '@testing-library/react-native'
+import { DatePickerModal } from '../../components/DatePickerModal'
 
-// Mock MUI X date pickers
+// Mock MUI X date pickers with React Native host elements
 jest.mock('@mui/x-date-pickers/DateCalendar', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react')
-  
+
   const DateCalendar = (props: { onChange?: (value: Date | null) => void; value?: Date; sx?: unknown; [key: string]: unknown }) => {
     const { onChange, value, ...otherProps } = props
-    
-    const handleClick = () => {
+
+    const handlePress = () => {
       if (onChange) {
         const newDate = new Date(2024, 0, 15, 12, 0, 0)
         onChange(newDate)
       }
     }
-    
-    return React.createElement('div', {
-      'data-testid': 'calendar',
-      'data-value': value?.toISOString(),
-      onClick: handleClick,
+
+    return React.createElement('View', {
       ...otherProps,
+      onPress: handlePress,
+      testID: 'calendar',
+      value: value?.toISOString(),
     })
   }
-  
+
   DateCalendar.displayName = 'DateCalendar'
-  
+
   return {
     DateCalendar,
   }
 })
 
 jest.mock('@mui/x-date-pickers/LocalizationProvider', () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react')
-  
+
   const LocalizationProvider = ({ children }: { children: React.ReactNode; dateAdapter?: unknown }) => {
-    return React.createElement('div', { 'data-testid': 'localization-provider' }, children)
+    return React.createElement(React.Fragment, null, children)
   }
-  
+
   return {
     LocalizationProvider,
   }
@@ -80,10 +55,6 @@ jest.mock('@mui/x-date-pickers/AdapterDateFns', () => {
     AdapterDateFns: MockAdapter,
   }
 })
-
-import React from 'react'
-import { render, fireEvent } from '@testing-library/react'
-import { DatePickerModal } from '../../components/DatePickerModal'
 
 // Mock ThemeContext
 jest.mock('../../contexts/ThemeContext', () => {
@@ -165,8 +136,8 @@ describe('DatePickerModal', () => {
   })
 
   describe('Rendering', () => {
-    it('should not render when visible is false', () => {
-      const { container } = render(
+    it('should not render when visible is false', async () => {
+      const { toJSON, queryByText } = await render(
         <DatePickerModal
           visible={false}
           currentDate={testDate}
@@ -175,11 +146,12 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      expect(container.firstChild).toBeNull()
+      expect(toJSON()).toBeNull()
+      expect(queryByText('Select Date')).toBeNull()
     })
 
-    it('should render when visible is true', () => {
-      const { getByText } = render(
+    it('should render when visible is true', async () => {
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -192,8 +164,8 @@ describe('DatePickerModal', () => {
       expect(getByText('Cancel')).toBeTruthy()
     })
 
-    it('should render calendar component when visible', () => {
-      const { getByTestId } = render(
+    it('should render calendar component when visible', async () => {
+      const { getByTestId } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -207,8 +179,8 @@ describe('DatePickerModal', () => {
   })
 
   describe('Date Selection', () => {
-    it('should initialize with currentDate', () => {
-      const { getByTestId } = render(
+    it('should initialize with currentDate', async () => {
+      const { getByTestId } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -218,11 +190,11 @@ describe('DatePickerModal', () => {
       )
 
       const calendar = getByTestId('calendar')
-      expect(calendar.getAttribute('data-value')).toBe(testDate.toISOString())
+      expect(calendar.props.value).toBe(testDate.toISOString())
     })
 
-    it('should update selected date when calendar date changes', () => {
-      const { getByTestId } = render(
+    it('should update selected date when calendar date changes', async () => {
+      const { getByTestId } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -232,13 +204,13 @@ describe('DatePickerModal', () => {
       )
 
       const calendar = getByTestId('calendar')
-      fireEvent.click(calendar)
+      await fireEvent.press(calendar)
 
-      expect(calendar).toBeTruthy()
+      expect(getByTestId('calendar')).toBeTruthy()
     })
 
-    it('should preserve time when selecting a new date', () => {
-      const { getByText, getByTestId } = render(
+    it('should preserve time when selecting a new date', async () => {
+      const { getByText, getByTestId } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -248,25 +220,25 @@ describe('DatePickerModal', () => {
       )
 
       const calendar = getByTestId('calendar')
-      fireEvent.click(calendar)
+      await fireEvent.press(calendar)
 
       const selectButton = getByText('Select Date')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(selectButton)
 
       expect(mockOnDateSelected).toHaveBeenCalledTimes(1)
       const selectedDate = mockOnDateSelected.mock.calls[0][0]
-      
+
       expect(selectedDate.getHours()).toBe(testDate.getHours())
       expect(selectedDate.getMinutes()).toBe(testDate.getMinutes())
-      
+
       expect(selectedDate.getDate()).toBe(15)
       expect(selectedDate.getMonth()).toBe(0)
       expect(selectedDate.getFullYear()).toBe(2024)
     })
 
-    it('should update selected date when currentDate prop changes', () => {
+    it('should update selected date when currentDate prop changes', async () => {
       const newDate = new Date('2024-02-20T10:00:00')
-      const { rerender, getByTestId } = render(
+      const { rerender, getByTestId } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -275,7 +247,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      rerender(
+      await rerender(
         <DatePickerModal
           visible={true}
           currentDate={newDate}
@@ -285,13 +257,13 @@ describe('DatePickerModal', () => {
       )
 
       const calendar = getByTestId('calendar')
-      expect(calendar.getAttribute('data-value')).toBe(newDate.toISOString())
+      expect(calendar.props.value).toBe(newDate.toISOString())
     })
   })
 
   describe('Button Interactions', () => {
-    it('should call onClose when Cancel button is pressed', () => {
-      const { getByText } = render(
+    it('should call onClose when Cancel button is pressed', async () => {
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -300,15 +272,14 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const cancelText = getByText('Cancel')
-      fireEvent.click(cancelText.parentElement || cancelText)
+      await fireEvent.press(getByText('Cancel'))
 
       expect(mockOnClose).toHaveBeenCalledTimes(1)
       expect(mockOnDateSelected).not.toHaveBeenCalled()
     })
 
-    it('should call onDateSelected and onClose when Select Date button is pressed', () => {
-      const { getByText } = render(
+    it('should call onDateSelected and onClose when Select Date button is pressed', async () => {
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -317,16 +288,15 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Date')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Date'))
 
       expect(mockOnDateSelected).toHaveBeenCalledTimes(1)
       expect(mockOnClose).toHaveBeenCalledTimes(1)
     })
 
-    it('should handle date selection with different time', () => {
+    it('should handle date selection with different time', async () => {
       const dateWithTime = new Date('2024-01-10T18:45:30')
-      const { getByText } = render(
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={dateWithTime}
@@ -335,8 +305,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Date')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Date'))
 
       const selectedDate = mockOnDateSelected.mock.calls[0][0]
       expect(selectedDate.getHours()).toBe(18)
@@ -346,8 +315,8 @@ describe('DatePickerModal', () => {
   })
 
   describe('Edge Cases', () => {
-    it('should handle modal visibility changes', () => {
-      const { rerender, queryByText, getByText } = render(
+    it('should handle modal visibility changes', async () => {
+      const { rerender, queryByText, getByText } = await render(
         <DatePickerModal
           visible={false}
           currentDate={testDate}
@@ -358,7 +327,7 @@ describe('DatePickerModal', () => {
 
       expect(queryByText('Select Date')).toBeNull()
 
-      rerender(
+      await rerender(
         <DatePickerModal
           visible={true}
           currentDate={testDate}
@@ -370,9 +339,9 @@ describe('DatePickerModal', () => {
       expect(getByText('Select Date')).toBeTruthy()
     })
 
-    it('should reset selected date when modal becomes visible', () => {
+    it('should reset selected date when modal becomes visible', async () => {
       const initialDate = new Date('2024-01-10T14:30:00')
-      const { rerender, getByTestId } = render(
+      const { rerender, getByTestId } = await render(
         <DatePickerModal
           visible={false}
           currentDate={initialDate}
@@ -382,7 +351,7 @@ describe('DatePickerModal', () => {
       )
 
       const newDate = new Date('2024-02-20T10:00:00')
-      rerender(
+      await rerender(
         <DatePickerModal
           visible={true}
           currentDate={newDate}
@@ -392,12 +361,12 @@ describe('DatePickerModal', () => {
       )
 
       const calendar = getByTestId('calendar')
-      expect(calendar.getAttribute('data-value')).toBe(newDate.toISOString())
+      expect(calendar.props.value).toBe(newDate.toISOString())
     })
 
-    it('should handle dates at month boundaries', () => {
+    it('should handle dates at month boundaries', async () => {
       const monthEndDate = new Date('2024-01-31T12:00:00')
-      const { getByText } = render(
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={monthEndDate}
@@ -406,8 +375,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Date')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Date'))
 
       expect(mockOnDateSelected).toHaveBeenCalled()
       const selectedDate = mockOnDateSelected.mock.calls[0][0]
@@ -415,9 +383,9 @@ describe('DatePickerModal', () => {
       expect(selectedDate.getMinutes()).toBe(0)
     })
 
-    it('should handle dates at year boundaries', () => {
+    it('should handle dates at year boundaries', async () => {
       const yearEndDate = new Date('2023-12-31T23:59:59')
-      const { getByText } = render(
+      const { getByText } = await render(
         <DatePickerModal
           visible={true}
           currentDate={yearEndDate}
@@ -426,8 +394,7 @@ describe('DatePickerModal', () => {
         />,
       )
 
-      const selectButton = getByText('Select Date')
-      fireEvent.click(selectButton.parentElement || selectButton)
+      await fireEvent.press(getByText('Select Date'))
 
       expect(mockOnDateSelected).toHaveBeenCalled()
       const selectedDate = mockOnDateSelected.mock.calls[0][0]

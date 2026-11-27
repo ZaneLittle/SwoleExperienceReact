@@ -3,8 +3,8 @@ import { render, fireEvent } from '@testing-library/react-native'
 import { ReorderControls } from '../../../components/workouts/ReorderControls'
 
 describe('ReorderControls', () => {
-  it('hides the up arrow on the first item', () => {
-    const { queryByLabelText, getByLabelText } = render(
+  it('hides the up arrow on the first item', async () => {
+    const { queryByLabelText, getByLabelText } = await render(
       <ReorderControls
         index={0}
         totalItems={3}
@@ -19,8 +19,8 @@ describe('ReorderControls', () => {
     expect(getByLabelText('Move down')).toBeTruthy()
   })
 
-  it('hides the down arrow on the last item', () => {
-    const { queryByLabelText, getByLabelText } = render(
+  it('hides the down arrow on the last item', async () => {
+    const { queryByLabelText, getByLabelText } = await render(
       <ReorderControls
         index={2}
         totalItems={3}
@@ -35,10 +35,10 @@ describe('ReorderControls', () => {
     expect(queryByLabelText('Move down')).toBeNull()
   })
 
-  it('calls the matching callback when an arrow is pressed', () => {
+  it('calls the matching callback when an arrow is pressed', async () => {
     const onMoveUp = jest.fn()
     const onMoveDown = jest.fn()
-    const { getByLabelText } = render(
+    const { getByLabelText } = await render(
       <ReorderControls
         index={1}
         totalItems={3}
@@ -49,8 +49,8 @@ describe('ReorderControls', () => {
       />,
     )
 
-    fireEvent.press(getByLabelText('Move up'))
-    fireEvent.press(getByLabelText('Move down'))
+    await fireEvent.press(getByLabelText('Move up'))
+    await fireEvent.press(getByLabelText('Move down'))
 
     expect(onMoveUp).toHaveBeenCalledTimes(1)
     expect(onMoveDown).toHaveBeenCalledTimes(1)

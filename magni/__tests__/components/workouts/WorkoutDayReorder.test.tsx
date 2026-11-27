@@ -43,7 +43,7 @@ describe('WorkoutDayReorder', () => {
     mockWorkoutService.getWorkouts.mockResolvedValue([1, 2, 3, 4].map(workout))
     mockWorkoutService.getUniqueDays.mockResolvedValue(4)
 
-    const { getByTestId, queryByTestId } = render(
+    const { getByTestId, queryByTestId } = await render(
       <WorkoutDayReorder onBack={jest.fn()} />,
     )
 

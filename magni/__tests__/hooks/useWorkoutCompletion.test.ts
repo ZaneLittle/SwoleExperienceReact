@@ -35,8 +35,8 @@ describe('useWorkoutCompletion', () => {
     mockWorkoutHistoryService.createBulkWorkoutHistories = jest.fn().mockResolvedValue(true)
   })
 
-  it('should initialize with default values', () => {
-    const { result } = renderHook(() => useWorkoutCompletion())
+  it('should initialize with default values', async () => {
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     expect(result.current.isCompletingDay).toBe(false)
     expect(typeof result.current.completeWorkoutDay).toBe('function')
@@ -50,7 +50,7 @@ describe('useWorkoutCompletion', () => {
 
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -73,7 +73,7 @@ describe('useWorkoutCompletion', () => {
 
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 3, 3, mockOnComplete)
@@ -86,7 +86,7 @@ describe('useWorkoutCompletion', () => {
   it('should complete empty day successfully', async () => {
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay([], 1, 3, mockOnComplete)
@@ -100,7 +100,7 @@ describe('useWorkoutCompletion', () => {
   it('should complete empty day and wrap to day 1 when on last day', async () => {
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay([], 3, 3, mockOnComplete)
@@ -117,7 +117,7 @@ describe('useWorkoutCompletion', () => {
     ]
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -136,7 +136,7 @@ describe('useWorkoutCompletion', () => {
     mockWorkoutService.setCurrentDay.mockResolvedValue(false)
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -156,7 +156,7 @@ describe('useWorkoutCompletion', () => {
     mockWorkoutService.setCurrentDay.mockRejectedValue(new Error('Storage error'))
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -173,7 +173,7 @@ describe('useWorkoutCompletion', () => {
 
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -193,7 +193,7 @@ describe('useWorkoutCompletion', () => {
     mockWorkoutHistoryService.createBulkWorkoutHistories.mockResolvedValue(false)
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
@@ -214,7 +214,7 @@ describe('useWorkoutCompletion', () => {
 
     const mockOnComplete = jest.fn()
 
-    const { result } = renderHook(() => useWorkoutCompletion())
+    const { result } = await renderHook(() => useWorkoutCompletion())
 
     await act(async () => {
       await result.current.completeWorkoutDay(mockWorkouts, 1, 3, mockOnComplete)
